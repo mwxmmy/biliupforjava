@@ -2,22 +2,25 @@ package top.sshh.bililiverecoder.entity;
 
 import lombok.Data;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Data
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = "eventId"))
 public class RecordHistory {
 
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
 
     private String roomId;
 
     private String bvId;
 
     private String title;
+
+    private String eventId;
 
     private String sessionId;
 

@@ -60,7 +60,7 @@ public class RecordEventRecordStartedService implements RecordEventService {
         }else {
             log.error("开始录制异常，不应该存在的情况，sessionId已存在，使用上一次创建的history ==> {}", JSON.toJSONString(history));
         }
-        history.setId(event.getEventId());
+        history.setEventId(event.getEventId());
         history.setSessionId(eventData.getSessionId());
         history.setRecording(eventData.isRecording());
         history.setStreaming(eventData.isStreaming());

@@ -3,6 +3,7 @@ package top.sshh.bililiverecoder.service;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import top.sshh.bililiverecoder.entity.RecordEventDTO;
 import top.sshh.bililiverecoder.entity.RecordEventType;
@@ -14,6 +15,8 @@ public class RecordEventFactory {
 
     @Autowired
     RecordEventRecordStartedService recordEventRecordStartedService;
+    @Autowired
+    RecordEventRecordEndService recordEventRecordEndService;
     @Autowired
     RecordEventStreamStartService recordEventStreamStartService;
     @Autowired
@@ -27,16 +30,25 @@ public class RecordEventFactory {
 
 
     public RecordEventService getEventService(String eventType){
-        switch (eventType){
-            case RecordEventType.SessionStarted:return recordEventRecordStartedService;
-            case RecordEventType.StreamStarted:return recordEventStreamStartService;
-            case RecordEventType.StreamEnded:return recordEventStreamEndService;
-            case RecordEventType.FileOpening:return recordEventFileOpenService;
-            case RecordEventType.FileClosed:return recordEventFileClosedService;
-            default:return recordEventEmptyService;
+        switch (eventType) {
+            case RecordEventType.SessionStarted:
+                return recordEventRecordStartedService;
+            case RecordEventType.SessionEnded:
+                return recordEventRecordEndService;
+            case RecordEventType.StreamStarted:
+                return recordEventStreamStartService;
+            case RecordEventType.StreamEnded:
+                return recordEventStreamEndService;
+            case RecordEventType.FileOpening:
+                return recordEventFileOpenService;
+            case RecordEventType.FileClosed:
+                return recordEventFileClosedService;
+            default:
+                return recordEventEmptyService;
         }
     }
 
+    @Async
     public void processing(RecordEventDTO eventDTO){
         String eventType = eventDTO.getEventType();
         if (StringUtils.isBlank(eventType)){

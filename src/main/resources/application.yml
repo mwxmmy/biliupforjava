@@ -1,8 +1,6 @@
 server:
   port: 80
   forward-headers-strategy: native
-
-
 spring:
   datasource:
     hikari:

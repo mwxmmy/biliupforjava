@@ -2,17 +2,22 @@ package top.sshh.bililiverecoder.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import top.sshh.bililiverecoder.entity.*;
 import top.sshh.bililiverecoder.repo.*;
 import top.sshh.bililiverecoder.service.RecordEventService;
 
+import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 @Slf4j
 @Component
 public class RecordEventFileOpenService implements RecordEventService {
+
+    @Value("${record.work-path}")
+    private String workPath;
 
     @Autowired
     private BiliUserRepository biliUserRepository;
@@ -33,6 +38,7 @@ public class RecordEventFileOpenService implements RecordEventService {
     @Override
     public void processing(RecordEventDTO event) {
         RecordEventData eventData = event.getEventData();
+        log.info("分p开始录制事件==>{}", eventData.getRelativePath());
         String sessionId = eventData.getSessionId();
         try {
             Thread.sleep(1000L);
@@ -54,7 +60,7 @@ public class RecordEventFileOpenService implements RecordEventService {
                 roomRepository.save(room);
             }
             history = new RecordHistory();
-            history.setId(event.getEventId());
+            history.setEventId(event.getEventId());
             history.setRoomId(room.getRoomId());
             history.setStartTime(LocalDateTime.now());
             history.setTitle(eventData.getTitle());
@@ -64,24 +70,24 @@ public class RecordEventFileOpenService implements RecordEventService {
             historyRepository.save(history);
         }
         // 正常逻辑
-        boolean existsPart = historyPartRepository.existsById(event.getEventId());
+        boolean existsPart = historyPartRepository.existsByEventId(event.getEventId());
         if(existsPart){
             return;
         }
 
         RecordHistoryPart part = new RecordHistoryPart();
-        part.setId(event.getEventId());
+        part.setEventId(event.getEventId());
         part.setTitle(LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM月dd日HH点mm分ss秒")));
         part.setRoomId(history.getRoomId());
         part.setHistoryId(history.getId());
-        part.setFilePath(eventData.getRelativePath());
+        part.setFilePath(workPath + File.separator + eventData.getRelativePath());
         part.setSessionId(eventData.getSessionId());
         part.setRecording(eventData.isRecording());
         part.setStartTime(LocalDateTime.now());
         historyPartRepository.save(part);
 
         String relativePath = eventData.getRelativePath();
-        history.setFilePath(relativePath.substring(0,relativePath.lastIndexOf('/')));
+        history.setFilePath(workPath + File.separator + relativePath.substring(0, relativePath.lastIndexOf('/')));
         historyRepository.save(history);
 
     }

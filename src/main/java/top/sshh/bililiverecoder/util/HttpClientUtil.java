@@ -36,22 +36,27 @@ public class HttpClientUtil {
                 .build();
     }
 
-    public static String post(String url, Map<String, String> headers, String json) throws IOException {
-        RequestBody requestBody = RequestBody.create(MediaType.parse("application/json"), json);
-        Request build = new Request.Builder()
-                .headers(Headers.of(headers))
-                .url(url)
-                .post(requestBody)
-                .build();
-        Response response = client.newCall(build).execute();
-        String string = response.body().string();
-        log.info("url={}, header={}, param={}, resp={}", url, JSON.toJSONString(headers), json, string);
-        return string;
+    public static String post(String url, Map<String, String> headers, String json) {
+        try {
+            RequestBody requestBody = RequestBody.create(MediaType.parse("application/json"), json);
+            Request build = new Request.Builder()
+                    .headers(Headers.of(headers))
+                    .url(url)
+                    .post(requestBody)
+                    .build();
+            Response response = client.newCall(build).execute();
+            String string = response.body().string();
+            log.info("url={}, header={}, param={}, resp={}", url, JSON.toJSONString(headers), json, string);
+            return string;
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e.getMessage());
+        }
     }
 
     public static String post(String url, Map<String, String> headers,
                               Map<String, String> formParams,
-                              Boolean allowCookie) throws IOException {
+                              Boolean allowCookie) {
         FormBody.Builder builder = new FormBody.Builder();
         formParams.forEach(builder::add);
         RequestBody formBody = builder
@@ -62,22 +67,33 @@ public class HttpClientUtil {
                 .post(formBody)
                 .build();
         OkHttpClient currentClient = allowCookie ? clientAllowCookie : client;
-        Response response = currentClient.newCall(build).execute();
-        String string = response.body().string();
-        log.info("url={}, header={}, param={}, resp={}", url, JSON.toJSONString(headers), formParams, string);
-        return string;
+        try {
+
+            Response response = currentClient.newCall(build).execute();
+            String string = response.body().string();
+            log.info("url={}, header={}, param={}, resp={}", url, JSON.toJSONString(headers), formParams, string);
+            return string;
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e.getMessage());
+        }
     }
 
-    public static String get(String url, Map<String, String> headers) throws IOException {
-        Response response = client.newCall(new Request.Builder()
-                .url(url)
-                .headers(Headers.of(headers))
-                .get()
-                .build()
-        ).execute();
-        String string = response.body().string();
-        log.info("url={}, header={}, resp={}", url, JSON.toJSONString(headers), string);
-        return string;
+    public static String get(String url, Map<String, String> headers) {
+        try {
+            Response response = client.newCall(new Request.Builder()
+                    .url(url)
+                    .headers(Headers.of(headers))
+                    .get()
+                    .build()
+            ).execute();
+            String string = response.body().string();
+            log.info("url={}, header={}, resp={}", url, JSON.toJSONString(headers), string);
+            return string;
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e.getMessage());
+        }
     }
 
     public static String get(String url) throws IOException {

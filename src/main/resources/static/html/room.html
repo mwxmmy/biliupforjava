@@ -1,0 +1,230 @@
+<div class="container" id="roomTable">
+    <el-table
+            :data="tableData"
+            height="250"
+            style="width: 100%">
+        <el-table-column type="expand">
+            <template slot-scope="props">
+                <el-form class="demo-table-expand" inline label-position="left">
+                    <el-form-item label="投稿分区id">
+                        <span>{{ props.row.tid }}</span>
+                    </el-form-item>
+                    <el-form-item label="标题模板">
+                        <span>{{ props.row.titleTemplate }}</span>
+                    </el-form-item>
+                    <el-form-item label="分p标题模板">
+                        <span>{{ props.row.partTitleTemplate }}</span>
+                    </el-form-item>
+                    <el-form-item label="描述模板">
+                        <span>{{ props.row.descTemplate }}</span>
+                    </el-form-item>
+                </el-form>
+            </template>
+        </el-table-column>
+        <el-table-column
+                label="直播间"
+                prop="roomId"
+                width="140">
+        </el-table-column>
+        <el-table-column
+                label="主播"
+                prop="uname"
+                width="100">
+        </el-table-column>
+        <el-table-column
+                label="标题"
+                prop="title"
+                width="180">
+        </el-table-column>
+        <el-table-column
+                label="是否自制"
+                prop="copyright"
+                width="120">
+            <template slot-scope="scope">
+                <el-button circle class="el-icon-check" type="success" v-if="scope.row.copyright==1"></el-button>
+                <el-button circle class="el-icon-close" type="danger" v-if="!scope.row.copyright==2"></el-button>
+            </template>
+        </el-table-column>
+        <el-table-column
+                label="直播中"
+                prop="streaming"
+                width="100">
+            <template slot-scope="scope">
+                <el-button circle class="el-icon-check" type="success" v-if="scope.row.streaming"></el-button>
+                <el-button circle class="el-icon-close" type="danger" v-if="!scope.row.streaming"></el-button>
+            </template>
+        </el-table-column>
+        <el-table-column
+                label="删除文件"
+                prop="deleteFile"
+                width="120">
+            <template slot-scope="scope">
+                <el-button circle class="el-icon-check" type="success" v-if="scope.row.deleteFile"></el-button>
+                <el-button circle class="el-icon-close" type="danger" v-if="!scope.row.deleteFile"></el-button>
+            </template>
+        </el-table-column>
+        <el-table-column
+                label="录制中"
+                prop="recording"
+                width="100">
+            <template slot-scope="scope">
+                <el-button circle class="el-icon-check" type="success" v-if="scope.row.recording"></el-button>
+                <el-button circle class="el-icon-close" type="danger" v-if="!scope.row.recording"></el-button>
+            </template>
+        </el-table-column>
+        <el-table-column
+                label="是否上传"
+                prop="recording"
+                width="120">
+            <template slot-scope="scope">
+                <el-button circle class="el-icon-check" type="success" v-if="scope.row.upload"></el-button>
+                <el-button circle class="el-icon-close" type="danger" v-if="!scope.row.upload"></el-button>
+            </template>
+        </el-table-column>
+        <el-table-column
+                label="投稿用户"
+                prop="uploadUserId"
+                width="120">
+            <template slot-scope="scope">
+                <div v-for="item in users">
+                    <span type="primary" v-if="scope.row.uploadUserId == item.id">{{item.uname}}</span>
+                </div>
+            </template>
+        </el-table-column>
+        <el-table-column label="操作"
+                         width="180">
+            <template slot-scope="scope">
+                <el-button
+                        @click="handleEdit(scope.$index, scope.row)" size="mini"
+                        type="primary">编辑
+                </el-button>
+            </template>
+        </el-table-column>
+    </el-table>
+    <el-dialog :visible.sync="dialogFormVisible" title="房间信息">
+        <el-form :model="room">
+            <el-form-item :label-width="formLabelWidth" label="投稿分区id">
+                <el-input autocomplete="off" type="number" v-model="room.tid"></el-input>
+            </el-form-item>
+            <el-form-item :label-width="formLabelWidth" label="是否自制">
+                <el-select placeholder="请选择" v-model="room.copyright">
+                    <el-option label="是" value="1"></el-option>
+                    <el-option label="否" value="2"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item :label-width="formLabelWidth" label="标题模板">
+                <el-input autocomplete="off" v-model="room.titleTemplate"></el-input>
+            </el-form-item>
+            <el-form-item :label-width="formLabelWidth" label="分p标题模板">
+                <el-input autocomplete="off" v-model="room.partTitleTemplate"></el-input>
+            </el-form-item>
+            <el-form-item :label-width="formLabelWidth" label="描述模板">
+                <el-input :rows="2" autocomplete="off"
+                          autosize
+                          type="textarea" v-model="room.descTemplate"></el-input>
+            </el-form-item>
+            <el-form-item :label-width="formLabelWidth" label="上传tag">
+                <el-input autocomplete="off" v-model="room.tags"></el-input>
+            </el-form-item>
+
+            <el-form-item :label-width="formLabelWidth" label="删除文件">
+                <el-select placeholder="请选择" v-model="room.deleteFile">
+                    <el-option label="是" value="true"></el-option>
+                    <el-option label="否" value="false"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item :label-width="formLabelWidth" label="是否上传">
+                <el-select placeholder="请选择" v-model="room.upload">
+                    <el-option label="是" value="true"></el-option>
+                    <el-option label="否" value="false"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item :label-width="formLabelWidth" label="上传用户">
+                <el-select v-model="room.uploadUserId">
+                    <el-option
+                            :key="item.id"
+                            :label="item.uname"
+                            :value="item.id"
+                            v-for="item in users">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+        </el-form>
+        <div class="dialog-footer" slot="footer">
+            <el-button @click="dialogFormVisible = false">取 消</el-button>
+            <el-button @click="updateRoom()" type="primary">确 定</el-button>
+        </div>
+    </el-dialog>
+</div>
+<script>
+    new Vue({
+        el: '#roomTable',
+        data: {
+            formLabelWidth: '160px',
+            dialogFormVisible: false,
+            room: {},
+            tableData: [],
+            users: []
+        },
+        methods: {
+            handleEdit: function (index, row) {
+                this.room = row;
+                this.dialogFormVisible = true;
+            },
+            updateRoom: function () {
+                let _this = this;
+                $.ajax({
+                    url: '/room/update',
+                    contentType: 'application/json;charset=utf-8',
+                    type: 'post',
+                    data: JSON.stringify(_this.room),
+                    dataType: 'json',
+                    success: function (data) {
+                        _this.dialogFormVisible = false;
+                        _this.initTable();
+                    }
+                });
+            },
+            initTable: function () {
+                let _this = this;
+                $.ajax({
+                    url: '/room',
+                    type: 'post',
+                    dataType: 'json',
+                    success: function (data) {
+                        _this.tableData = data;
+                    }
+                });
+            }
+        },
+        created: function created() {
+            let _this = this;
+            $.ajax({
+                url: '/biliUser/list',
+                type: 'get',
+                dataType: 'json',
+                success: function (data) {
+                    console.info(data)
+                    _this.users = data;
+                }
+            });
+            this.initTable();
+        }
+    });
+</script>
+<style>
+    .demo-table-expand {
+        font-size: 0;
+    }
+
+    .demo-table-expand label {
+        width: 120px;
+        color: #99a9bf;
+    }
+
+    .demo-table-expand .el-form-item {
+        margin-right: 0;
+        margin-bottom: 0;
+        width: 50%;
+    }
+</style>

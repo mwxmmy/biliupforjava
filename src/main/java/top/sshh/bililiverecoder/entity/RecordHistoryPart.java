@@ -2,19 +2,20 @@ package top.sshh.bililiverecoder.entity;
 
 import lombok.Data;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Data
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = "eventId"))
 public class RecordHistoryPart {
 
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
 
     private String roomId;
-    private String historyId;
+    private Long historyId;
     /**
      * 视频oid
      */
@@ -31,13 +32,14 @@ public class RecordHistoryPart {
 
     private long fileSize;
 
+    private String eventId;
+
     private String sessionId;
 
 
     private boolean recording;
 
-    // 1-正在上传，2-上传成功
-    private int uploadStatus;
+    private boolean upload;
 
     private int uploadRetryCount;
 

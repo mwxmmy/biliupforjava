@@ -9,21 +9,15 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
-import top.sshh.bililiverecoder.entity.RecordHistory;
+import top.sshh.bililiverecoder.entity.data.VideoUploadDto;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
 import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.util.*;
@@ -39,14 +33,14 @@ public class BiliApi {
     private static String appSecret = "60698ba2f68e01ce44738920a0ffe768";
 
 
-    public static String getUserInfo(Long uid) throws IOException {
+    public static String getUserInfo(Long uid) {
         Map<String, String> additionalHeaders = new HashMap<>();
         additionalHeaders.put("referer", "https://live.bilibili.com/");
         additionalHeaders.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36");
         return HttpClientUtil.get("https://api.bilibili.com/x/space/acc/info?mid=" + uid, additionalHeaders);
     }
 
-    public static String getLoginKey() throws IOException {
+    public static String getLoginKey() {
         String url = "https://passport.bilibili.com/api/oauth2/getKey";
         Map<String, String> params = new TreeMap<>();
         params.put("appkey", appKey);
@@ -68,7 +62,7 @@ public class BiliApi {
     }
 
 
-    public static String getKeyAndLogin(String username, String password) throws IOException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeySpecException, InvalidKeyException {
+    public static String getKeyAndLogin(String username, String password) {
         String loginKeyResp = getLoginKey();
         String hash = JsonPath.read(loginKeyResp, "data.hash");
         String key = JsonPath.read(loginKeyResp, "data.key");
@@ -109,7 +103,7 @@ public class BiliApi {
             String password,
             String challenge,
             String seccode,
-            String validate) throws IOException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeySpecException, InvalidKeyException {
+            String validate) {
 
         Map<String, String> params = new TreeMap<>();
         params.put("appkey", appKey);
@@ -159,23 +153,28 @@ public class BiliApi {
         return DigestUtils.md5Hex(body + appSecret);
     }
 
-    public static String rsa(String str, String key) throws NoSuchPaddingException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, InvalidKeySpecException, InvalidKeyException {
-        key = key
-                .replace("-----BEGIN PUBLIC KEY-----", "")
-                .replaceAll("\n", "")
-                .replace("-----END PUBLIC KEY-----", "");
-        byte[] decode = Base64.getDecoder().decode(key);
-        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(decode);
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-        PublicKey publicKey = keyFactory.generatePublic(keySpec);
-        Cipher encryptCipher = Cipher.getInstance("RSA");
-        encryptCipher.init(Cipher.ENCRYPT_MODE, publicKey);
-        byte[] secretMessageBytes = str.getBytes(StandardCharsets.UTF_8);
-        byte[] encryptedMessageBytes = encryptCipher.doFinal(secretMessageBytes);
-        return Base64.getEncoder().encodeToString(encryptedMessageBytes);
+    public static String rsa(String str, String key) {
+        try {
+            key = key
+                    .replace("-----BEGIN PUBLIC KEY-----", "")
+                    .replaceAll("\n", "")
+                    .replace("-----END PUBLIC KEY-----", "");
+            byte[] decode = Base64.getDecoder().decode(key);
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(decode);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PublicKey publicKey = keyFactory.generatePublic(keySpec);
+            Cipher encryptCipher = Cipher.getInstance("RSA");
+            encryptCipher.init(Cipher.ENCRYPT_MODE, publicKey);
+            byte[] secretMessageBytes = str.getBytes(StandardCharsets.UTF_8);
+            byte[] encryptedMessageBytes = encryptCipher.doFinal(secretMessageBytes);
+            return Base64.getEncoder().encodeToString(encryptedMessageBytes);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e.getMessage());
+        }
     }
 
-    public static String preUpload(String accessToken, String mid, String profile) throws IOException {
+    public static String preUpload(String accessToken, Long mid, String profile) {
         String url = "https://member.bilibili.com/preupload";
         Map<String, String> params = new TreeMap<>();
         params.put("appkey", appKey);
@@ -188,7 +187,7 @@ public class BiliApi {
         params.put("sign", sign(params, appSecret));
 
         params.put("profile", profile);
-        params.put("mid", mid);
+        params.put("mid", mid.toString());
 
         Map<String, String> headers = new HashMap<>();
         long currentSecond = Instant.now().getEpochSecond();
@@ -202,7 +201,7 @@ public class BiliApi {
     }
 
 
-    public static String publish(String accessToken, RecordHistory data) throws IOException {
+    public static String publish(String accessToken, VideoUploadDto data) {
         String url = "https://member.bilibili.com/x/vu/client/add?access_key=" + accessToken;
         Map<String, String> query = new HashMap<>();
         query.put("access_key", accessToken);
@@ -241,7 +240,7 @@ public class BiliApi {
                                         Long filesize,
                                         String md5,
                                         String name,
-                                        String version) throws IOException {
+                                        String version) {
         Map<String, String> params = new HashMap<>();
         params.put("chunks", "" + chunks);
         params.put("filesize", "" + filesize);
@@ -252,7 +251,7 @@ public class BiliApi {
 
     }
 
-    public static String appMyInfo(String accessToken) throws IOException {
+    public static String appMyInfo(String accessToken) {
         String url = "https://app.bilibili.com/x/v2/account/myinfo";
         Map<String, String> params = new TreeMap<>();
         params.put("appkey", appKey);
@@ -274,7 +273,7 @@ public class BiliApi {
         return HttpClientUtil.get(uriBuilder.toUriString(), headers);
     }
 
-    public static BiliResponseDto<GenerateQRDto> generateQRUrlTV() throws IOException {
+    public static BiliResponseDto<GenerateQRDto> generateQRUrlTV() {
         Map<String, String> params = new TreeMap<>();
         params.put("appkey", "4409e2ce8ffd12b8");
         params.put("local_id", "0");
@@ -286,7 +285,7 @@ public class BiliApi {
         return resp;
     }
 
-    public static String loginOnTV(String authCode) throws IOException {
+    public static String loginOnTV(String authCode) {
         String url = "http://passport.bilibili.com/x/passport-tv-login/qrcode/poll";
         Map<String, String> params = new TreeMap<>();
         params.put("appkey", "4409e2ce8ffd12b8");
@@ -297,7 +296,7 @@ public class BiliApi {
         return HttpClientUtil.post(url, new HashMap<>(), params, true);
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         System.out.println(generateQRUrlTV());
     }
 

@@ -17,13 +17,26 @@ public class RecordRoom {
     private Long id;
     private String roomId;
     private String uname;
-    private String historyId;
+    private Long historyId;
     //本地数据库用户id
     private Long uploadUserId;
 
     private boolean upload;
 
     private String title;
+    private String titleTemplate;
+
+    private String tags = "直播回放";
+
+    // 发布到哪个分区
+    private Integer tid;
+
+
+    private int copyright = 1;
+
+    private String descTemplate;
+
+    private String partTitleTemplate;
 
     /**
      * 上传完成是否删除文件

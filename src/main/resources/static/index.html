@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>录播姬上传插件</title>
+    <link href="css/index.css" rel="stylesheet">
+    <script src="js/jquery-3.3.1.min.js"></script>
+    <script src="js/vue.min.js"></script>
+    <script src="js/index.js"></script>
+    <style type="text/css">
+        #app li a:hover {
+            color: black;
+            background: #93A5C6;
+        }
+
+        #app li a {
+            color: white;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<div id="app">
+    <template>
+        <el-tabs @tab-click="handleClick" v-model="activeName">
+            <el-tab-pane label="直播间" name="room"></el-tab-pane>
+            <el-tab-pane label="bilibili用户" name="user"></el-tab-pane>
+        </el-tabs>
+    </template>
+    <div id="p"></div>
+</div>
+</body>
+<script>
+    let answer = new Vue({
+        el: '#app',
+        data: {
+            activeName: 'room',
+        },
+        methods: {
+            handleClick: function (tab, event) {
+                switch (this.activeName) {
+                    case 'room':
+                        $('#p').html("");
+                        $('#p').load('html/room.html');
+                        break;
+                    case 'user':
+                        $('#p').html("");
+                        $('#p').load('html/user.html');
+                        break;
+                }
+            }
+        }
+    });
+</script>
+</html>

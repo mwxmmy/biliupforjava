@@ -7,22 +7,21 @@ import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.jayway.jsonpath.JsonPath;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import top.sshh.bililiverecoder.entity.BiliBiliUser;
 import top.sshh.bililiverecoder.entity.data.BiliSessionDto;
 import top.sshh.bililiverecoder.repo.BiliUserRepository;
 import top.sshh.bililiverecoder.util.BiliApi;
 
 import javax.imageio.ImageIO;
-import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @RestController
@@ -33,7 +32,7 @@ public class BiliUserController {
     BiliUserRepository biliUserRepository;
 
     @GetMapping("/login")
-    public void loginUser(HttpServletResponse response) throws Exception {
+    public String loginUser() throws Exception {
 
         BiliApi.BiliResponseDto<BiliApi.GenerateQRDto> s = BiliApi.generateQRUrlTV();
         if (s.getCode() != 0) {
@@ -42,12 +41,15 @@ public class BiliUserController {
         BitMatrix bm = new QRCodeWriter().encode(s.getData().getUrl(),
                 BarcodeFormat.QR_CODE, 256, 256);
         BufferedImage bi = MatrixToImageWriter.toBufferedImage(bm);
-        ImageIO.write(bi, "jpg", response.getOutputStream());
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        ImageIO.write(bi, "jpg", stream);
+        byte[] bytes = Base64.encodeBase64(stream.toByteArray());
         // 偷懒直接new一个Thread
         // new thread to check login status
         new Thread(() -> {
-            for (int i = 0; i < 6; i++) {
-                try {
+            try {
+                Thread.sleep(10000);
+                for (int i = 0; i < 6; i++) {
                     String loginResp = BiliApi.loginOnTV(s.getData().getAuth_code());
                     Integer code = JsonPath.read(loginResp, "code");
                     if (code == 0) {
@@ -62,15 +64,18 @@ public class BiliUserController {
                         biliUser.setUid(dto.getMid());
                         biliUser.setAccessToken(dto.getAccessToken());
                         biliUser.setRefreshToken(dto.getRefreshToken());
+                        biliUser.setLogin(true);
                         biliUser.setUpdateTime(LocalDateTime.now());
                         biliUserRepository.save(biliUser);
+                        return;
                     }
                     Thread.sleep(10000);
-                } catch (InterruptedException | IOException e) {
-                    break;
+
                 }
+            } catch (InterruptedException e) {
             }
         }).start();
+        return new String(bytes);
     }
 
     @GetMapping("/list")
@@ -80,5 +85,17 @@ public class BiliUserController {
             list.add(biliBiliUser);
         }
         return list;
+    }
+
+    @PostMapping("/update")
+    public boolean updateBillUser(@RequestBody BiliBiliUser user) {
+        Optional<BiliBiliUser> userOptional = biliUserRepository.findById(user.getId());
+        if (userOptional.isPresent()) {
+            BiliBiliUser dbUser = userOptional.get();
+            dbUser.setEnable(user.isEnable());
+            dbUser.setUpdateTime(LocalDateTime.now());
+            biliUserRepository.save(dbUser);
+        }
+        return false;
     }
 }

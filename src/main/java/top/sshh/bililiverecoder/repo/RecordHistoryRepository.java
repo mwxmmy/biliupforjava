@@ -5,7 +5,7 @@ import org.springframework.stereotype.Repository;
 import top.sshh.bililiverecoder.entity.RecordHistory;
 
 @Repository
-public interface RecordHistoryRepository extends CrudRepository<RecordHistory, String> {
+public interface RecordHistoryRepository extends CrudRepository<RecordHistory, Long> {
 
     RecordHistory findBySessionId(String sessionId);
 }

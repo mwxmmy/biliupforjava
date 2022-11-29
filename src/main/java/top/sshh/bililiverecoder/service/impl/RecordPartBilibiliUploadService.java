@@ -64,7 +64,8 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                 //没有设置分区，直接取消上传
                 return;
             }
-
+            // 上传任务入队列
+            TaskUtil.partUploadTask.put(part.getId(), Thread.currentThread());
             Optional<RecordHistory> historyOptional = historyRepository.findById(part.getHistoryId());
             if (!historyOptional.isPresent()) {
                 log.error("分片上传失败，history不存在==>{}", JSON.toJSONString(part));
@@ -102,10 +103,6 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                         biliBiliUser = biliUserRepository.save(biliBiliUser);
                         throw new RuntimeException("{}登录已过期，请重新登录! " + biliBiliUser.getUname());
                     }
-
-
-                    // 上传任务入队列
-                    TaskUtil.partUploadTask.put(part.getId(), Thread.currentThread());
                     // 登录验证结束
                     String preRes = BiliApi.preUpload(biliBiliUser.getAccessToken(), biliBiliUser.getUid(), "ugcfr/pc3");
                     JSONObject preResObj = JSON.parseObject(preRes);
@@ -116,7 +113,7 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                     String filePath = part.getFilePath();
                     File uploadFile = new File(filePath);
                     long fileSize = uploadFile.length();
-                    long chunkSize = 1024 * 1024 * 5;
+                    long chunkSize = 1024 * 1024 * 10;
                     long chunkNum = (long) Math.ceil((double) fileSize / chunkSize);
                     AtomicInteger upCount = new AtomicInteger(0);
                     AtomicBoolean isThrow = new AtomicBoolean(false);

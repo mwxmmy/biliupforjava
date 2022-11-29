@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = "eventId"))
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"eventId", "filePath"}))
 public class RecordHistoryPart {
 
     @Id

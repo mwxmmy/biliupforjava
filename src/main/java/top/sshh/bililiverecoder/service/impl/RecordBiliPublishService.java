@@ -75,7 +75,6 @@ public class RecordBiliPublishService {
                         e.printStackTrace();
                     }
                 }
-                TaskUtil.partUploadTask.remove(uploadPart.getId());
             }
             //再次检查是否上传完成
             Optional<RecordHistoryPart> partOptional = partRepository.findById(uploadPart.getId());

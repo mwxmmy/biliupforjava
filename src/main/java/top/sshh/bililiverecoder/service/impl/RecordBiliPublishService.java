@@ -40,71 +40,92 @@ public class RecordBiliPublishService {
     private RecordPartUploadService uploadService;
 
     public boolean publishRecordHistory(RecordHistory history) {
-        if (history.isRecording()) {
+        if (history.isPublish()) {
             return false;
         }
-
         Thread publishThread = TaskUtil.publishTask.get(history.getId());
         if (publishThread != null) {
             //正在发布，直接退出
             return false;
         }
+        try {
+            Thread.sleep(10000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        publishThread = TaskUtil.publishTask.get(history.getId());
+        if (publishThread != null) {
+            //正在发布，直接退出
+            return false;
+        }
+        // 发布任务入队列
+        TaskUtil.publishTask.put(history.getId(), Thread.currentThread());
 
         RecordRoom room = roomRepository.findByRoomId(history.getRoomId());
         log.info("发布视频事件开始：{}", room.getUname());
 
         if (room.getTid() == null) {
             //没有设置分区，直接取消上传
+            TaskUtil.publishTask.remove(history.getId());
             return false;
         }
         List<RecordHistoryPart> uploadParts = partRepository.findByHistoryId(history.getId());
+        if (uploadParts.size() == 0) {
+            log.info("发布视频事件分p不能为空，删除分p：{}", JSON.toJSONString(history));
+            historyRepository.delete(history);
+            return false;
+        }
         for (RecordHistoryPart uploadPart : uploadParts) {
             //已经上传完成就跳过
             if (uploadPart.isUpload()) {
                 continue;
             }
+            String filePath = uploadPart.getFilePath().intern();
             Thread thread = TaskUtil.partUploadTask.get(uploadPart.getId());
             if (thread != null && thread != Thread.currentThread()) {
-                boolean alive = thread.isAlive();
-                if (alive) {
-                    try {
-                        //等待线程上传完成
-                        log.info("partId={},{} ===>正在上传 ，等待上传完成在发布", uploadPart.getId(), uploadPart.getFilePath());
-                        thread.join();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                //等待线程上传完成
+                log.info("partId={},{} ===>正在上传 ，等待上传完成在发布,即将等待获取锁", uploadPart.getId(), filePath);
+                synchronized (filePath) {
+                    TaskUtil.partUploadTask.remove(uploadPart.getId());
+                    log.error("视频发布流程获取part上传锁成功，即将再次检查是否已上传完成");
+                    //再次检查是否上传完成
+                    Optional<RecordHistoryPart> partOptional = partRepository.findById(uploadPart.getId());
+                    if (partOptional.isPresent()) {
+                        RecordHistoryPart part = partOptional.get();
+                        if (!part.isUpload()) {
+                            log.error("视频发布流程获取part上传锁成功，检查到未上传完成");
+                            uploadService.upload(uploadPart);
+                        }
                     }
+
                 }
             }
-            //再次检查是否上传完成
-            Optional<RecordHistoryPart> partOptional = partRepository.findById(uploadPart.getId());
-            if (partOptional.isPresent()) {
-                RecordHistoryPart part = partOptional.get();
-                if (!part.isUpload()) {
-                    uploadService.upload(uploadPart);
-                }
-            }
+
         }
         //重新加载上传列表
         uploadParts = partRepository.findByHistoryId(history.getId());
         long count = uploadParts.stream().filter(RecordHistoryPart::isUpload).count();
         if (count != uploadParts.size()) {
             //没有全部上传完成返回失败
+            TaskUtil.publishTask.remove(history.getId());
             return false;
         }
         if (room.isUpload()) {
             if (room.getUploadUserId() == null) {
                 log.info("视频发布事件，没有设置上传用户，无法发布 ==>{}", JSON.toJSONString(room));
+                TaskUtil.publishTask.remove(history.getId());
                 return false;
             } else {
                 Optional<BiliBiliUser> userOptional = biliUserRepository.findById(room.getUploadUserId());
                 if (!userOptional.isPresent()) {
                     log.error("视频发布事件，用户不存在，无法发布 ==>{}", JSON.toJSONString(room));
+                    TaskUtil.publishTask.remove(history.getId());
                     return false;
                 }
                 BiliBiliUser biliBiliUser = userOptional.get();
                 if (!biliBiliUser.isLogin()) {
                     log.error("视频发布事件，用户登录状态失效，无法发布，请重新登录 ==>{}", JSON.toJSONString(room));
+                    TaskUtil.publishTask.remove(history.getId());
                     return false;
                 }
 
@@ -122,12 +143,10 @@ public class RecordBiliPublishService {
                 if (expired) {
                     biliBiliUser.setLogin(false);
                     biliBiliUser = biliUserRepository.save(biliBiliUser);
+                    TaskUtil.publishTask.remove(history.getId());
                     throw new RuntimeException("{}登录已过期，请重新登录! " + biliBiliUser.getUname());
                 }
 
-
-                // 发布任务入队列
-                TaskUtil.publishTask.put(history.getId(), Thread.currentThread());
 
 
                 Map<String, Object> map = new HashMap<>();
@@ -164,6 +183,7 @@ public class RecordBiliPublishService {
                     String uploadRes = BiliApi.publish(biliBiliUser.getAccessToken(), videoUploadDto);
                     String bvid = JSON.parseObject(uploadRes).getJSONObject("data").getString("bvid");
                     history.setBvId(bvid);
+                    history.setPublish(true);
                     history = historyRepository.save(history);
                     log.info("发布={}=视频成功 == > {}", room.getUname(), JSON.toJSONString(history));
                 } catch (Exception e) {
@@ -175,6 +195,7 @@ public class RecordBiliPublishService {
                 }
             }
         }
+        TaskUtil.publishTask.remove(history.getId());
         return true;
     }
 

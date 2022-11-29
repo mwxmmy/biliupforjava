@@ -31,6 +31,7 @@ public class publishJob {
     // 定时查询直播历史，如果下一次直播开始时间和上一次结束时间小于5min，视为同一次直播
     @Scheduled(fixedDelay = 120000, initialDelay = 0)
     public void publish() {
+        log.info("视频上传定时任务开始");
         //查询出所有需要上传的房间
         List<RecordRoom> roomList = roomRepository.findByUpload(true);
 
@@ -38,9 +39,10 @@ public class publishJob {
 
         for (RecordRoom room : roomList) {
             // 查询不在录制需要上传的历史
-            Iterator<RecordHistory> iterator = historyRepository.findByRoomIdAndRecordingAndUploadAndUploadRetryCountLessThan(room.getId(), false, true, 5).iterator();
+            Iterator<RecordHistory> iterator = historyRepository.findByRoomIdAndRecordingIsFalseAndUploadIsTrueAndPublishIsFalseAndUploadRetryCountLessThan(room.getRoomId(), 5).iterator();
             iterator.forEachRemaining(historyList::add);
         }
+        log.info("视频上传定时任务 待发布视频数量 size=={}", historyList.size());
 
         for (RecordHistory history : historyList) {
             publishService.publishRecordHistory(history);

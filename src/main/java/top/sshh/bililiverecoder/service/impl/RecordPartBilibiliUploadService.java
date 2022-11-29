@@ -22,12 +22,15 @@ import top.sshh.bililiverecoder.service.RecordPartUploadService;
 import top.sshh.bililiverecoder.util.BiliApi;
 import top.sshh.bililiverecoder.util.TaskUtil;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.RandomAccessFile;
-import java.security.MessageDigest;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Component
@@ -115,43 +118,55 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                     long fileSize = uploadFile.length();
                     long chunkSize = 1024 * 1024 * 5;
                     long chunkNum = (long) Math.ceil((double) fileSize / chunkSize);
-                    MessageDigest md5Digest = DigestUtils.getMd5Digest();
-                    try (RandomAccessFile r = new RandomAccessFile(filePath, "r")) {
-                        for (int i = 0; i < chunkNum; i++) {
-                            int tryCount = 0;
-                            Exception toThrow = null;
-                            while (tryCount < 5) {
-                                try {
-                                    r.seek(i * chunkSize);
-                                    byte[] bytes = new byte[(int) chunkSize];
-                                    int read = r.read(bytes);
-                                    if (read == -1) {
-                                        break;
+                    AtomicInteger upCount = new AtomicInteger(0);
+                    AtomicBoolean isThrow = new AtomicBoolean(false);
+                    List<Runnable> runnableList = new ArrayList<>();
+                    for (int i = 0; i < chunkNum; i++) {
+                        int finalI = i;
+                        Runnable runnable = () -> {
+                            try (RandomAccessFile r = new RandomAccessFile(filePath, "r")) {
+                                int tryCount = 0;
+                                while (tryCount < 5) {
+                                    try {
+                                        r.seek(finalI * chunkSize);
+                                        byte[] bytes = new byte[(int) chunkSize];
+                                        int read = r.read(bytes);
+                                        if (read == -1) {
+                                            break;
+                                        }
+                                        if (read != bytes.length)
+                                            bytes = ArrayUtils.subarray(bytes, 0, read);
+                                        String s = BiliApi.uploadChunk(url, filename, bytes, read,
+                                                finalI + 1, (int) chunkNum);
+                                        if (!s.contains("OK")) {
+                                            throw new RuntimeException("上传返回异常");
+                                        }
+                                        int count = upCount.incrementAndGet();
+                                        log.info("{}==>[{}] 上传视频part {} 进度{}/{}, resp={}", Thread.currentThread().getName(), room.getTitle(),
+                                                filePath, count, chunkNum, s);
+                                        tryCount = 5;
+                                        isThrow.set(false);
+                                    } catch (Exception e) {
+                                        int count = upCount.get();
+                                        log.info("{}==>[{}] 上传视频part {} 进度{}/{}, exception={}", Thread.currentThread().getName(), room.getTitle(),
+                                                filePath, count, chunkNum, ExceptionUtils.getStackTrace(e));
+                                        isThrow.set(true);
                                     }
-                                    if (read != bytes.length)
-                                        bytes = ArrayUtils.subarray(bytes, 0, read);
-                                    md5Digest.update(bytes);
-                                    String s = BiliApi.uploadChunk(url, filename, bytes, read,
-                                            i + 1, (int) chunkNum);
-                                    if (!s.contains("OK")) {
-                                        throw new RuntimeException("上传返回异常");
-                                    }
-                                    log.info("[{}] 上传视频part {} 进度{}/{}, resp={}", room.getTitle(),
-                                            filePath, i + 1, chunkNum, s);
-                                    tryCount = 5;
-                                    toThrow = null;
-                                } catch (Exception e) {
-                                    log.info("[{}] 上传视频part {} 进度{}/{}, exception={}", room.getTitle(),
-                                            filePath, i + 1, chunkNum, ExceptionUtils.getStackTrace(e));
-                                    toThrow = e;
                                 }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                isThrow.set(true);
                             }
-                            if (toThrow != null) {
-                                throw toThrow;
-                            }
+                        };
 
-                        }
-                    } catch (Exception e) {
+                        runnableList.add(runnable);
+
+                    }
+
+                    //并发上传
+                    runnableList.stream().parallel().forEach(Runnable::run);
+                    if (isThrow.get()) {
+                        //存在异常
                         TaskUtil.partUploadTask.remove(part.getId());
                         part.setUpload(false);
                         part = partRepository.save(part);
@@ -161,25 +176,37 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                             history.setUploadRetryCount(history.getUploadRetryCount() + 1);
                             history = historyRepository.save(history);
                         }
+                        throw new RuntimeException("partId={}===并发上传失败，存在异常");
+                    }
+
+                    try {
+                        FileInputStream stream = new FileInputStream(uploadFile);
+                        String md5 = DigestUtils.md5Hex(stream).toLowerCase();
+                        stream.close();
+                        BiliApi.completeUpload(complete, (int) chunkNum, fileSize, md5,
+                                uploadFile.getName(), "2.0.0.1054");
+                        part.setFileName(filename);
+                        part.setUpload(true);
+                        part.setUpdateTime(LocalDateTime.now());
+                        part = partRepository.save(part);
+                        //如果配置上传删除，则删除文件
+                        if (room.isDeleteFile()) {
+                            boolean delete = uploadFile.delete();
+                            if (delete) {
+                                log.error("{}=>文件删除成功！！！", filePath);
+                            } else {
+                                log.error("{}=>文件删除失败！！！", filePath);
+                            }
+                        }
+                        TaskUtil.partUploadTask.remove(part.getId());
+                        log.info("partId={},文件上传成功==>{}", part.getId(), part.getFilePath());
+                    } catch (Exception e) {
                         e.printStackTrace();
-                        throw new RuntimeException(e.getMessage());
+                        log.error("partId={},文件上传失败==>{}", part.getId(), part.getFilePath(), e);
                     }
-                    String md5 = DatatypeConverter.printHexBinary(md5Digest.digest()).toLowerCase();
-                    BiliApi.completeUpload(complete, (int) chunkNum, fileSize, md5,
-                            uploadFile.getName(), "2.0.0.1054");
-                    part.setFileName(filename);
-                    part.setUpload(true);
-                    part.setUpdateTime(LocalDateTime.now());
-                    part = partRepository.save(part);
-                    //如果配置上传删除，则删除文件
-                    if (room.isDeleteFile()) {
-                        uploadFile.deleteOnExit();
-                    }
-                    TaskUtil.partUploadTask.remove(part.getId());
-                    log.info("partId={},文件上传成功==>{}", part.getId(), part.getFilePath());
                 }
-            }else {
-                log.info("分片上传事件，文件不需要上传 ==>{}",JSON.toJSONString(part));
+            } else {
+                log.info("分片上传事件，文件不需要上传 ==>{}", JSON.toJSONString(part));
                 return;
             }
         }

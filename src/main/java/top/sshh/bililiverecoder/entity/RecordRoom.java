@@ -21,7 +21,7 @@ public class RecordRoom {
     //本地数据库用户id
     private Long uploadUserId;
 
-    private boolean upload;
+    private boolean upload = true;
 
     private String title;
     private String titleTemplate = "【直播回放】【${uname}】${title} ${yyyy年MM月dd日HH点mm分}";
@@ -29,7 +29,7 @@ public class RecordRoom {
     private String tags = "直播回放";
 
     // 发布到哪个分区
-    private Integer tid;
+    private Integer tid = 171;
 
 
     private int copyright = 1;

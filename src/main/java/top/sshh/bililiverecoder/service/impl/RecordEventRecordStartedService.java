@@ -45,7 +45,7 @@ public class RecordEventRecordStartedService implements RecordEventService {
             room.setCreateTime(LocalDateTime.now());
             room.setUname(eventData.getName());
             room.setTitle(eventData.getTitle());
-            roomRepository.save(room);
+            room = roomRepository.save(room);
         }
         room.setTitle(eventData.getTitle());
         room.setSessionId(eventData.getSessionId());

@@ -122,7 +122,7 @@ public class RecordBiliPublishService {
                 }
                 if (expired) {
                     biliBiliUser.setLogin(false);
-                    biliUserRepository.save(biliBiliUser);
+                    biliBiliUser = biliUserRepository.save(biliBiliUser);
                     throw new RuntimeException("{}登录已过期，请重新登录! " + biliBiliUser.getUname());
                 }
 
@@ -145,6 +145,9 @@ public class RecordBiliPublishService {
                     SingleVideoDto dto = new SingleVideoDto();
                     map.put("date", uploadPart.getStartTime());
                     dto.setTitle(this.template(room.getPartTitleTemplate(), map));
+                    //同步标题
+                    uploadPart.setTitle(this.template(room.getPartTitleTemplate(), map));
+                    uploadPart = partRepository.save(uploadPart);
                     dto.setDesc("");
                     dto.setFilename(uploadPart.getFileName());
                     dtos.add(dto);
@@ -162,9 +165,11 @@ public class RecordBiliPublishService {
                     String uploadRes = BiliApi.publish(biliBiliUser.getAccessToken(), videoUploadDto);
                     String bvid = JSON.parseObject(uploadRes).getJSONObject("data").getString("bvid");
                     history.setBvId(bvid);
-                    historyRepository.save(history);
+                    history = historyRepository.save(history);
                     log.info("发布={}=视频成功 == > {}", room.getUname(), JSON.toJSONString(history));
                 } catch (Exception e) {
+                    history.setUploadRetryCount(history.getUploadRetryCount() + 1);
+                    history = historyRepository.save(history);
                     log.info("发布={}=视频失败 == > {}", room.getUname(), JSON.toJSONString(history), e);
                 } finally {
                     TaskUtil.publishTask.remove(history.getId());

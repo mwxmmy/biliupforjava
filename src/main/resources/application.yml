@@ -22,7 +22,7 @@ spring:
 
 record:
   check-interval: 25
-  work-path: ${user.home}/.bili
+  work-path: /bilirecord
 
 logging:
   file:

@@ -11,7 +11,10 @@ public interface RecordHistoryPartRepository extends CrudRepository<RecordHistor
 
     RecordHistoryPart findByFilePath(String path);
 
+    RecordHistoryPart findByHistoryIdAndTitle(Long historyId, String title);
+
     List<RecordHistoryPart> findByHistoryId(Long historyId);
+
 
     boolean existsByEventId(String eventId);
 }

@@ -1,5 +1,6 @@
 package top.sshh.bililiverecoder.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -56,13 +57,15 @@ public class RecordEventFileClosedService implements RecordEventService {
         part.setFileSize(eventData.getFileSize());
         part.setEndTime(LocalDateTime.now());
         part.setUpdateTime(LocalDateTime.now());
-        historyPartRepository.save(part);
+        part = historyPartRepository.save(part);
         Optional<RecordHistory> historyOptional = historyRepository.findById(part.getHistoryId());
         if (historyOptional.isPresent()) {
             RecordHistory history = historyOptional.get();
-            history.setFileSize(history.getFileSize()+ part.getFileSize());
+            history.setFileSize(history.getFileSize() + part.getFileSize());
             history.setUpdateTime(LocalDateTime.now());
-            historyRepository.save(history);
+            history = historyRepository.save(history);
+        } else {
+            log.error("history不存在 part==>{}", JSON.toJSONString(part));
         }
         // 文件上传操作
         //开始上传该视频分片，异步上传任务。

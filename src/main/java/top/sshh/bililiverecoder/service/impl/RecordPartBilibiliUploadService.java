@@ -11,10 +11,12 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import top.sshh.bililiverecoder.entity.BiliBiliUser;
+import top.sshh.bililiverecoder.entity.RecordHistory;
 import top.sshh.bililiverecoder.entity.RecordHistoryPart;
 import top.sshh.bililiverecoder.entity.RecordRoom;
 import top.sshh.bililiverecoder.repo.BiliUserRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryPartRepository;
+import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
 import top.sshh.bililiverecoder.repo.RecordRoomRepository;
 import top.sshh.bililiverecoder.service.RecordPartUploadService;
 import top.sshh.bililiverecoder.util.BiliApi;
@@ -35,6 +37,8 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
     private BiliUserRepository biliUserRepository;
     @Autowired
     private RecordHistoryPartRepository partRepository;
+    @Autowired
+    private RecordHistoryRepository historyRepository;
     @Autowired
     private RecordRoomRepository roomRepository;
 
@@ -57,7 +61,14 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                 //没有设置分区，直接取消上传
                 return;
             }
-            if (room.isUpload()) {
+
+            Optional<RecordHistory> historyOptional = historyRepository.findById(part.getHistoryId());
+            if (!historyOptional.isPresent()) {
+                log.error("分片上传失败，history不存在==>{}", JSON.toJSONString(part));
+                return;
+            }
+            RecordHistory history = historyOptional.get();
+            if (history.isUpload()) {
                 if (room.getUploadUserId() == null) {
                     log.info("分片上传事件，没有设置上传用户，无法上传 ==>{}", JSON.toJSONString(room));
                     return;
@@ -85,7 +96,7 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                     }
                     if (expired) {
                         biliBiliUser.setLogin(false);
-                        biliUserRepository.save(biliBiliUser);
+                        biliBiliUser = biliUserRepository.save(biliBiliUser);
                         throw new RuntimeException("{}登录已过期，请重新登录! " + biliBiliUser.getUname());
                     }
 
@@ -100,7 +111,8 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                     String filename = preResObj.getString("filename");
                     // 分段上传
                     String filePath = part.getFilePath();
-                    long fileSize = new File(filePath).length();
+                    File uploadFile = new File(filePath);
+                    long fileSize = uploadFile.length();
                     long chunkSize = 1024 * 1024 * 5;
                     long chunkNum = (long) Math.ceil((double) fileSize / chunkSize);
                     MessageDigest md5Digest = DigestUtils.getMd5Digest();
@@ -142,17 +154,27 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                     } catch (Exception e) {
                         TaskUtil.partUploadTask.remove(part.getId());
                         part.setUpload(false);
-                        partRepository.save(part);
+                        part = partRepository.save(part);
+                        historyOptional = historyRepository.findById(history.getId());
+                        if (historyOptional.isPresent()) {
+                            history = historyOptional.get();
+                            history.setUploadRetryCount(history.getUploadRetryCount() + 1);
+                            history = historyRepository.save(history);
+                        }
                         e.printStackTrace();
                         throw new RuntimeException(e.getMessage());
                     }
                     String md5 = DatatypeConverter.printHexBinary(md5Digest.digest()).toLowerCase();
                     BiliApi.completeUpload(complete, (int) chunkNum, fileSize, md5,
-                            new File(filePath).getName(), "2.0.0.1054");
+                            uploadFile.getName(), "2.0.0.1054");
                     part.setFileName(filename);
                     part.setUpload(true);
                     part.setUpdateTime(LocalDateTime.now());
-                    partRepository.save(part);
+                    part = partRepository.save(part);
+                    //如果配置上传删除，则删除文件
+                    if (room.isDeleteFile()) {
+                        uploadFile.deleteOnExit();
+                    }
                     TaskUtil.partUploadTask.remove(part.getId());
                     log.info("partId={},文件上传成功==>{}", part.getId(), part.getFilePath());
                 }

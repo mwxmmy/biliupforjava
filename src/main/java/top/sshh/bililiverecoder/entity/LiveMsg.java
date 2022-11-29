@@ -16,17 +16,21 @@ public class LiveMsg {
     private Long id;
 
     private String partId;
+    private String bvid;
+    private Long cid;
 
     private String username;
 
     private String context;
 
-    // 1 未上传，2已上传
+    // 1 未发送，2已发送
     private boolean isSend;
+
+    private int code;
 
     /**
      * 发送时间戳
      */
-    private long sendTime;
+    private Long sendTime;
 
 }

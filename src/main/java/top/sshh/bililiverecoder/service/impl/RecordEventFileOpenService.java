@@ -57,7 +57,7 @@ public class RecordEventFileOpenService implements RecordEventService {
                 room.setCreateTime(LocalDateTime.now());
                 room.setUname(eventData.getName());
                 room.setTitle(eventData.getTitle());
-                roomRepository.save(room);
+                room = roomRepository.save(room);
             }
             history = new RecordHistory();
             history.setEventId(event.getEventId());
@@ -67,7 +67,7 @@ public class RecordEventFileOpenService implements RecordEventService {
             history.setSessionId(eventData.getSessionId());
             history.setRecording(eventData.isRecording());
             history.setStreaming(eventData.isStreaming());
-            historyRepository.save(history);
+            history = historyRepository.save(history);
         }
         // 正常逻辑
         boolean existsPart = historyPartRepository.existsByEventId(event.getEventId());
@@ -84,7 +84,7 @@ public class RecordEventFileOpenService implements RecordEventService {
         part.setSessionId(eventData.getSessionId());
         part.setRecording(eventData.isRecording());
         part.setStartTime(LocalDateTime.now());
-        historyPartRepository.save(part);
+        part = historyPartRepository.save(part);
 
         String relativePath = eventData.getRelativePath();
         history.setFilePath(workPath + File.separator + relativePath.substring(0, relativePath.lastIndexOf('/')));

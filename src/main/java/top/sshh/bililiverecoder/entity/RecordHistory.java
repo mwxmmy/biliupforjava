@@ -31,6 +31,14 @@ public class RecordHistory {
     private boolean recording;
     private boolean streaming;
 
+    // 是否上传
+    private boolean upload;
+
+    // 是否发布成功
+    private boolean publish;
+
+    private int uploadRetryCount = 0;
+
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 

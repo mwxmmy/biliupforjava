@@ -57,6 +57,7 @@ public class RecordEventRecordStartedService implements RecordEventService {
             history.setRoomId(room.getRoomId());
             history.setStartTime(LocalDateTime.now());
             history.setTitle(eventData.getTitle());
+            history.setUpload(room.isUpload());
         }else {
             log.error("开始录制异常，不应该存在的情况，sessionId已存在，使用上一次创建的history ==> {}", JSON.toJSONString(history));
         }

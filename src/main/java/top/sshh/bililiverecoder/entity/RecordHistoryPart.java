@@ -19,11 +19,15 @@ public class RecordHistoryPart {
     /**
      * 视频oid
      */
-    private Long oid;
+    private Long cid;
 
     private String title;
 
     private String filePath;
+
+    private int page;
+
+    private int duration;
 
     /**
      * 投稿服务器返回的文件名

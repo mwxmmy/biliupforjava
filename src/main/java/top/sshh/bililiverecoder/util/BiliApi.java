@@ -9,6 +9,9 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
+import top.sshh.bililiverecoder.entity.LiveMsg;
+import top.sshh.bililiverecoder.entity.data.BiliDmResponse;
+import top.sshh.bililiverecoder.entity.data.BiliVideoInfoResponse;
 import top.sshh.bililiverecoder.entity.data.VideoUploadDto;
 
 import javax.crypto.Cipher;
@@ -272,6 +275,51 @@ public class BiliApi {
         params.forEach(uriBuilder::queryParam);
         return HttpClientUtil.get(uriBuilder.toUriString(), headers);
     }
+
+    public static BiliVideoInfoResponse getVideoInfo(String bvid) {
+        String url = "http://api.bilibili.com/x/web-interface/view";
+        Map<String, String> params = new TreeMap<>();
+        params.put("bvid", bvid);
+        Map<String, String> headers = new HashMap<>();
+        long currentSecond = Instant.now().getEpochSecond();
+        headers.put("Display-ID", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5-" + currentSecond);
+        headers.put("Buvid", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5");
+        headers.put("User-Agent", "Mozilla/5.0 BiliDroid/5.37.0 (bbcallen@gmail.com)");
+        headers.put("Device-ID", "aBRoDWAVeRhsA3FDewMzS3lLMwM");
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(url);
+        params.forEach(uriBuilder::queryParam);
+        String response = HttpClientUtil.get(uriBuilder.toUriString(), headers);
+        return JSON.parseObject(response, BiliVideoInfoResponse.class);
+    }
+
+    public static BiliDmResponse sendVideoDm(String accessToken, LiveMsg msg) {
+        String url = "http://api.bilibili.com/x/v2/dm/post";
+        Map<String, String> params = new TreeMap<>();
+        params.put("appkey", appKey);
+        params.put("access_key", accessToken);
+        params.put("build", "5370000");
+        params.put("channel", "html5_app_bili");
+        params.put("mobi_app", "android");
+        params.put("platform", "android");
+        params.put("ts", "" + System.currentTimeMillis() / 1000);
+        params.put("sign", sign(params, appSecret));
+        params.put("type", "1");
+        params.put("oid", msg.getCid().toString());
+        params.put("bvid", msg.getBvid());
+        params.put("msg", msg.getContext());
+        params.put("progress", msg.getSendTime().toString());
+        params.put("mode", "1");
+        params.put("rnd", String.valueOf(System.currentTimeMillis() * 1000000));
+        Map<String, String> headers = new HashMap<>();
+        long currentSecond = Instant.now().getEpochSecond();
+        headers.put("Display-ID", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5-" + currentSecond);
+        headers.put("Buvid", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5");
+        headers.put("User-Agent", "Mozilla/5.0 BiliDroid/5.37.0 (bbcallen@gmail.com)");
+        headers.put("Device-ID", "aBRoDWAVeRhsA3FDewMzS3lLMwM");
+        String response = HttpClientUtil.post(url, headers, params, true);
+        return JSON.parseObject(response, BiliDmResponse.class);
+    }
+
 
     public static BiliResponseDto<GenerateQRDto> generateQRUrlTV() {
         Map<String, String> params = new TreeMap<>();

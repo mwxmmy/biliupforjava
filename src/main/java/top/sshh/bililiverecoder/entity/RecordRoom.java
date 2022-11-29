@@ -24,7 +24,7 @@ public class RecordRoom {
     private boolean upload;
 
     private String title;
-    private String titleTemplate;
+    private String titleTemplate = "【直播回放】【${uname}】${title} ${yyyy年MM月dd日HH点mm分}";
 
     private String tags = "直播回放";
 
@@ -34,9 +34,10 @@ public class RecordRoom {
 
     private int copyright = 1;
 
-    private String descTemplate;
+    private String descTemplate = "直播录像 \n" +
+            "${uname}直播间：https://live.bilibili.com/${roomId}";
 
-    private String partTitleTemplate;
+    private String partTitleTemplate = "${MM月dd日HH点mm分}";
 
     /**
      * 上传完成是否删除文件

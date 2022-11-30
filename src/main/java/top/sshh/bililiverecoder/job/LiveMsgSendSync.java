@@ -39,7 +39,7 @@ public class LiveMsgSendSync {
     @Autowired
     private LiveMsgService liveMsgService;
 
-    @Scheduled(fixedDelay = 1000, initialDelay = 0)
+    @Scheduled(fixedDelay = 3600000, initialDelay = 0)
     public void sndMsgProcess() {
         log.error("发送弹幕定时任务开始");
         List<RecordHistory> historyList = historyRepository.findByPublishIsTrueAndCode(0);

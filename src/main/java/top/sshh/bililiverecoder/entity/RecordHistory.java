@@ -37,6 +37,8 @@ public class RecordHistory {
     // 是否发布成功
     private boolean publish;
 
+    private int code = -1;
+
     private int uploadRetryCount = 0;
 
     private LocalDateTime startTime;

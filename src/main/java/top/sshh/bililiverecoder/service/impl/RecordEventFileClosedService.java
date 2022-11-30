@@ -9,7 +9,10 @@ import top.sshh.bililiverecoder.entity.RecordEventDTO;
 import top.sshh.bililiverecoder.entity.RecordEventData;
 import top.sshh.bililiverecoder.entity.RecordHistory;
 import top.sshh.bililiverecoder.entity.RecordHistoryPart;
-import top.sshh.bililiverecoder.repo.*;
+import top.sshh.bililiverecoder.repo.BiliUserRepository;
+import top.sshh.bililiverecoder.repo.RecordHistoryPartRepository;
+import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
+import top.sshh.bililiverecoder.repo.RecordRoomRepository;
 import top.sshh.bililiverecoder.service.RecordEventService;
 import top.sshh.bililiverecoder.service.RecordPartUploadService;
 
@@ -40,7 +43,7 @@ public class RecordEventFileClosedService implements RecordEventService {
     private RecordPartUploadService uploadService;
 
     @Autowired
-    private LiveMsgRepository liveMsgRepository;
+    private LiveMsgService liveMsgService;
 
 
     @Override
@@ -71,6 +74,8 @@ public class RecordEventFileClosedService implements RecordEventService {
         //开始上传该视频分片，异步上传任务。
         uploadService.asyncUpload(part);
 
-        //TODO 解析弹幕入库
+        //解析弹幕入库
+        liveMsgService.processing(part);
+
     }
 }

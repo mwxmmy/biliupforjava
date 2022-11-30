@@ -307,6 +307,8 @@ public class BiliApi {
         params.put("oid", msg.getCid().toString());
         params.put("bvid", msg.getBvid());
         params.put("msg", msg.getContext());
+        params.put("color", String.valueOf(msg.getColor()));
+        params.put("fontsize", String.valueOf(msg.getFontsize()));
         params.put("progress", msg.getSendTime().toString());
         params.put("mode", "1");
         params.put("rnd", String.valueOf(System.currentTimeMillis() * 1000000));

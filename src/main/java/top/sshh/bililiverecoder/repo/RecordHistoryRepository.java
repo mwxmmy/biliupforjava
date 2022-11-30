@@ -13,5 +13,7 @@ public interface RecordHistoryRepository extends CrudRepository<RecordHistory, L
 
     List<RecordHistory> findByRoomIdAndRecordingIsFalseAndUploadIsTrueAndPublishIsFalseAndUploadRetryCountLessThan(String roomId, int count);
 
-    List<RecordHistory> findByBvIdNotNullAndPublish(boolean publish);
+    List<RecordHistory> findByPublishIsTrueAndCode(int code);
+
+    List<RecordHistory> findByBvIdNotNullAndPublishIsTrueAndAndCode(int publish);
 }

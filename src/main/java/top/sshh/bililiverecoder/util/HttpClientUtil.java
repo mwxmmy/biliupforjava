@@ -1,6 +1,5 @@
 package top.sshh.bililiverecoder.util;
 
-import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 
@@ -46,7 +45,6 @@ public class HttpClientUtil {
                     .build();
             Response response = client.newCall(build).execute();
             String string = response.body().string();
-            log.info("url={}, header={}, param={}, resp={}", url, JSON.toJSONString(headers), json, string);
             return string;
         } catch (IOException e) {
             e.printStackTrace();
@@ -71,7 +69,6 @@ public class HttpClientUtil {
 
             Response response = currentClient.newCall(build).execute();
             String string = response.body().string();
-            log.info("url={}, header={}, param={}, resp={}", url, JSON.toJSONString(headers), formParams, string);
             return string;
         } catch (IOException e) {
             e.printStackTrace();
@@ -88,7 +85,6 @@ public class HttpClientUtil {
                     .build()
             ).execute();
             String string = response.body().string();
-            log.info("url={}, header={}, resp={}", url, JSON.toJSONString(headers), string);
             return string;
         } catch (IOException e) {
             e.printStackTrace();
@@ -123,7 +119,6 @@ public class HttpClientUtil {
         Request request = post
                 .build();
         String string = clientAllowCookie.newCall(request).execute().body().string();
-        log.info("url={}, resp={}", url, string);
         return string;
     }
 

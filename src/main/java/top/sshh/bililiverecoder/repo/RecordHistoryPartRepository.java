@@ -15,6 +15,8 @@ public interface RecordHistoryPartRepository extends CrudRepository<RecordHistor
 
     List<RecordHistoryPart> findByHistoryId(Long historyId);
 
+    List<RecordHistoryPart> findByHistoryIdAndCidIsNotNull(Long historyId);
+
 
     boolean existsByEventId(String eventId);
 }

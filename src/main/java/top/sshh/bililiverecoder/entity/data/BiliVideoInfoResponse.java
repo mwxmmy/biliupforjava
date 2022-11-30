@@ -12,7 +12,7 @@ public class BiliVideoInfoResponse {
 
 
     @Data
-    public class BiliVideoInfo {
+    public static class BiliVideoInfo {
         private String bvid;
         private String aid;
         private int videos;
@@ -23,7 +23,7 @@ public class BiliVideoInfoResponse {
     }
 
     @Data
-    public class BiliVideoInfoPart {
+    public static class BiliVideoInfoPart {
         private long cid;
         private int page;
         /**

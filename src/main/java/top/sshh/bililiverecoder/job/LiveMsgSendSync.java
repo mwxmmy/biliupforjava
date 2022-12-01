@@ -16,9 +16,11 @@ import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
 import top.sshh.bililiverecoder.service.impl.LiveMsgService;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -54,43 +56,51 @@ public class LiveMsgSendSync {
         if (CollectionUtils.isEmpty(partList)) {
             return;
         }
+        List<LiveMsg> msgAllList = new ArrayList<>();
         for (RecordHistoryPart part : partList) {
-            AtomicInteger count = new AtomicInteger(0);
             List<LiveMsg> msgList = msgRepository.findByPartIdAndCode(part.getId(), -1);
             if (CollectionUtils.isEmpty(msgList)) {
                 continue;
             }
+            msgAllList.addAll(msgList);
 
-            List<BiliBiliUser> allUser = userRepository.findByLoginIsTrueAndEnableIsTrue();
-            if (CollectionUtils.isEmpty(allUser)) {
-                return;
-            }
-            LinkedBlockingQueue<LiveMsg> msgLinkedList = new LinkedBlockingQueue<>(msgList);
-            allUser.stream().parallel().forEach(user -> {
-                while (msgLinkedList.size() > 0) {
-                    LiveMsg msg = msgLinkedList.poll();
-                    count.incrementAndGet();
-                    int code = liveMsgService.sendMsg(user, msg);
-                    if (code != 0 && code != 36703) {
-                        log.error("{}用户，发送失败，错误代码{}，一共发送{}条弹幕。", user.getUname(), code, count.get());
-                        return;
-                    } else if (code == 36703) {
-                        user.setEnable(false);
-                        userRepository.save(user);
-                        log.error("{}用户，发送失败，错误代码{}，一共发送{}条弹幕。", user.getUname(), code, count.get());
-                    }
-                    try {
-                        if (code == 36703) {
-                            Thread.sleep(100 * 1000L);
-                        } else {
-                            Thread.sleep(15 * 1000L);
-                        }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
         }
+        if (msgAllList.isEmpty()) {
+            return;
+        }
+
+        List<BiliBiliUser> allUser = userRepository.findByLoginIsTrueAndEnableIsTrue();
+        if (CollectionUtils.isEmpty(allUser)) {
+            return;
+        }
+
+        msgAllList = msgAllList.stream().sorted((m1, m2) -> (int) (m1.getSendTime() - m2.getSendTime())).collect(Collectors.toList());
+        Queue<LiveMsg> msgQueue = new LinkedList<>(msgAllList);
+        AtomicInteger count = new AtomicInteger(0);
+        allUser.stream().parallel().forEach(user -> {
+            while (msgQueue.size() > 0) {
+                LiveMsg msg = msgQueue.poll();
+                count.incrementAndGet();
+                int code = liveMsgService.sendMsg(user, msg);
+                if (code != 0 && code != 36703) {
+                    log.error("{}用户，发送失败，错误代码{}，一共发送{}条弹幕。", user.getUname(), code, count.get());
+                    return;
+                } else if (code == 36703) {
+                    user.setEnable(false);
+                    userRepository.save(user);
+                    log.error("{}用户，发送失败，错误代码{}，一共发送{}条弹幕。", user.getUname(), code, count.get());
+                }
+                try {
+                    if (code == 36703) {
+                        Thread.sleep(100 * 1000L);
+                    } else {
+                        Thread.sleep(30 * 1000L);
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
 
     }
 }

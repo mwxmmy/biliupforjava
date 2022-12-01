@@ -99,9 +99,8 @@ public class LiveMsgService {
                 //4.拿到根元素
                 Element rootElement = document.getRootElement();
                 List<Node> nodes = rootElement.selectNodes("/i/d");
-                //限制每秒钟不超过3条弹幕
+                //限制每两秒钟最多一条弹幕
                 long time = 0;
-                int limit = 0;
                 BloomFilter<CharSequence> bloomFilter = BloomFilter.create(Funnels.stringFunnel(StandardCharsets.UTF_8), 1000000, 0.01);
                 List<LiveMsg> liveMsgs = new ArrayList<>();
                 for (Node node : nodes) {
@@ -121,13 +120,9 @@ public class LiveMsgService {
                     int fontsize = Integer.parseInt(values[2]);
                     int color = Integer.parseInt(values[3]);
                     //如果显示时间超过当前时间，调整当前时间
-                    if (sendTime > time + 1000) {
+                    if (sendTime > time + 2000) {
                         time = (int) sendTime;
-                        limit = 0;
                     } else {
-                        limit++;
-                    }
-                    if (limit > 3) {
                         continue;
                     }
                     if (bloomFilter.mightContain(text)) {

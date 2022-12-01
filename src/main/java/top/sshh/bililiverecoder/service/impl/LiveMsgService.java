@@ -45,6 +45,27 @@ public class LiveMsgService {
         EXCLUSION_DM.add("老板大气");
         EXCLUSION_DM.add("红包");
         EXCLUSION_DM.add("关注");
+        EXCLUSION_DM.add("b");
+        EXCLUSION_DM.add("B");
+        EXCLUSION_DM.add("傻");
+        EXCLUSION_DM.add("妈");
+        EXCLUSION_DM.add("草");
+        EXCLUSION_DM.add("垃圾");
+        EXCLUSION_DM.add("狗");
+        EXCLUSION_DM.add("蛆");
+        EXCLUSION_DM.add("逼");
+        EXCLUSION_DM.add("死");
+        EXCLUSION_DM.add("艹");
+        EXCLUSION_DM.add("举报");
+        EXCLUSION_DM.add("nm");
+        EXCLUSION_DM.add("残");
+        EXCLUSION_DM.add("难看");
+        EXCLUSION_DM.add("没意思");
+        EXCLUSION_DM.add("尼");
+        EXCLUSION_DM.add("玛");
+        EXCLUSION_DM.add("恶心");
+        EXCLUSION_DM.add("屎");
+        EXCLUSION_DM.add("sb");
     }
 
     @Autowired
@@ -111,14 +132,24 @@ public class LiveMsgService {
                     DefaultElement element = (DefaultElement) node;
                     String text = element.getText();
                     //短文字弹幕没有意义
-                    if (this.zhCharCount(text) < 4) {
+                    if (this.zhCharCount(text) < 3) {
                         continue;
                     }
                     //排除垃圾弹幕
+                    boolean isContinue = false;
                     for (String s : EXCLUSION_DM) {
                         if (text.contains(s)) {
-                            return;
+                            isContinue = true;
+                            break;
                         }
+                    }
+                    if (isContinue) {
+                        continue;
+                    }
+                    String userName = element.attribute("user").getValue();
+                    //排除低级用户
+                    if (userName.startsWith("bili")) {
+                        continue;
                     }
                     String value = element.attribute("p").getValue();
                     String[] values = value.split(",");

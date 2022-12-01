@@ -20,6 +20,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -41,9 +43,12 @@ public class LiveMsgSendSync {
     @Autowired
     private LiveMsgService liveMsgService;
 
-    @Scheduled(fixedDelay = 3600000, initialDelay = 0)
+    private static final Lock lock = new ReentrantLock();
+
+    @Scheduled(cron = "0 1 * * * ?")
     public void sndMsgProcess() {
         log.error("发送弹幕定时任务开始");
+        long startTime = System.currentTimeMillis();
         List<RecordHistory> historyList = historyRepository.findByPublishIsTrueAndCode(0);
         if (CollectionUtils.isEmpty(historyList)) {
             return;
@@ -73,35 +78,47 @@ public class LiveMsgSendSync {
         if (CollectionUtils.isEmpty(allUser)) {
             return;
         }
-
-        msgAllList = msgAllList.stream().sorted((m1, m2) -> (int) (m1.getSendTime() - m2.getSendTime())).collect(Collectors.toList());
-        Queue<LiveMsg> msgQueue = new LinkedList<>(msgAllList);
-        AtomicInteger count = new AtomicInteger(0);
-        log.error("即将开始弹幕发送操作，剩余待发送弹幕{}条。", msgQueue.size());
-        allUser.stream().parallel().forEach(user -> {
-            while (msgQueue.size() > 0) {
-                LiveMsg msg = msgQueue.poll();
-                count.incrementAndGet();
-                int code = liveMsgService.sendMsg(user, msg);
-                if (code != 0 && code != 36703) {
-                    log.error("{}用户，发送失败，错误代码{}，一共发送{}条弹幕。", user.getUname(), code, count.get());
-                    return;
-                } else if (code == 36703) {
-                    user.setEnable(false);
-                    userRepository.save(user);
-                    log.error("{}用户，发送失败，错误代码{}，一共发送{}条弹幕。", user.getUname(), code, count.get());
-                }
-                try {
-                    if (code == 36703) {
-                        Thread.sleep(120 * 1000L);
-                    } else {
-                        Thread.sleep(25 * 1000L);
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        try {
+            boolean tryLock = lock.tryLock();
+            if (!tryLock) {
+                log.error("弹幕发获取锁失败！！！！");
+                return;
             }
-        });
+            msgAllList = msgAllList.stream().sorted((m1, m2) -> (int) (m1.getSendTime() - m2.getSendTime())).collect(Collectors.toList());
+            Queue<LiveMsg> msgQueue = new LinkedList<>(msgAllList);
+            AtomicInteger count = new AtomicInteger(0);
+            log.error("即将开始弹幕发送操作，剩余待发送弹幕{}条。", msgQueue.size());
+            allUser.stream().parallel().forEach(user -> {
+                while (msgQueue.size() > 0) {
+                    if (System.currentTimeMillis() - startTime > 2 * 3600 * 1000) {
+                        log.error("弹幕发送超时，重新启动");
+                        return;
+                    }
+                    LiveMsg msg = msgQueue.poll();
+                    count.incrementAndGet();
+                    int code = liveMsgService.sendMsg(user, msg);
+                    if (code != 0 && code != 36703 && code != 36714) {
+                        log.error("{}用户，发送失败，错误代码{}，一共发送{}条弹幕。", user.getUname(), code, count.get());
+                        return;
+                    } else if (code == 36703) {
+                        user.setEnable(false);
+                        user = userRepository.save(user);
+                        log.error("{}用户，发送失败，错误代码{}，一共发送{}条弹幕。", user.getUname(), code, count.get());
+                    }
+                    try {
+                        if (code == 36703) {
+                            Thread.sleep(120 * 1000L);
+                        } else {
+                            Thread.sleep(25 * 1000L);
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        } finally {
+            lock.unlock();
+        }
 
     }
 }

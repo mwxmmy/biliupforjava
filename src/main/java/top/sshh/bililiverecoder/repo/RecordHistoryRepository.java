@@ -15,5 +15,5 @@ public interface RecordHistoryRepository extends CrudRepository<RecordHistory, L
 
     List<RecordHistory> findByPublishIsTrueAndCode(int code);
 
-    List<RecordHistory> findByBvIdNotNullAndPublishIsTrueAndAndCode(int publish);
+    List<RecordHistory> findByBvIdNotNullAndPublishIsTrueAndCodeLessThan(int code);
 }

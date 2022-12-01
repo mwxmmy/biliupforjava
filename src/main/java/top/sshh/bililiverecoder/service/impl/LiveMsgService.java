@@ -45,20 +45,27 @@ public class LiveMsgService {
         EXCLUSION_DM.add("老板大气");
         EXCLUSION_DM.add("红包");
         EXCLUSION_DM.add("关注");
-        EXCLUSION_DM.add("b");
-        EXCLUSION_DM.add("B");
-        EXCLUSION_DM.add("傻");
+        EXCLUSION_DM.add("傻逼");
         EXCLUSION_DM.add("妈");
         EXCLUSION_DM.add("草");
         EXCLUSION_DM.add("垃圾");
         EXCLUSION_DM.add("狗");
         EXCLUSION_DM.add("蛆");
-        EXCLUSION_DM.add("逼");
+        EXCLUSION_DM.add("脑浆");
+        EXCLUSION_DM.add("退役");
+        EXCLUSION_DM.add("好卡");
         EXCLUSION_DM.add("死");
         EXCLUSION_DM.add("艹");
         EXCLUSION_DM.add("举报");
+        EXCLUSION_DM.add("傻子");
+        EXCLUSION_DM.add("卡卡");
+        EXCLUSION_DM.add("好卡");
+        EXCLUSION_DM.add("不卡");
+        EXCLUSION_DM.add("卡了");
         EXCLUSION_DM.add("nm");
-        EXCLUSION_DM.add("残");
+        EXCLUSION_DM.add("NM");
+        EXCLUSION_DM.add("nM");
+        EXCLUSION_DM.add("Nm");
         EXCLUSION_DM.add("难看");
         EXCLUSION_DM.add("没意思");
         EXCLUSION_DM.add("尼");
@@ -66,6 +73,9 @@ public class LiveMsgService {
         EXCLUSION_DM.add("恶心");
         EXCLUSION_DM.add("屎");
         EXCLUSION_DM.add("sb");
+        EXCLUSION_DM.add("sB");
+        EXCLUSION_DM.add("SB");
+        EXCLUSION_DM.add("Sb");
     }
 
     @Autowired
@@ -130,7 +140,12 @@ public class LiveMsgService {
                 List<LiveMsg> liveMsgs = new ArrayList<>();
                 for (Node node : nodes) {
                     DefaultElement element = (DefaultElement) node;
-                    String text = element.getText();
+                    String userName = element.attribute("user").getValue();
+                    //排除低级用户
+                    if (userName.startsWith("bili")) {
+                        continue;
+                    }
+                    String text = element.getText().trim().replace("\n", ",").replace("\r", ",");
                     //短文字弹幕没有意义
                     if (this.zhCharCount(text) < 3) {
                         continue;
@@ -146,23 +161,20 @@ public class LiveMsgService {
                     if (isContinue) {
                         continue;
                     }
-                    String userName = element.attribute("user").getValue();
-                    //排除低级用户
-                    if (userName.startsWith("bili")) {
-                        continue;
-                    }
+
                     String value = element.attribute("p").getValue();
                     String[] values = value.split(",");
                     long sendTime = (long) (Float.parseFloat(values[0]) * 1000);
                     int fontsize = Integer.parseInt(values[2]);
                     int color = Integer.parseInt(values[3]);
                     //如果显示时间超过当前时间，调整当前时间
-                    if (sendTime > time + 2000) {
+                    if (sendTime > time + 3000) {
                         time = (int) sendTime;
                     } else {
                         continue;
                     }
-                    if (bloomFilter.mightContain(text)) {
+                    if (!bloomFilter.mightContain(text)) {
+                        bloomFilter.put(text);
                         LiveMsg msg = new LiveMsg();
                         msg.setPartId(part.getId());
                         msg.setBvid(bvid);

@@ -11,6 +11,7 @@ import top.sshh.bililiverecoder.entity.data.BiliVideoInfoResponse;
 import top.sshh.bililiverecoder.repo.RecordHistoryPartRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
 import top.sshh.bililiverecoder.repo.RecordRoomRepository;
+import top.sshh.bililiverecoder.service.impl.LiveMsgService;
 import top.sshh.bililiverecoder.service.impl.RecordBiliPublishService;
 import top.sshh.bililiverecoder.util.BiliApi;
 
@@ -32,6 +33,9 @@ public class videoSyncJob {
     @Autowired
     RecordHistoryPartRepository partRepository;
 
+    @Autowired
+    private LiveMsgService liveMsgService;
+
 
     // 定时查询直播历史，每十分钟验证一下是否发布成功
     @Scheduled(fixedDelay = 600000, initialDelay = 0)
@@ -50,7 +54,10 @@ public class videoSyncJob {
                         part.setCid(page.getCid());
                         part.setPage(page.getPage());
                         part.setDuration(page.getDuration());
-                        partRepository.save(part);
+                        part = partRepository.save(part);
+
+                        //解析弹幕入库
+                        liveMsgService.processing(part);
                         log.info("同步视频分p 成功==>{}", JSON.toJSONString(part));
                     }
                 }

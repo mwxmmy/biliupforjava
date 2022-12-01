@@ -42,8 +42,6 @@ public class RecordEventFileClosedService implements RecordEventService {
     @Autowired
     private RecordPartUploadService uploadService;
 
-    @Autowired
-    private LiveMsgService liveMsgService;
 
 
     @Override
@@ -73,9 +71,6 @@ public class RecordEventFileClosedService implements RecordEventService {
         // 文件上传操作
         //开始上传该视频分片，异步上传任务。
         uploadService.asyncUpload(part);
-
-        //解析弹幕入库
-        liveMsgService.processing(part);
 
     }
 }

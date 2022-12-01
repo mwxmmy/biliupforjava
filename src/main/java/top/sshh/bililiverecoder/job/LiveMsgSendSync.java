@@ -95,7 +95,7 @@ public class LiveMsgSendSync {
                     if (code == 36703) {
                         Thread.sleep(120 * 1000L);
                     } else {
-                        Thread.sleep(15 * 1000L);
+                        Thread.sleep(30 * 1000L);
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();

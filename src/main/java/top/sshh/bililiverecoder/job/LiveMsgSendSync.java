@@ -77,6 +77,7 @@ public class LiveMsgSendSync {
         msgAllList = msgAllList.stream().sorted((m1, m2) -> (int) (m1.getSendTime() - m2.getSendTime())).collect(Collectors.toList());
         Queue<LiveMsg> msgQueue = new LinkedList<>(msgAllList);
         AtomicInteger count = new AtomicInteger(0);
+        log.error("即将开始弹幕发送操作，剩余待发送弹幕{}条。", msgQueue.size());
         allUser.stream().parallel().forEach(user -> {
             while (msgQueue.size() > 0) {
                 LiveMsg msg = msgQueue.poll();
@@ -92,9 +93,9 @@ public class LiveMsgSendSync {
                 }
                 try {
                     if (code == 36703) {
-                        Thread.sleep(100 * 1000L);
+                        Thread.sleep(120 * 1000L);
                     } else {
-                        Thread.sleep(30 * 1000L);
+                        Thread.sleep(15 * 1000L);
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();

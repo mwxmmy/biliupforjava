@@ -35,12 +35,16 @@ import java.util.Optional;
 @Component
 public class LiveMsgService {
 
-    private static List<String> EXCLUSION_DM = new ArrayList<>();
+
+    private static final String ZH_CHAR_REGX = "^[\u4e00-\u9fa5]{1}$";
+
+    private static final List<String> EXCLUSION_DM = new ArrayList<>();
 
     static {
         EXCLUSION_DM.add("天选之人");
         EXCLUSION_DM.add("老板大气");
         EXCLUSION_DM.add("红包");
+        EXCLUSION_DM.add("关注");
     }
 
     @Autowired
@@ -106,13 +110,15 @@ public class LiveMsgService {
                 for (Node node : nodes) {
                     DefaultElement element = (DefaultElement) node;
                     String text = element.getText();
-                    //短弹幕没有意义
-                    if (text.length() < 3) {
+                    //短文字弹幕没有意义
+                    if (this.zhCharCount(text) < 4) {
                         continue;
                     }
-                    //排出垃圾弹幕
-                    if (EXCLUSION_DM.contains(text)) {
-                        return;
+                    //排除垃圾弹幕
+                    for (String s : EXCLUSION_DM) {
+                        if (text.contains(s)) {
+                            return;
+                        }
                     }
                     String value = element.attribute("p").getValue();
                     String[] values = value.split(",");
@@ -155,5 +161,16 @@ public class LiveMsgService {
                 }
             }
         }
+    }
+
+    private int zhCharCount(String s) {
+        int count = 0;
+        char[] chars = s.toCharArray();
+        for (char c : chars) {
+            if (String.valueOf(c).matches(ZH_CHAR_REGX)) {
+                count++;
+            }
+        }
+        return count;
     }
 }

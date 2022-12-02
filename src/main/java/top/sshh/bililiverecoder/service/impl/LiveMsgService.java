@@ -57,6 +57,7 @@ public class LiveMsgService {
         EXCLUSION_DM.add("死");
         EXCLUSION_DM.add("艹");
         EXCLUSION_DM.add("举报");
+        EXCLUSION_DM.add("弹幕");
         EXCLUSION_DM.add("傻子");
         EXCLUSION_DM.add("卡卡");
         EXCLUSION_DM.add("好卡");
@@ -142,7 +143,7 @@ public class LiveMsgService {
                     DefaultElement element = (DefaultElement) node;
                     String userName = element.attribute("user").getValue();
                     //排除低级用户
-                    if (userName.startsWith("bili")) {
+                    if (userName.startsWith("bili") || userName.endsWith("bili")) {
                         continue;
                     }
                     String text = element.getText().trim().replace("\n", ",").replace("\r", ",");

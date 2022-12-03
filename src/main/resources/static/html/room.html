@@ -8,6 +8,12 @@
                     <el-form-item label="投稿分区id">
                         <span>{{ props.row.tid }}</span>
                     </el-form-item>
+                    <el-form-item label="忽略小分片">
+                        <span>{{ props.row.fileSizeLimit }}MB(小于该大小的分片会直接删除)</span>
+                    </el-form-item>
+                    <el-form-item label="忽略小分片">
+                        <span>{{ props.row.durationLimit }}秒(小于该时长的分片会直接删除)</span>
+                    </el-form-item>
                     <el-form-item label="标题模板">
                         <span>{{ props.row.titleTemplate }}</span>
                     </el-form-item>
@@ -104,6 +110,12 @@
         <el-form :model="room">
             <el-form-item :label-width="formLabelWidth" label="投稿分区id">
                 <el-input autocomplete="off" type="number" v-model="room.tid"></el-input>
+            </el-form-item>
+            <el-form-item :label-width="formLabelWidth" label="文件忽略大小(MB)">
+                <el-input autocomplete="off" type="number" v-model="room.fileSizeLimit"></el-input>
+            </el-form-item>
+            <el-form-item :label-width="formLabelWidth" label="文件忽略时长(秒)">
+                <el-input autocomplete="off" type="number" v-model="room.durationLimit"></el-input>
             </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="是否自制">
                 <el-select placeholder="请选择" v-model="room.copyright">
@@ -217,7 +229,7 @@
     }
 
     .demo-table-expand label {
-        width: 120px;
+        width: 150px;
         color: #99a9bf;
     }
 

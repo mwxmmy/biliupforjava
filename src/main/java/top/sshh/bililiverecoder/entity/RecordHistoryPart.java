@@ -23,6 +23,8 @@ public class RecordHistoryPart {
 
     private String title;
 
+    private String areaName;
+
     private String filePath;
 
     private int page;

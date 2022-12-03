@@ -83,9 +83,11 @@ public class RecordEventFileOpenService implements RecordEventService {
         RecordHistoryPart part = new RecordHistoryPart();
         part.setEventId(event.getEventId());
         part.setTitle(LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM月dd日HH点mm分ss秒")));
+        part.setAreaName(eventData.getAreaNameChild());
         part.setRoomId(history.getRoomId());
         part.setHistoryId(history.getId());
         part.setFilePath(workPath + File.separator + eventData.getRelativePath());
+        part.setFileSize(0L);
         part.setSessionId(eventData.getSessionId());
         part.setRecording(eventData.isRecording());
         part.setStartTime(LocalDateTime.now());

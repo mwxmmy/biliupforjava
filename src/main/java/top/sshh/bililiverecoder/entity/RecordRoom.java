@@ -26,6 +26,10 @@ public class RecordRoom {
     private String title;
     private String titleTemplate = "【直播回放】【${uname}】${title} ${yyyy年MM月dd日HH点mm分}";
 
+    private long fileSizeLimit = 0L;
+
+    private int durationLimit = 60;
+
     private String tags = "直播回放";
 
     // 发布到哪个分区
@@ -37,12 +41,12 @@ public class RecordRoom {
     private String descTemplate = "直播录像 \n" +
             "${uname}直播间：https://live.bilibili.com/${roomId}";
 
-    private String partTitleTemplate = "${MM月dd日HH点mm分}";
+    private String partTitleTemplate = "${areaName}-${MM月dd日HH点mm分}";
 
     /**
      * 上传完成是否删除文件
      */
-    private boolean deleteFile;
+    private boolean deleteFile = true;
 
     private String sessionId;
 

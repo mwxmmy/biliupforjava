@@ -5,10 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import top.sshh.bililiverecoder.entity.RecordEventDTO;
-import top.sshh.bililiverecoder.entity.RecordEventData;
-import top.sshh.bililiverecoder.entity.RecordHistory;
-import top.sshh.bililiverecoder.entity.RecordHistoryPart;
+import top.sshh.bililiverecoder.entity.*;
 import top.sshh.bililiverecoder.repo.BiliUserRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryPartRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
@@ -43,7 +40,6 @@ public class RecordEventFileClosedService implements RecordEventService {
     private RecordPartUploadService uploadService;
 
 
-
     @Override
     public void processing(RecordEventDTO event) {
         RecordEventData eventData = event.getEventData();
@@ -72,12 +68,15 @@ public class RecordEventFileClosedService implements RecordEventService {
         }
         // 文件上传操作
         //开始上传该视频分片，异步上传任务。
-        // 小于200M不上传
-        if (fileSize > 1024 * 1024 * 200) {
+        // 小于设定文件大小和时长不上传
+        RecordRoom room = roomRepository.findByRoomId(eventData.getRoomId());
+        if (fileSize > 1024 * 1024 * room.getFileSizeLimit() && part.getDuration() > room.getDurationLimit()) {
             uploadService.asyncUpload(part);
         } else {
-//            historyPartRepository.delete(part);
+            log.error("文件大小小于设置的忽略大小或时长，删除。");
+            historyPartRepository.delete(part);
         }
+
 
     }
 }

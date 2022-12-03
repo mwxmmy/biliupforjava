@@ -80,6 +80,16 @@ public class RecordBiliPublishService {
             if (uploadPart.isUpload()) {
                 continue;
             }
+            if (uploadPart.getFileSize() < 1024 * 1024 * room.getFileSizeLimit()) {
+                log.error("文件大小小于设置的忽略大小，自动删除。");
+                partRepository.delete(uploadPart);
+                continue;
+            }
+            if (uploadPart.getDuration() < room.getDurationLimit()) {
+                log.error("文件时长小于设置的忽略时间，自动删除。");
+                partRepository.delete(uploadPart);
+                continue;
+            }
             String filePath = uploadPart.getFilePath().intern();
             Thread thread = TaskUtil.partUploadTask.get(uploadPart.getId());
             if (thread != null && thread != Thread.currentThread()) {
@@ -161,10 +171,12 @@ public class RecordBiliPublishService {
                 String title = StringUtils.isNotBlank(history.getTitle()) ? history.getTitle() : "直播录像";
                 map.put("${title}", title);
                 map.put("${roomId}", room.getRoomId());
+                map.put("${areaName}", "");
                 List<SingleVideoDto> dtos = new ArrayList<>();
                 for (RecordHistoryPart uploadPart : uploadParts) {
                     SingleVideoDto dto = new SingleVideoDto();
                     map.put("date", uploadPart.getStartTime());
+                    map.put("${areaName}", uploadPart.getAreaName());
                     dto.setTitle(this.template(room.getPartTitleTemplate(), map));
                     //同步标题
                     uploadPart.setTitle(this.template(room.getPartTitleTemplate(), map));
@@ -177,6 +189,7 @@ public class RecordBiliPublishService {
 
                 map.put("date", startTime);
                 videoUploadDto.setTid(room.getTid());
+                videoUploadDto.setCopyright(room.getCopyright());
                 videoUploadDto.setTitle(this.template(room.getTitleTemplate(), map));
                 videoUploadDto.setDesc(this.template(room.getDescTemplate(), map));
                 videoUploadDto.setDynamic(this.template(room.getDescTemplate(), map));
@@ -205,6 +218,7 @@ public class RecordBiliPublishService {
     private String template(String template, Map<String, Object> map) {
         template = template.replace("${uname}", map.get("${uname}").toString())
                 .replace("${title}", map.get("${title}").toString())
+                .replace("${areaName}", map.get("${areaName}").toString())
                 .replace("${roomId}", map.get("${roomId}").toString());
         if (template.contains("${")) {
             LocalDateTime localDateTime = (LocalDateTime) map.get("date");

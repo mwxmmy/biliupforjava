@@ -4,6 +4,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import top.sshh.bililiverecoder.entity.RecordHistory;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -11,7 +12,9 @@ public interface RecordHistoryRepository extends CrudRepository<RecordHistory, L
 
     RecordHistory findBySessionId(String sessionId);
 
-    List<RecordHistory> findByRoomIdAndRecordingIsFalseAndUploadIsTrueAndPublishIsFalseAndUploadRetryCountLessThan(String roomId, int count);
+    List<RecordHistory> findByRoomIdAndEndTimeBetweenOrderByEndTimeAsc(String roomId, LocalDateTime from, LocalDateTime to);
+
+    List<RecordHistory> findByRoomIdAndRecordingIsFalseAndUploadIsTrueAndPublishIsFalseAndPublishIsFalseAndUploadRetryCountLessThanAndEndTimeBetweenOrderByEndTimeAsc(String roomId, int count, LocalDateTime from, LocalDateTime to);
 
     List<RecordHistory> findByPublishIsTrueAndCode(int code);
 

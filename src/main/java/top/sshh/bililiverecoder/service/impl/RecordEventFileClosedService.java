@@ -54,8 +54,9 @@ public class RecordEventFileClosedService implements RecordEventService {
             log.info("文件分片不存在==>{}", eventData.getRelativePath());
             return;
         }
+        long fileSize = eventData.getFileSize();
         part.setRecording(false);
-        part.setFileSize(eventData.getFileSize());
+        part.setFileSize(fileSize);
         part.setEndTime(LocalDateTime.now());
         part.setUpdateTime(LocalDateTime.now());
         part = historyPartRepository.save(part);
@@ -64,13 +65,19 @@ public class RecordEventFileClosedService implements RecordEventService {
             RecordHistory history = historyOptional.get();
             history.setFileSize(history.getFileSize() + part.getFileSize());
             history.setUpdateTime(LocalDateTime.now());
+            history.setEndTime(LocalDateTime.now());
             history = historyRepository.save(history);
         } else {
             log.error("history不存在 part==>{}", JSON.toJSONString(part));
         }
         // 文件上传操作
         //开始上传该视频分片，异步上传任务。
-        uploadService.asyncUpload(part);
+        // 小于200M不上传
+        if (fileSize > 1024 * 1024 * 200) {
+            uploadService.asyncUpload(part);
+        } else {
+//            historyPartRepository.delete(part);
+        }
 
     }
 }

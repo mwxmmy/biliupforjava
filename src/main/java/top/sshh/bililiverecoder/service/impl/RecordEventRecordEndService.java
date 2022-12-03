@@ -11,6 +11,9 @@ import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
 import top.sshh.bililiverecoder.repo.RecordRoomRepository;
 import top.sshh.bililiverecoder.service.RecordEventService;
 
+import java.time.LocalDateTime;
+import java.util.Optional;
+
 @Slf4j
 @Component
 public class RecordEventRecordEndService implements RecordEventService {
@@ -28,19 +31,26 @@ public class RecordEventRecordEndService implements RecordEventService {
     public void processing(RecordEventDTO event) {
         RecordEventData eventData = event.getEventData();
         log.info("录制结束事件==>{}=={}", eventData.getRoomId(), eventData.getTitle());
-        String sessionId = eventData.getSessionId();
-        RecordHistory history = historyRepository.findBySessionId(sessionId);
-
-        history.setSessionId(eventData.getSessionId());
-        history.setRecording(eventData.isRecording());
-        history.setStreaming(eventData.isStreaming());
-        historyRepository.save(history);
+        try {
+            Thread.sleep(2000L);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         RecordRoom room = roomRepository.findByRoomId(eventData.getRoomId());
-        room.setRecording(eventData.isRecording());
-        room.setStreaming(eventData.isStreaming());
-        room.setHistoryId(null);
-        room.setSessionId(null);
-        roomRepository.save(room);
-        recordBiliPublishService.publishRecordHistory(history);
+        Optional<RecordHistory> historyOptional = historyRepository.findById(room.getHistoryId());
+        if (historyOptional.isPresent()) {
+            RecordHistory history = historyOptional.get();
+            history.setSessionId(eventData.getSessionId());
+            history.setEndTime(LocalDateTime.now());
+            history.setRecording(false);
+            history.setStreaming(false);
+            historyRepository.save(history);
+            room.setRecording(false);
+            room.setStreaming(false);
+            room.setSessionId(null);
+            roomRepository.save(room);
+        }
+
+//        recordBiliPublishService.publishRecordHistory(history);
     }
 }

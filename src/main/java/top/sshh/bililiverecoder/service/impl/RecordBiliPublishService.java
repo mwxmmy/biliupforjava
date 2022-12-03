@@ -99,6 +99,9 @@ public class RecordBiliPublishService {
                     }
 
                 }
+            } else {
+                log.error("视频发布流程,检查到未上传完成,开始上传！");
+                uploadService.upload(uploadPart);
             }
 
         }

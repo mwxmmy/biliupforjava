@@ -11,6 +11,7 @@ import top.sshh.bililiverecoder.service.RecordEventService;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -41,40 +42,44 @@ public class RecordEventFileOpenService implements RecordEventService {
         log.info("分p开始录制事件==>{}", eventData.getRelativePath());
         String sessionId = eventData.getSessionId();
         try {
-            Thread.sleep(1000L);
-        }catch (Exception e){
+            Thread.sleep(2000L);
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        RecordHistory history = historyRepository.findBySessionId(sessionId);
+        RecordRoom room = roomRepository.findByRoomId(eventData.getRoomId());
+        if (room == null) {
+            log.error("录制异常，录制历史没有创建，录制房间也没有创建！！！可能webhook请求顺序错误");
+            room = new RecordRoom();
+            room.setRoomId(eventData.getRoomId());
+            room.setCreateTime(LocalDateTime.now());
+            room.setUname(eventData.getName());
+            room.setTitle(eventData.getTitle());
+            room = roomRepository.save(room);
+        }
+        Optional<RecordHistory> historyOptional = historyRepository.findById(room.getHistoryId());
+        RecordHistory history;
         //异常情况判断
-        if(history == null){
+        if (!historyOptional.isPresent()) {
             log.error("录制异常，录制历史没有创建，可能webhook请求顺序错误");
-            RecordRoom room = roomRepository.findByRoomId(eventData.getRoomId());
-            if(room == null){
-                log.error("录制异常，录制历史没有创建，录制房间也没有创建！！！可能webhook请求顺序错误");
-                room = new RecordRoom();
-                room.setRoomId(eventData.getRoomId());
-                room.setCreateTime(LocalDateTime.now());
-                room.setUname(eventData.getName());
-                room.setTitle(eventData.getTitle());
-                room = roomRepository.save(room);
-            }
+
             history = new RecordHistory();
             history.setEventId(event.getEventId());
             history.setRoomId(room.getRoomId());
             history.setStartTime(LocalDateTime.now());
+            history.setEndTime(LocalDateTime.now());
             history.setTitle(eventData.getTitle());
             history.setSessionId(eventData.getSessionId());
             history.setRecording(eventData.isRecording());
             history.setStreaming(eventData.isStreaming());
             history = historyRepository.save(history);
+        } else {
+            history = historyOptional.get();
         }
         // 正常逻辑
         boolean existsPart = historyPartRepository.existsByEventId(event.getEventId());
         if(existsPart){
             return;
         }
-
         RecordHistoryPart part = new RecordHistoryPart();
         part.setEventId(event.getEventId());
         part.setTitle(LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM月dd日HH点mm分ss秒")));
@@ -84,6 +89,7 @@ public class RecordEventFileOpenService implements RecordEventService {
         part.setSessionId(eventData.getSessionId());
         part.setRecording(eventData.isRecording());
         part.setStartTime(LocalDateTime.now());
+        part.setEndTime(LocalDateTime.now());
         part = historyPartRepository.save(part);
 
         String relativePath = eventData.getRelativePath();

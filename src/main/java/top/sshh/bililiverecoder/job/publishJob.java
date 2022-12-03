@@ -10,6 +10,7 @@ import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
 import top.sshh.bililiverecoder.repo.RecordRoomRepository;
 import top.sshh.bililiverecoder.service.impl.RecordBiliPublishService;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -36,10 +37,11 @@ public class publishJob {
         List<RecordRoom> roomList = roomRepository.findByUpload(true);
 
         List<RecordHistory> historyList = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
 
         for (RecordRoom room : roomList) {
-            // 查询不在录制需要上传的历史
-            Iterator<RecordHistory> iterator = historyRepository.findByRoomIdAndRecordingIsFalseAndUploadIsTrueAndPublishIsFalseAndUploadRetryCountLessThan(room.getRoomId(), 5).iterator();
+            // 查询不在录制,下播十分钟后的需要上传的历史
+            Iterator<RecordHistory> iterator = historyRepository.findByRoomIdAndRecordingIsFalseAndUploadIsTrueAndPublishIsFalseAndPublishIsFalseAndUploadRetryCountLessThanAndEndTimeBetweenOrderByEndTimeAsc(room.getRoomId(), 5, now.minusDays(1L), now.minusMinutes(11L)).iterator();
             iterator.forEachRemaining(historyList::add);
         }
         log.info("视频上传定时任务 待发布视频数量 size=={}", historyList.size());

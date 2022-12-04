@@ -53,6 +53,7 @@ public class RecordEventFileClosedService implements RecordEventService {
         long fileSize = eventData.getFileSize();
         part.setRecording(false);
         part.setFileSize(fileSize);
+        part.setDuration(eventData.getDuration());
         part.setEndTime(LocalDateTime.now());
         part.setUpdateTime(LocalDateTime.now());
         part = historyPartRepository.save(part);

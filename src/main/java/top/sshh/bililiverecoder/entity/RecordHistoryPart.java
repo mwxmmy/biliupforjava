@@ -29,7 +29,7 @@ public class RecordHistoryPart {
 
     private int page;
 
-    private int duration;
+    private float duration;
 
     /**
      * 投稿服务器返回的文件名

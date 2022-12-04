@@ -13,7 +13,7 @@ public class VideoUploadDto {
     private String desc = "";
     private Integer no_reprint = 0;
     private Integer open_elec = 1;
-    private String source = "直播";
+    private String source = "直播间: https://live.bilibili.com/${roomId}  稿件直播源";
     private String tag = "";
     private Integer tid = 27;
     private String title = "";

@@ -118,7 +118,7 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                         // 分段上传
                         File uploadFile = new File(filePath);
                         long fileSize = uploadFile.length();
-                        long chunkSize = 1024 * 1024 * 10;
+                        long chunkSize = 1024 * 1024 * 5;
                         long chunkNum = (long) Math.ceil((double) fileSize / chunkSize);
                         AtomicInteger upCount = new AtomicInteger(0);
                         AtomicBoolean isThrow = new AtomicBoolean(false);

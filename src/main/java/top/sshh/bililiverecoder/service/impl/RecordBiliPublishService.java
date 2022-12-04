@@ -191,6 +191,7 @@ public class RecordBiliPublishService {
                 videoUploadDto.setTid(room.getTid());
                 videoUploadDto.setCopyright(room.getCopyright());
                 videoUploadDto.setTitle(this.template(room.getTitleTemplate(), map));
+                videoUploadDto.setSource(this.template(videoUploadDto.getSource(), map));
                 videoUploadDto.setDesc(this.template(room.getDescTemplate(), map));
                 videoUploadDto.setDynamic(this.template(room.getDescTemplate(), map));
                 videoUploadDto.setVideos(dtos);

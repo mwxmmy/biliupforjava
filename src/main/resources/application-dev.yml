@@ -1,0 +1,41 @@
+server:
+  port: 80
+  forward-headers-strategy: native
+spring:
+  datasource:
+    username: bup
+    password: bup
+    url: jdbc:mysql://mysql:3306/bup?useUnicode=true&characterEncoding=utf8&autoReconnect=true&rewriteBatchedStatements=true
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        jdbc:
+          #为spring data jpa saveAll方法提供批量插入操作 此处可以随时更改大小 建议500哦
+          batch_size: 1000
+          batch_versioned_data: true
+          order_inserts: true
+  thymeleaf:
+    cache: false
+  task:
+    scheduling:
+      pool:
+        size: 10
+#  h2:
+#    console:
+#      enabled: true
+
+record:
+  check-interval: 25
+  work-path: /bilirecord
+
+logging:
+  file:
+    path: ${record.work-path}/log/
+  logback:
+    rollingpolicy:
+      max-file-size: 50MB
+

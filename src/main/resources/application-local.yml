@@ -1,0 +1,40 @@
+server:
+  port: 80
+  forward-headers-strategy: native
+spring:
+  datasource:
+    hikari:
+      jdbc-url: jdbc:h2:retry:${record.work-path}/db
+    username: sa
+    password: 123456
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        jdbc:
+          #为spring data jpa saveAll方法提供批量插入操作 此处可以随时更改大小 建议500哦
+          batch_size: 1000
+          batch_versioned_data: true
+          order_inserts: true
+  thymeleaf:
+    cache: false
+  task:
+    scheduling:
+      pool:
+        size: 10
+#  h2:
+#    console:
+#      enabled: true
+
+record:
+  check-interval: 25
+  work-path: /bilirecord
+
+logging:
+  file:
+    path: ${record.work-path}/log/
+  logback:
+    rollingpolicy:
+      max-file-size: 50MB
+

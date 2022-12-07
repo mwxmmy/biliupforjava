@@ -59,7 +59,7 @@ public class BiliUserController {
                             biliUser = new BiliBiliUser();
                         }
                         String userInfo = BiliApi.appMyInfo(dto.getAccessToken());
-                        biliUser.setUname(JsonPath.read(userInfo, "data.name"));
+                        biliUser.setUname(JsonPath.read(userInfo, "data.uname"));
                         log.info("{} 登录成功!!!", biliUser.getUname());
                         biliUser.setUid(dto.getMid());
                         biliUser.setAccessToken(dto.getAccessToken());

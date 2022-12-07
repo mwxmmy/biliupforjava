@@ -96,7 +96,7 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                         // 检查是否已经过期，调用用户信息接口
                         try {
                             String myInfo = BiliApi.appMyInfo(biliBiliUser.getAccessToken());
-                            String uname = JsonPath.read(myInfo, "data.name");
+                            String uname = JsonPath.read(myInfo, "data.uname");
                             if (StringUtils.isBlank(uname)) {
                                 expired = true;
                             }

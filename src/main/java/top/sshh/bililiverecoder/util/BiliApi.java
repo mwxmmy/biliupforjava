@@ -255,7 +255,7 @@ public class BiliApi {
     }
 
     public static String appMyInfo(String accessToken) {
-        String url = "https://app.bilibili.com/x/v2/account/myinfo";
+        String url = "http://api.bilibili.com/x/member/web/account";
         Map<String, String> params = new TreeMap<>();
         params.put("appkey", appKey);
         params.put("access_key", accessToken);

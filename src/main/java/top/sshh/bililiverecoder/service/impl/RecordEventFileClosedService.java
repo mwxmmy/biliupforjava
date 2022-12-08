@@ -1,6 +1,5 @@
 package top.sshh.bililiverecoder.service.impl;
 
-import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,6 +14,7 @@ import top.sshh.bililiverecoder.service.RecordPartUploadService;
 
 import java.io.File;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
 @Slf4j
@@ -44,41 +44,68 @@ public class RecordEventFileClosedService implements RecordEventService {
     public void processing(RecordEventDTO event) {
         RecordEventData eventData = event.getEventData();
         log.info("分p录制结束事件==>{}", eventData.getRelativePath());
-        // 正常逻辑
-        RecordHistoryPart part = historyPartRepository.findByFilePath(workPath + File.separator + eventData.getRelativePath());
-        if (part == null) {
-            log.info("文件分片不存在==>{}", eventData.getRelativePath());
-            return;
-        }
-        long fileSize = eventData.getFileSize();
-        part.setRecording(false);
-        part.setFileSize(fileSize);
-        part.setDuration(eventData.getDuration());
-        part.setEndTime(LocalDateTime.now());
-        part.setAreaName(eventData.getAreaNameChild());
-        part.setUpdateTime(LocalDateTime.now());
-        part = historyPartRepository.save(part);
-        Optional<RecordHistory> historyOptional = historyRepository.findById(part.getHistoryId());
+        RecordRoom room = roomRepository.findByRoomId(eventData.getRoomId());
+        Optional<RecordHistory> historyOptional = historyRepository.findById(room.getHistoryId());
         if (historyOptional.isPresent()) {
             RecordHistory history = historyOptional.get();
+            // 正常逻辑
+            RecordHistoryPart part = historyPartRepository.findByFilePath(workPath + File.separator + eventData.getRelativePath());
+            if (part == null) {
+                log.info("文件分片不存在==>{}", eventData.getRelativePath());
+                part = new RecordHistoryPart();
+                part.setStartTime(LocalDateTime.now().minusSeconds((long) eventData.getDuration()));
+                part.setEventId(event.getEventId());
+                part.setTitle(LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM月dd日HH点mm分ss秒")));
+                part.setAreaName(eventData.getAreaNameChild());
+                part.setRoomId(history.getRoomId());
+                part.setHistoryId(history.getId());
+                part.setFilePath(workPath + File.separator + eventData.getRelativePath());
+                part.setFileSize(0L);
+                part.setSessionId(eventData.getSessionId());
+                part.setRecording(eventData.isRecording());
+                part.setStartTime(LocalDateTime.now());
+                part.setEndTime(LocalDateTime.now());
+                return;
+            }
+            long fileSize = eventData.getFileSize();
+            part.setRecording(false);
+            part.setFileSize(fileSize);
+            part.setDuration(eventData.getDuration());
+            part.setEndTime(LocalDateTime.now());
+            part.setAreaName(eventData.getAreaNameChild());
+            part.setUpdateTime(LocalDateTime.now());
+            part = historyPartRepository.save(part);
+
             history.setFileSize(history.getFileSize() + part.getFileSize());
             history.setUpdateTime(LocalDateTime.now());
             history.setEndTime(LocalDateTime.now());
             history = historyRepository.save(history);
-        } else {
-            log.error("history不存在 part==>{}", JSON.toJSONString(part));
-        }
-        // 文件上传操作
-        //开始上传该视频分片，异步上传任务。
-        // 小于设定文件大小和时长不上传
-        RecordRoom room = roomRepository.findByRoomId(eventData.getRoomId());
-        if (fileSize > 1024 * 1024 * room.getFileSizeLimit() && part.getDuration() > room.getDurationLimit()) {
-            uploadService.asyncUpload(part);
-        } else {
-            log.error("文件大小小于设置的忽略大小或时长，删除。");
-            historyPartRepository.delete(part);
-        }
 
+            // 文件上传操作
+            //开始上传该视频分片，异步上传任务。
+            // 小于设定文件大小和时长不上传
+            if (fileSize > 1024 * 1024 * room.getFileSizeLimit() && part.getDuration() > room.getDurationLimit()) {
+                uploadService.asyncUpload(part);
+            } else {
+                log.error("文件大小小于设置的忽略大小或时长，删除。");
+                historyPartRepository.delete(part);
+            }
+        } else {
+            log.error("分p录制结束事件，录制历史不存在。");
+            RecordHistoryPart part = new RecordHistoryPart();
+            part.setStartTime(LocalDateTime.now().minusSeconds((long) eventData.getDuration()));
+            part.setEventId(event.getEventId());
+            part.setTitle(LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM月dd日HH点mm分ss秒")));
+            part.setAreaName(eventData.getAreaNameChild());
+            part.setRoomId(eventData.getRoomId());
+            part.setFilePath(workPath + File.separator + eventData.getRelativePath());
+            part.setFileSize(0L);
+            part.setSessionId(eventData.getSessionId());
+            part.setRecording(eventData.isRecording());
+            part.setStartTime(LocalDateTime.now());
+            part.setEndTime(LocalDateTime.now());
+            historyPartRepository.save(part);
+        }
 
     }
 }

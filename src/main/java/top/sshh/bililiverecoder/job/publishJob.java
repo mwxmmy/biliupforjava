@@ -6,6 +6,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import top.sshh.bililiverecoder.entity.RecordHistory;
 import top.sshh.bililiverecoder.entity.RecordRoom;
+import top.sshh.bililiverecoder.repo.RecordHistoryPartRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
 import top.sshh.bililiverecoder.repo.RecordRoomRepository;
 import top.sshh.bililiverecoder.service.impl.RecordBiliPublishService;
@@ -28,9 +29,12 @@ public class publishJob {
     @Autowired
     RecordHistoryRepository historyRepository;
 
+    @Autowired
+    RecordHistoryPartRepository partRepository;
+
 
     // 定时查询直播历史，如果下一次直播开始时间和上一次结束时间小于5min，视为同一次直播
-    @Scheduled(fixedDelay = 120000, initialDelay = 0)
+    @Scheduled(fixedDelay = 60000, initialDelay = 0)
     public void publish() {
         log.info("视频上传定时任务开始");
         //查询出所有需要上传的房间
@@ -41,12 +45,17 @@ public class publishJob {
 
         for (RecordRoom room : roomList) {
             // 查询不在录制,下播十分钟后的需要上传的历史
-            Iterator<RecordHistory> iterator = historyRepository.findByRoomIdAndRecordingIsFalseAndUploadIsTrueAndPublishIsFalseAndPublishIsFalseAndUploadRetryCountLessThanAndEndTimeBetweenOrderByEndTimeAsc(room.getRoomId(), 5, now.minusDays(1L), now.minusMinutes(11L)).iterator();
+            Iterator<RecordHistory> iterator = historyRepository.findByRoomIdAndRecordingIsFalseAndUploadIsTrueAndPublishIsFalseAndUploadRetryCountLessThanAndEndTimeBetweenOrderByEndTimeAsc(room.getRoomId(), 5, now.minusDays(1L), now.minusMinutes(11L)).iterator();
             iterator.forEachRemaining(historyList::add);
         }
         log.info("视频上传定时任务 待发布视频数量 size=={}", historyList.size());
 
         for (RecordHistory history : historyList) {
+            int count = partRepository.countByHistoryIdAndRecordingIsTrue(history.getId());
+            if (count > 0) {
+                log.error("跳过：视频上传定时任务 还有正在录制中的视频，数量==>{}", count);
+                continue;
+            }
             publishService.publishRecordHistory(history);
         }
     }

@@ -1,5 +1,6 @@
 package top.sshh.bililiverecoder.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -75,9 +76,11 @@ public class RecordEventFileOpenService implements RecordEventService {
         } else {
             history = historyOptional.get();
         }
+        String filePath = workPath + File.separator + eventData.getRelativePath();
         // 正常逻辑
-        boolean existsPart = historyPartRepository.existsByEventId(event.getEventId());
+        boolean existsPart = historyPartRepository.existsByFilePath(filePath);
         if(existsPart){
+            log.error("eventId 查询分p已存在，filePath==>{}", filePath);
             return;
         }
         RecordHistoryPart part = new RecordHistoryPart();
@@ -86,14 +89,14 @@ public class RecordEventFileOpenService implements RecordEventService {
         part.setAreaName(eventData.getAreaNameChild());
         part.setRoomId(history.getRoomId());
         part.setHistoryId(history.getId());
-        part.setFilePath(workPath + File.separator + eventData.getRelativePath());
+        part.setFilePath(filePath);
         part.setFileSize(0L);
         part.setSessionId(eventData.getSessionId());
         part.setRecording(eventData.isRecording());
         part.setStartTime(LocalDateTime.now());
         part.setEndTime(LocalDateTime.now());
         part = historyPartRepository.save(part);
-
+        log.info("分p开始录制事件结束,成功保存录制结果==>{}", JSON.toJSONString(part));
         String relativePath = eventData.getRelativePath();
         history.setFilePath(workPath + File.separator + relativePath.substring(0, relativePath.lastIndexOf('/')));
         historyRepository.save(history);

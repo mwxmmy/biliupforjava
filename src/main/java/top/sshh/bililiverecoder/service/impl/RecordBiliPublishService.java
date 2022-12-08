@@ -56,6 +56,7 @@ public class RecordBiliPublishService {
         publishThread = TaskUtil.publishTask.get(history.getId());
         if (publishThread != null) {
             //正在发布，直接退出
+            log.error("视频正在发布，直接退出==>{}", JSON.toJSONString(history));
             return false;
         }
         // 发布任务入队列
@@ -73,12 +74,25 @@ public class RecordBiliPublishService {
         if (uploadParts.size() == 0) {
             log.info("发布视频事件分p不能为空，删除分p：{}", JSON.toJSONString(history));
             historyRepository.delete(history);
+            TaskUtil.publishTask.remove(history.getId());
             return false;
         }
+        LocalDateTime now = LocalDateTime.now();
         for (RecordHistoryPart uploadPart : uploadParts) {
             //已经上传完成就跳过
             if (uploadPart.isUpload()) {
                 continue;
+            }
+            //已经上传完成就跳过
+            if (uploadPart.isRecording()) {
+                log.error("发布视频事件错误，还有分p还在录制中==>{}", JSON.toJSONString(uploadPart));
+                TaskUtil.publishTask.remove(history.getId());
+                return false;
+            }
+            if (uploadPart.getEndTime().isAfter(now.plusMinutes(11L))) {
+                log.error("发布视频事件错误，有分p结束时间在十分钟以内==>{}", JSON.toJSONString(uploadPart));
+                TaskUtil.publishTask.remove(history.getId());
+                return false;
             }
             if (uploadPart.getFileSize() < 1024 * 1024 * room.getFileSizeLimit()) {
                 log.error("文件大小小于设置的忽略大小，自动删除。");

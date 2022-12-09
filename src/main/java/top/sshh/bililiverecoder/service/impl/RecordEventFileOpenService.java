@@ -99,6 +99,7 @@ public class RecordEventFileOpenService implements RecordEventService {
         log.info("分p开始录制事件结束,成功保存录制结果==>{}", JSON.toJSONString(part));
         String relativePath = eventData.getRelativePath();
         history.setFilePath(workPath + File.separator + relativePath.substring(0, relativePath.lastIndexOf('/')));
+        history.setEndTime(LocalDateTime.now());
         historyRepository.save(history);
 
     }

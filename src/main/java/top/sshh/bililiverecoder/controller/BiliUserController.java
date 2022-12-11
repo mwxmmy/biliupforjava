@@ -19,9 +19,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @RestController
@@ -97,5 +95,27 @@ public class BiliUserController {
             biliUserRepository.save(dbUser);
         }
         return false;
+    }
+
+    @GetMapping("/delete/{id}")
+    public Map<String, String> add(@PathVariable("id") Long id) {
+        Map<String, String> result = new HashMap<>();
+        if (id == null) {
+            result.put("type", "info");
+            result.put("msg", "请输入用户id");
+            return result;
+        }
+
+        Optional<BiliBiliUser> userOptional = biliUserRepository.findById(id);
+        if (userOptional.isPresent()) {
+            biliUserRepository.delete(userOptional.get());
+            result.put("type", "success");
+            result.put("msg", "用户删除成功");
+            return result;
+        } else {
+            result.put("type", "warning");
+            result.put("msg", "用户不存在");
+            return result;
+        }
     }
 }

@@ -43,6 +43,10 @@
                         @click="handleEdit(scope.$index, scope.row)" size="mini"
                         type="primary">编辑
                 </el-button>
+                <el-button
+                        @click="deleteUser(scope.row.id)" size="mini"
+                        type="danger">删除
+                </el-button>
             </template>
         </el-table-column>
     </el-table>
@@ -105,7 +109,6 @@
                     type: 'get',
                     dataType: 'json',
                     success: function (data) {
-                        console.info(data)
                         _this.tableData = data;
                     }
                 });
@@ -136,7 +139,23 @@
                         _this.dialogFormVisible = false;
                     }
                 });
-            }
+            },
+            deleteUser: function (id) {
+                let _this = this;
+                $.ajax({
+                    url: '/biliUser/delete/' + id,
+                    contentType: 'application/json;charset=utf-8',
+                    type: 'get',
+                    dataType: 'json',
+                    success: function (data) {
+                        _this.$message({
+                            message: data.msg,
+                            type: data.type
+                        });
+                        _this.initTable();
+                    }
+                });
+            },
         },
         created: function created() {
             this.initTable();

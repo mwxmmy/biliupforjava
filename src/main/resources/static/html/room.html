@@ -1,4 +1,5 @@
 <div class="container" id="roomTable">
+    <el-button @click="addRoomDialog=true" type="primary">添加直播间</el-button>
     <el-table
             :data="tableData"
             style="width: 100%">
@@ -103,6 +104,10 @@
                         @click="handleEdit(scope.$index, scope.row)" size="mini"
                         type="primary">编辑
                 </el-button>
+                <el-button
+                        @click="deleteRoom(scope.row.roomId)" size="mini"
+                        type="danger">删除
+                </el-button>
             </template>
         </el-table-column>
     </el-table>
@@ -166,6 +171,17 @@
             <el-button @click="updateRoom()" type="primary">确 定</el-button>
         </div>
     </el-dialog>
+    <el-dialog :visible.sync="addRoomDialog" title="添加房间">
+        <el-form :model="addRoom">
+            <el-form-item :label-width="formLabelWidth" label="房间号(长号)">
+                <el-input autocomplete="off" type="number" v-model="addRoom.roomId"></el-input>
+            </el-form-item>
+        </el-form>
+        <div class="dialog-footer" slot="footer">
+            <el-button @click="addRoomDialog = false">取 消</el-button>
+            <el-button @click="addRoomF()" type="primary">确 定</el-button>
+        </div>
+    </el-dialog>
 </div>
 <script>
     new Vue({
@@ -173,7 +189,9 @@
         data: {
             formLabelWidth: '160px',
             dialogFormVisible: false,
+            addRoomDialog: false,
             room: {},
+            addRoom: {},
             tableData: [],
             users: []
         },
@@ -192,6 +210,40 @@
                     dataType: 'json',
                     success: function (data) {
                         _this.dialogFormVisible = false;
+                        _this.initTable();
+                    }
+                });
+            },
+            addRoomF: function () {
+                let _this = this;
+                $.ajax({
+                    url: '/room/add',
+                    contentType: 'application/json;charset=utf-8',
+                    type: 'post',
+                    data: JSON.stringify(_this.addRoom),
+                    dataType: 'json',
+                    success: function (data) {
+                        _this.$message({
+                            message: data.msg,
+                            type: data.type
+                        });
+                        _this.addRoomDialog = false;
+                        _this.initTable();
+                    }
+                });
+            },
+            deleteRoom: function (roomId) {
+                let _this = this;
+                $.ajax({
+                    url: '/room/delete/' + roomId,
+                    contentType: 'application/json;charset=utf-8',
+                    type: 'get',
+                    dataType: 'json',
+                    success: function (data) {
+                        _this.$message({
+                            message: data.msg,
+                            type: data.type
+                        });
                         _this.initTable();
                     }
                 });
@@ -215,7 +267,6 @@
                 type: 'get',
                 dataType: 'json',
                 success: function (data) {
-                    console.info(data)
                     _this.users = data;
                 }
             });

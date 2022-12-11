@@ -1,5 +1,6 @@
 package top.sshh.bililiverecoder.controller;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import top.sshh.bililiverecoder.entity.RecordRoom;
@@ -7,16 +8,14 @@ import top.sshh.bililiverecoder.repo.RecordRoomRepository;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 @RequestMapping("/room")
 public class RoomController {
     @Autowired
     private RecordRoomRepository roomRepository;
+
 
 
     @PostMapping
@@ -47,6 +46,52 @@ public class RoomController {
             return true;
         }
         return false;
+    }
+
+    @PostMapping("/add")
+    public Map<String, String> add(@RequestBody RecordRoom add) {
+        Map<String, String> result = new HashMap<>();
+        if (StringUtils.isBlank(add.getRoomId())) {
+            result.put("type", "info");
+            result.put("msg", "请输入房间号");
+            return result;
+        }
+
+        RecordRoom room = roomRepository.findByRoomId(add.getRoomId());
+        if (room != null) {
+            result.put("type", "warning");
+            result.put("msg", "房间号已存在");
+            return result;
+        } else {
+            room = new RecordRoom();
+            room.setRoomId(add.getRoomId());
+            roomRepository.save(room);
+            result.put("type", "success");
+            result.put("msg", "添加成功");
+            return result;
+        }
+    }
+
+    @GetMapping("/delete/{roomId}")
+    public Map<String, String> add(@PathVariable("roomId") String roomId) {
+        Map<String, String> result = new HashMap<>();
+        if (StringUtils.isBlank(roomId)) {
+            result.put("type", "info");
+            result.put("msg", "请输入房间号");
+            return result;
+        }
+
+        RecordRoom room = roomRepository.findByRoomId(roomId);
+        if (room != null) {
+            roomRepository.delete(room);
+            result.put("type", "success");
+            result.put("msg", "房间删除成功");
+            return result;
+        } else {
+            result.put("type", "warning");
+            result.put("msg", "房间不存在");
+            return result;
+        }
     }
 
     @GetMapping("/verification")

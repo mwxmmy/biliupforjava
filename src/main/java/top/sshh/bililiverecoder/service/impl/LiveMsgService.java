@@ -71,6 +71,7 @@ public class LiveMsgService {
         EXCLUSION_DM.add("没意思");
         EXCLUSION_DM.add("尼");
         EXCLUSION_DM.add("玛");
+        EXCLUSION_DM.add("哈哈哈");
         EXCLUSION_DM.add("恶心");
         EXCLUSION_DM.add("屎");
         EXCLUSION_DM.add("sb");
@@ -169,7 +170,7 @@ public class LiveMsgService {
                     int fontsize = Integer.parseInt(values[2]);
                     int color = Integer.parseInt(values[3]);
                     //如果显示时间超过当前时间，调整当前时间
-                    if (sendTime > time + 3000) {
+                    if (sendTime > time + 1000) {
                         time = (int) sendTime;
                     } else {
                         continue;

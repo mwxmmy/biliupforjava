@@ -81,15 +81,22 @@ public class RoomController {
             return result;
         }
 
-        RecordRoom room = roomRepository.findByRoomId(roomId);
-        if (room != null) {
-            roomRepository.delete(room);
+        try {
+            RecordRoom room = roomRepository.findByRoomId(roomId);
+            if (room != null) {
+                roomRepository.delete(room);
+                result.put("type", "success");
+                result.put("msg", "房间删除成功");
+                return result;
+            } else {
+                result.put("type", "warning");
+                result.put("msg", "房间不存在");
+                return result;
+            }
+        } catch (Exception e) {
+            roomRepository.deleteByRoomId(roomId);
             result.put("type", "success");
             result.put("msg", "房间删除成功");
-            return result;
-        } else {
-            result.put("type", "warning");
-            result.put("msg", "房间不存在");
             return result;
         }
     }

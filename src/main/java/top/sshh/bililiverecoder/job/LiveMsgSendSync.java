@@ -97,7 +97,7 @@ public class LiveMsgSendSync {
                     LiveMsg msg = msgQueue.poll();
                     count.incrementAndGet();
                     int code = liveMsgService.sendMsg(user, msg);
-                    if (code != 0 && code != 36703 && code != 36714) {
+                    if (code != 0 && code != 36703 && code != 36714 && code != -101) {
                         log.error("{}用户，发送失败，错误代码{}，一共发送{}条弹幕。", user.getUname(), code, count.get());
                         user.setEnable(false);
                         user = userRepository.save(user);

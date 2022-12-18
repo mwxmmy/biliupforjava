@@ -51,11 +51,6 @@ public class publishJob {
         log.info("视频上传定时任务 待发布视频数量 size=={}", historyList.size());
 
         for (RecordHistory history : historyList) {
-            int count = partRepository.countByHistoryIdAndRecordingIsTrue(history.getId());
-            if (count > 0) {
-                log.error("跳过：视频上传定时任务 还有正在录制中的视频，数量==>{}", count);
-                continue;
-            }
             publishService.publishRecordHistory(history);
         }
     }

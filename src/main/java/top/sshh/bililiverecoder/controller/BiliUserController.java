@@ -98,7 +98,7 @@ public class BiliUserController {
     }
 
     @GetMapping("/delete/{id}")
-    public Map<String, String> add(@PathVariable("id") Long id) {
+    public Map<String, String> delete(@PathVariable("id") Long id) {
         Map<String, String> result = new HashMap<>();
         if (id == null) {
             result.put("type", "info");

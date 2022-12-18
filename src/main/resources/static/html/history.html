@@ -1,108 +1,213 @@
 <div class="container" id="historyTable">
-    <el-button @click="getLoginImage();dialogLoginVisible = true" type="primary">登录</el-button>
+    <el-form :inline="true" :model="form" label-position="left" label-width="90px" ref="form">
+        <el-form-item label="房间号" label-width="60px">
+            <el-input
+                    clearable
+                    placeholder="请输入房间号"
+                    v-model="form.roomId">
+            </el-input>
+        </el-form-item>
+        <el-form-item label="bvId" label-width="50px">
+            <el-input
+                    clearable
+                    v-model="form.bvId">
+            </el-input>
+        </el-form-item>
+        <el-form-item label="是否上传">
+            <el-select @change="initTable" clearable placeholder="请选择" v-model="form.upload">
+                <el-option label="全部" value=""></el-option>
+                <el-option label="是" value="true"></el-option>
+                <el-option label="否" value="false"></el-option>
+            </el-select>
+        </el-form-item>
+        <el-form-item label="是否录制中">
+            <el-select @change="initTable" clearable placeholder="请选择" v-model="form.recording">
+                <el-option label="全部" value=""></el-option>
+                <el-option label="是" value="true"></el-option>
+                <el-option label="否" value="false"></el-option>
+            </el-select>
+        </el-form-item>
+        <el-form-item label="是否已发布">
+            <el-select @change="initTable" clearable placeholder="请选择" v-model="form.publish">
+                <el-option label="全部" value=""></el-option>
+                <el-option label="是" value="true"></el-option>
+                <el-option label="否" value="false"></el-option>
+            </el-select>
+        </el-form-item>
+        <el-form-item label="结束时间">
+            <el-date-picker
+                    placeholder="开始时间"
+                    type="datetime"
+                    v-model="form.from">
+            </el-date-picker>
+            <el-date-picker
+                    placeholder="结束时间"
+                    type="datetime"
+                    v-model="form.to">
+            </el-date-picker>
+        </el-form-item>
+        <el-form-item>
+            <el-button @click="initTable" type="primary">查询</el-button>
+        </el-form-item>
+    </el-form>
     <el-table
             :data="tableData"
             style="width: 100%">
         <el-table-column
-                label="用户id"
-                prop="uid"
+                label="id"
+                prop="id"
+                width="80">
+        </el-table-column>
+        <el-table-column
+                label="房间名称"
+                prop="roomName"
                 width="120">
         </el-table-column>
         <el-table-column
-                label="昵称"
-                prop="uname"
+                label="bv号"
+                prop="bvId"
                 width="120">
         </el-table-column>
         <el-table-column
-                label="是否登录"
-                prop="login"
+                label="标题"
+                prop="title"
+                width="120">
+        </el-table-column>
+        <el-table-column
+                label="文件大小"
+                prop="fileSize"
                 width="120">
             <template slot-scope="scope">
-                <el-button circle class="el-icon-check" type="success" v-if="scope.row.login"></el-button>
-                <el-button circle class="el-icon-close" type="danger" v-if="!scope.row.login"></el-button>
+                {{(scope.row.fileSize/1024/1024/1024).toFixed(2)}}(GB)
             </template>
         </el-table-column>
         <el-table-column
-                label="是否启用"
-                prop="enable"
+                label="分p数量"
+                prop="partCount"
                 width="120">
+        </el-table-column>
+        <el-table-column
+                label="录制中的分p数量"
+                prop="recordPartCount"
+                width="120">
+        </el-table-column>
+        <el-table-column
+                label="弹幕数量"
+                prop="msgCount"
+                width="120">
+        </el-table-column>
+        <el-table-column
+                label="发送成功的弹幕数量"
+                prop="successMsgCount"
+                width="120">
+        </el-table-column>
+        <el-table-column
+                label="录制中"
+                prop="recording"
+                width="100">
             <template slot-scope="scope">
-                <el-button circle class="el-icon-check" type="success" v-if="scope.row.enable"></el-button>
-                <el-button circle class="el-icon-close" type="danger" v-if="!scope.row.enable"></el-button>
+                <el-button circle class="el-icon-check" type="success" v-if="scope.row.recording"></el-button>
+                <el-button circle class="el-icon-close" type="danger" v-if="!scope.row.recording"></el-button>
             </template>
         </el-table-column>
         <el-table-column
-                label="更新时间"
-                prop="updateTime"
+                label="是否上传"
+                prop="upload"
+                width="100">
+            <template slot-scope="scope">
+                <el-button circle class="el-icon-check" type="success" v-if="scope.row.upload"></el-button>
+                <el-button circle class="el-icon-close" type="danger" v-if="!scope.row.upload"></el-button>
+            </template>
+        </el-table-column>
+        <el-table-column
+                label="是否发布成功"
+                prop="publish"
+                width="100">
+            <template slot-scope="scope">
+                <el-button circle class="el-icon-check" type="success" v-if="scope.row.publish"></el-button>
+                <el-button circle class="el-icon-close" type="danger" v-if="!scope.row.publish"></el-button>
+            </template>
+        </el-table-column>
+        <el-table-column
+                label="开始时间"
+                prop="startTime"
+                width="220">
+        </el-table-column>
+        <el-table-column
+                label="结束时间"
+                prop="endTime"
                 width="220">
         </el-table-column>
         <el-table-column label="操作"
-                         width="180">
+                         width="600">
             <template slot-scope="scope">
                 <el-button
                         @click="handleEdit(scope.$index, scope.row)" size="mini"
                         type="primary">编辑
                 </el-button>
+                <el-button
+                        @click="updatePartStatus(scope.row.id)" size="mini"
+                        type="primary">结束分p录制状态
+                </el-button>
+                <el-button
+                        @click="touchPublish(scope.row.id)" size="mini"
+                        type="primary">触发发布事件
+                </el-button>
+                <el-button
+                        @click="deleteHistoryMsg(scope.row.id)" size="mini"
+                        type="danger">删除弹幕
+                </el-button>
+                <el-button
+                        @click="deleteHistory(scope.row.id)" size="mini"
+                        type="danger">删除
+                </el-button>
             </template>
         </el-table-column>
     </el-table>
 
-    <el-dialog :visible.sync="dialogLoginVisible" title="登录">
-        <div class="dialog-footer" slot="footer">
-
-            <el-row class="row-bg" justify="center" type="flex">
-                <el-col :span="10">
-                    <span>登录成功会请自行刷新二维码(有效期60秒)</span>
-                </el-col>
-            </el-row>
-
-            <el-row class="row-bg" justify="center" type="flex">
-                <el-col :span="6">
-                    <el-image
-                            :src="'data:image/png;base64,' + image" fit="fill"
-                            justify="center"
-                            style="width: 250px; height: 250px"></el-image>
-                </el-col>
-                <el-col :span="3"></el-col>
-            </el-row>
-
-            <el-button @click="getLoginImage();initTable();" type="primary">刷新</el-button>
-            <el-button @click="dialogLoginVisible = false;initTable();">关闭</el-button>
-        </div>
-    </el-dialog>
-
-    <el-dialog :visible.sync="dialogFormVisible" title="用户信息">
-        <el-form :model="user">
-            <el-form-item :label-width="formLabelWidth" label="是否启用弹幕发送">
-                <el-select placeholder="请选择" v-model="user.enable">
+    <el-dialog :visible.sync="editDialogFormVisible" title="用户信息">
+        <el-form :model="history">
+            <el-form-item label="是否上传" label-width="80px">
+                <el-select placeholder="请选择" v-model="history.upload">
+                    <el-option label="是" value="true"></el-option>
+                    <el-option label="否" value="false"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="是否录制中" label-width="90px">
+                <el-select placeholder="请选择" v-model="history.recording">
                     <el-option label="是" value="true"></el-option>
                     <el-option label="否" value="false"></el-option>
                 </el-select>
             </el-form-item>
         </el-form>
         <div class="dialog-footer" slot="footer">
-            <el-button @click="dialogFormVisible = false">取 消</el-button>
-            <el-button @click="updateUser()" type="primary">确 定</el-button>
+            <el-button @click="editDialogFormVisible = false">取 消</el-button>
+            <el-button @click="updateHistory()" type="primary">确 定</el-button>
         </div>
     </el-dialog>
 </div>
 <script>
     new Vue({
-        el: '#userTable',
+        el: '#historyTable',
         data: {
             formLabelWidth: '150px',
-            dialogFormVisible: false,
-            dialogLoginVisible: false,
             tableData: [],
-            user: {},
-            image: ''
+            editDialogFormVisible: false,
+            form: {},
+            history: {}
         },
         methods: {
+            handleEdit: function (index, row) {
+                this.history = row;
+                this.editDialogFormVisible = true;
+            },
             initTable: function () {
                 let _this = this;
                 $.ajax({
-                    url: '/biliUser/list',
-                    type: 'get',
+                    url: '/history/list',
+                    contentType: 'application/json;charset=utf-8',
+                    type: 'post',
+                    data: JSON.stringify(_this.form),
                     dataType: 'json',
                     success: function (data) {
                         console.info(data)
@@ -110,33 +215,87 @@
                     }
                 });
             },
-            getLoginImage: function () {
+            updateHistory: function () {
                 let _this = this;
                 $.ajax({
-                    url: '/biliUser/login',
-                    type: 'get',
-                    success: function (data) {
-                        _this.image = data;
-                    }
-                });
-            },
-            handleEdit: function (index, row) {
-                this.user = row;
-                this.dialogFormVisible = true;
-            },
-            updateUser: function () {
-                let _this = this;
-                $.ajax({
-                    url: '/biliUser/update',
+                    url: '/history/update',
                     contentType: 'application/json;charset=utf-8',
                     type: 'post',
-                    data: JSON.stringify(_this.user),
+                    data: JSON.stringify(_this.history),
                     dataType: 'json',
                     success: function (data) {
-                        _this.dialogFormVisible = false;
+                        _this.$message({
+                            message: data.msg,
+                            type: data.type
+                        });
+                        _this.initTable();
                     }
                 });
-            }
+            },
+            updatePartStatus: function (id) {
+                let _this = this;
+                $.ajax({
+                    url: '/history/updatePartStatus/' + id,
+                    contentType: 'application/json;charset=utf-8',
+                    type: 'get',
+                    dataType: 'json',
+                    success: function (data) {
+                        _this.$message({
+                            message: data.msg,
+                            type: data.type
+                        });
+                        _this.initTable();
+                    }
+                });
+            },
+            touchPublish: function (id) {
+                let _this = this;
+                $.ajax({
+                    url: '/history/touchPublish/' + id,
+                    contentType: 'application/json;charset=utf-8',
+                    type: 'get',
+                    dataType: 'json',
+                    success: function (data) {
+                        _this.$message({
+                            message: data.msg,
+                            type: data.type
+                        });
+                        _this.initTable();
+                    }
+                });
+            },
+            deleteHistory: function (id) {
+                let _this = this;
+                $.ajax({
+                    url: '/history/delete/' + id,
+                    contentType: 'application/json;charset=utf-8',
+                    type: 'get',
+                    dataType: 'json',
+                    success: function (data) {
+                        _this.$message({
+                            message: data.msg,
+                            type: data.type
+                        });
+                        _this.initTable();
+                    }
+                });
+            },
+            deleteHistoryMsg: function (id) {
+                let _this = this;
+                $.ajax({
+                    url: '/history/deleteMsg/' + id,
+                    contentType: 'application/json;charset=utf-8',
+                    type: 'get',
+                    dataType: 'json',
+                    success: function (data) {
+                        _this.$message({
+                            message: data.msg,
+                            type: data.type
+                        });
+                        _this.initTable();
+                    }
+                });
+            },
         },
         created: function created() {
             this.initTable();

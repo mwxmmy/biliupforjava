@@ -28,6 +28,7 @@
         <el-tabs @tab-click="handleClick" v-model="activeName">
             <el-tab-pane label="直播间" name="room"></el-tab-pane>
             <el-tab-pane label="bilibili用户" name="user"></el-tab-pane>
+            <el-tab-pane label="录制历史" name="history"></el-tab-pane>
         </el-tabs>
     </template>
     <div id="p"></div>
@@ -49,6 +50,10 @@
                     case 'user':
                         $('#p').html("");
                         $('#p').load('html/user.html');
+                        break;
+                    case 'history':
+                        $('#p').html("");
+                        $('#p').load('html/history.html');
                         break;
                 }
             }

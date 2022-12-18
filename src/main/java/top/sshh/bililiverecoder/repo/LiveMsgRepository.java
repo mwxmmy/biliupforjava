@@ -13,5 +13,11 @@ public interface LiveMsgRepository extends CrudRepository<LiveMsg, Long> {
 
     int countByPartId(Long partId);
 
+    int countByBvid(String bvId);
+
+    int countByBvidAndCode(String bvId, Integer code);
+
     void deleteByPartId(Long partId);
+
+    List<LiveMsg> queryByBvid(String bvid);
 }

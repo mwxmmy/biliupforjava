@@ -5,6 +5,7 @@ import com.jayway.jsonpath.JsonPath;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import top.sshh.bililiverecoder.entity.BiliBiliUser;
 import top.sshh.bililiverecoder.entity.RecordHistory;
@@ -20,6 +21,7 @@ import top.sshh.bililiverecoder.service.RecordPartUploadService;
 import top.sshh.bililiverecoder.util.BiliApi;
 import top.sshh.bililiverecoder.util.TaskUtil;
 
+import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -39,16 +41,24 @@ public class RecordBiliPublishService {
     @Autowired
     private RecordPartUploadService uploadService;
 
+    @Async
+    public void asyncPublishRecordHistory(RecordHistory history) {
+        this.publishRecordHistory(history);
+    }
+
     public boolean publishRecordHistory(RecordHistory history) {
         if (history.isPublish()) {
+            log.error("视频状态为已发布，退出==>{}", JSON.toJSONString(history));
             return false;
         }
         Thread publishThread = TaskUtil.publishTask.get(history.getId());
         if (publishThread != null) {
             //正在发布，直接退出
+            log.error("视频正在发布，退出==>{}", JSON.toJSONString(history));
             return false;
         }
         try {
+            log.info("视频发布等待十秒==>{}", JSON.toJSONString(history));
             Thread.sleep(10000L);
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -68,6 +78,7 @@ public class RecordBiliPublishService {
         if (room.getTid() == null) {
             //没有设置分区，直接取消上传
             TaskUtil.publishTask.remove(history.getId());
+            log.error("视频没有设置分区，退出==>{}", JSON.toJSONString(history));
             return false;
         }
         List<RecordHistoryPart> uploadParts = partRepository.findByHistoryId(history.getId());
@@ -79,32 +90,42 @@ public class RecordBiliPublishService {
         }
         LocalDateTime now = LocalDateTime.now();
         for (RecordHistoryPart uploadPart : uploadParts) {
+
+            String filePath = uploadPart.getFilePath().intern();
+            File file = new File(filePath);
             //已经上传完成就跳过
             if (uploadPart.isUpload()) {
                 continue;
             }
-            //已经上传完成就跳过
-            if (uploadPart.isRecording()) {
-                log.error("发布视频事件错误，还有分p还在录制中==>{}", JSON.toJSONString(uploadPart));
-                TaskUtil.publishTask.remove(history.getId());
-                return false;
+            if (file.exists()) {
+                if (uploadPart.isRecording() && file.lastModified() > System.currentTimeMillis() - (10 * 60 * 1000)) {
+                    log.error("发布视频事件错误，还有分p还在录制中==>{}", JSON.toJSONString(uploadPart));
+                    TaskUtil.publishTask.remove(history.getId());
+                    return false;
+                } else {
+                    uploadPart.setRecording(false);
+                    if (uploadPart.getFileSize() == 0 || uploadPart.getDuration() == 0) {
+                        uploadPart.setFileSize(file.length());
+                        uploadPart.setDuration((float) file.length() / 1024 / 1024);
+                    }
+                    uploadPart = partRepository.save(uploadPart);
+                    if (uploadPart.getEndTime().isAfter(now.plusMinutes(11L))) {
+                        log.error("发布视频事件错误，有分p结束时间在十分钟以内==>{}", JSON.toJSONString(uploadPart));
+                        TaskUtil.publishTask.remove(history.getId());
+                        return false;
+                    }
+                    if (uploadPart.getFileSize() < 1024 * 1024 * room.getFileSizeLimit()) {
+                        log.error("文件大小小于设置的忽略大小，自动删除。");
+                        partRepository.delete(uploadPart);
+                        continue;
+                    }
+                    if (uploadPart.getDuration() < room.getDurationLimit()) {
+                        log.error("文件时长小于设置的忽略时间，自动删除。");
+                        partRepository.delete(uploadPart);
+                        continue;
+                    }
+                }
             }
-            if (uploadPart.getEndTime().isAfter(now.plusMinutes(11L))) {
-                log.error("发布视频事件错误，有分p结束时间在十分钟以内==>{}", JSON.toJSONString(uploadPart));
-                TaskUtil.publishTask.remove(history.getId());
-                return false;
-            }
-            if (uploadPart.getFileSize() < 1024 * 1024 * room.getFileSizeLimit()) {
-                log.error("文件大小小于设置的忽略大小，自动删除。");
-                partRepository.delete(uploadPart);
-                continue;
-            }
-            if (uploadPart.getDuration() < room.getDurationLimit()) {
-                log.error("文件时长小于设置的忽略时间，自动删除。");
-                partRepository.delete(uploadPart);
-                continue;
-            }
-            String filePath = uploadPart.getFilePath().intern();
             Thread thread = TaskUtil.partUploadTask.get(uploadPart.getId());
             if (thread != null && thread != Thread.currentThread()) {
                 //等待线程上传完成

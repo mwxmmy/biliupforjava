@@ -19,5 +19,7 @@ public interface RecordHistoryPartRepository extends CrudRepository<RecordHistor
 
     int countByHistoryIdAndRecordingIsTrue(Long historyId);
 
+    int countByHistoryId(Long historyId);
+
     boolean existsByFilePath(String filePath);
 }

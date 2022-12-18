@@ -2,21 +2,15 @@ package top.sshh.bililiverecoder.entity;
 
 import lombok.Data;
 
-import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Data
-@Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = "eventId"))
-public class RecordHistory {
+public class RecordHistoryDTO {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
     private String roomId;
 
-    @Transient
     private String roomName;
 
     private String bvId;
@@ -31,14 +25,14 @@ public class RecordHistory {
 
     private long fileSize;
 
-    private boolean recording;
-    private boolean streaming;
+    private Boolean recording;
+    private Boolean streaming;
 
     // 是否上传
-    private boolean upload;
+    private Boolean upload;
 
     // 是否发布成功
-    private boolean publish;
+    private Boolean publish;
 
     private int code = -1;
 
@@ -50,21 +44,16 @@ public class RecordHistory {
     private LocalDateTime updateTime;
 
 
-    @Transient
     private int partCount;
 
-    @Transient
     private int recordPartCount;
 
-    @Transient
     private int msgCount;
 
-    @Transient
     private int successMsgCount;
 
 
-    @Transient
     private LocalDateTime from;
-    @Transient
+
     private LocalDateTime to;
 }

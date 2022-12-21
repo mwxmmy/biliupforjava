@@ -94,7 +94,8 @@ public class RoomController {
                 return result;
             }
         } catch (Exception e) {
-            roomRepository.deleteByRoomId(roomId);
+            List<RecordRoom> roomList = roomRepository.findByRoomIdAndUploadIsTrue(roomId);
+            roomRepository.deleteAll(roomList);
             result.put("type", "success");
             result.put("msg", "房间删除成功");
             return result;

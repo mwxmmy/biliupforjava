@@ -12,7 +12,6 @@ public interface RecordRoomRepository extends CrudRepository<RecordRoom, Long> {
     RecordRoom findByRoomId(String roomId);
 
     List<RecordRoom> findByRoomIdAndUploadIsTrue(String roomId);
-    void deleteByRoomId(String roomId);
 
     List<RecordRoom> findByUpload(boolean upload);
 }

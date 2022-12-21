@@ -73,18 +73,18 @@ public class RoomController {
     }
 
     @GetMapping("/delete/{roomId}")
-    public Map<String, String> add(@PathVariable("roomId") String roomId) {
+    public Map<String, String> add(@PathVariable("roomId") Long roomId) {
         Map<String, String> result = new HashMap<>();
-        if (StringUtils.isBlank(roomId)) {
+        if (roomId == null) {
             result.put("type", "info");
             result.put("msg", "请输入房间号");
             return result;
         }
 
         try {
-            RecordRoom room = roomRepository.findByRoomId(roomId);
-            if (room != null) {
-                roomRepository.delete(room);
+            Optional<RecordRoom> roomOptional = roomRepository.findById(roomId);
+            if (roomOptional.isPresent()) {
+                roomRepository.delete(roomOptional.get());
                 result.put("type", "success");
                 result.put("msg", "房间删除成功");
                 return result;
@@ -94,10 +94,8 @@ public class RoomController {
                 return result;
             }
         } catch (Exception e) {
-            List<RecordRoom> roomList = roomRepository.findByRoomIdAndUploadIsTrue(roomId);
-            roomRepository.deleteAll(roomList);
-            result.put("type", "success");
-            result.put("msg", "房间删除成功");
+            result.put("type", "error");
+            result.put("msg", "房间删除失败==>"+e.getMessage());
             return result;
         }
     }

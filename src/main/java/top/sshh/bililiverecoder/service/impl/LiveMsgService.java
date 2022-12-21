@@ -90,12 +90,13 @@ public class LiveMsgService {
     private RecordHistoryRepository recordHistoryRepository;
 
     public int sendMsg(BiliBiliUser user, LiveMsg liveMsg) {
-        BiliDmResponse response = BiliApi.sendVideoDm(user.getAccessToken(), liveMsg);
+        BiliDmResponse response = BiliApi.sendVideoDm(user, liveMsg);
         int code = response.getCode();
-        liveMsg.setCode(code);
-        liveMsgRepository.save(liveMsg);
         if (code != 0) {
             log.error("{}发送弹幕错误，code==>{}",user.getUname(), code);
+        }else {
+            liveMsg.setCode(code);
+            liveMsgRepository.save(liveMsg);
         }
         return code;
     }

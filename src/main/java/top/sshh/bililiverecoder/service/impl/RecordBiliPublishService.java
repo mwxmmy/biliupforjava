@@ -185,7 +185,7 @@ public class RecordBiliPublishService {
                 boolean expired = false;
                 // 检查是否已经过期，调用用户信息接口
                 try {
-                    String myInfo = BiliApi.appMyInfo(biliBiliUser.getAccessToken());
+                    String myInfo = BiliApi.appMyInfo(biliBiliUser);
                     String uname = JsonPath.read(myInfo, "data.uname");
                     if (StringUtils.isBlank(uname)) {
                         expired = true;

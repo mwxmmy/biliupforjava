@@ -23,6 +23,8 @@ public class BiliBiliUser {
     private String accessToken;
     private String refreshToken;
 
+    private String cookies;
+
     private LocalDateTime updateTime;
 
     /**

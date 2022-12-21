@@ -1,6 +1,8 @@
 package top.sshh.bililiverecoder.controller;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
@@ -56,14 +58,24 @@ public class BiliUserController {
                         if (biliUser == null) {
                             biliUser = new BiliBiliUser();
                         }
-                        String userInfo = BiliApi.appMyInfo(dto.getAccessToken());
-                        biliUser.setUname(JsonPath.read(userInfo, "data.uname"));
-                        log.info("{} 登录成功!!!", biliUser.getUname());
+                        JSONArray cookies = JSON.parseArray(JsonPath.read(loginResp, "data.cookie_info.cookies").toString());
+                        StringBuilder cookieString = new StringBuilder();
+                        for (Object object : cookies) {
+                            JSONObject cookie = (JSONObject)object;
+                            cookieString.append(cookie.get("name").toString());
+                            cookieString.append(":");
+                            cookieString.append(cookie.get("value").toString());
+                            cookieString.append("; ");
+                        }
+                        biliUser.setCookies(cookieString.toString());
                         biliUser.setUid(dto.getMid());
                         biliUser.setAccessToken(dto.getAccessToken());
                         biliUser.setRefreshToken(dto.getRefreshToken());
                         biliUser.setLogin(true);
                         biliUser.setUpdateTime(LocalDateTime.now());
+                        String userInfo = BiliApi.appMyInfo(biliUser);
+                        biliUser.setUname(JsonPath.read(userInfo, "data.uname"));
+                        log.info("{} 登录成功!!!", biliUser.getUname());
                         biliUserRepository.save(biliUser);
                         return;
                     }

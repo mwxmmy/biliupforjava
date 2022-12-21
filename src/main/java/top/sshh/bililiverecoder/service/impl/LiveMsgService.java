@@ -58,6 +58,7 @@ public class LiveMsgService {
         EXCLUSION_DM.add("艹");
         EXCLUSION_DM.add("举报");
         EXCLUSION_DM.add("弹幕");
+        EXCLUSION_DM.add("画质");
         EXCLUSION_DM.add("傻子");
         EXCLUSION_DM.add("卡卡");
         EXCLUSION_DM.add("好卡");
@@ -169,11 +170,14 @@ public class LiveMsgService {
                     long sendTime = (long) (Float.parseFloat(values[0]) * 1000);
                     int fontsize = Integer.parseInt(values[2]);
                     int color = Integer.parseInt(values[3]);
-                    //如果显示时间超过当前时间，调整当前时间
-                    if (sendTime > time + 1000) {
-                        time = (int) sendTime;
-                    } else {
-                        continue;
+                    //白色弹幕需要调整间隔
+                    if(color == 1677215){
+                        //如果显示时间超过当前时间，调整当前时间
+                        if (sendTime > time + 3000) {
+                            time = (int) sendTime;
+                        } else {
+                            continue;
+                        }
                     }
                     if (!bloomFilter.mightContain(text)) {
                         bloomFilter.put(text);

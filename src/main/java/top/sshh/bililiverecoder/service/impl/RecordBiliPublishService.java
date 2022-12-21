@@ -90,7 +90,8 @@ public class RecordBiliPublishService {
         }
         LocalDateTime now = LocalDateTime.now();
         for (RecordHistoryPart uploadPart : uploadParts) {
-
+            Optional<RecordHistoryPart> flsuhPartOptional = partRepository.findById(uploadPart.getId());
+            uploadPart = flsuhPartOptional.get();
             String filePath = uploadPart.getFilePath().intern();
             File file = new File(filePath);
             //已经上传完成就跳过
@@ -150,8 +151,12 @@ public class RecordBiliPublishService {
             }
 
         }
+        int preSize = uploadParts.size();
         //重新加载上传列表
         uploadParts = partRepository.findByHistoryId(history.getId());
+        if(preSize != uploadParts.size()){
+            log.error("发布视频事件错误，分p数量发生变动==>{}", JSON.toJSONString(history));
+        }
         long count = uploadParts.stream().filter(RecordHistoryPart::isUpload).count();
         if (count != uploadParts.size()) {
             //没有全部上传完成返回失败

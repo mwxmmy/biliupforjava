@@ -37,12 +37,9 @@ public class DmTest {
 
     @Test
     public void sendDm() {
-        Optional<RecordHistoryPart> partOptional = partRepository.findById(3136L);
-        if (partOptional.isPresent()) {
-            RecordHistoryPart part = partOptional.get();
-            part.setFilePath("E:/tmp/退役之后过上慢生活-001.flv");
-            liveMsgService.processing(part);
-        }
+        BiliBiliUser biliUser = biliUserRepository.findByUid(10043269L);
+        List<LiveMsg> msgList = msgRepository.findByPartIdAndCode(3428L, -1);
+        liveMsgService.sendMsg(biliUser,msgList.get(0));
     }
 
     @Test

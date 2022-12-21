@@ -33,8 +33,8 @@ public class BiliApi {
 
 
     // TODO 修改为从properties中读取
-    private static String appKey = "bca7e84c2d947ac6";
-    private static String appSecret = "60698ba2f68e01ce44738920a0ffe768";
+    private static String appKey = "4409e2ce8ffd12b8";
+    private static String appSecret = "59b43e04ad6965f34319062b478f83dd";
 
 
     public static String getUserInfo(Long uid) {
@@ -48,7 +48,7 @@ public class BiliApi {
         String url = "https://passport.bilibili.com/api/oauth2/getKey";
         Map<String, String> params = new TreeMap<>();
         params.put("appkey", appKey);
-        params.put("build", "5370000");
+        params.put("build", "101800");
         params.put("channel", "html5_app_bili");
         params.put("mobi_app", "android");
         params.put("platform", "android");
@@ -111,7 +111,7 @@ public class BiliApi {
 
         Map<String, String> params = new TreeMap<>();
         params.put("appkey", appKey);
-        params.put("build", "5370000");
+        params.put("build", "101800");
         params.put("channel", "html5_app_bili");
         params.put("mobi_app", "android");
         params.put("platform", "android");
@@ -183,7 +183,7 @@ public class BiliApi {
         Map<String, String> params = new TreeMap<>();
         params.put("appkey", appKey);
         params.put("access_key", accessToken);
-        params.put("build", "5370000");
+        params.put("build", "101800");
         params.put("channel", "html5_app_bili");
         params.put("mobi_app", "android");
         params.put("platform", "android");
@@ -260,7 +260,7 @@ public class BiliApi {
         Map<String, String> params = new TreeMap<>();
         params.put("appkey", appKey);
         params.put("access_key", user.getAccessToken());
-        params.put("build", "5370000");
+        params.put("build", "101800");
         params.put("channel", "html5_app_bili");
         params.put("mobi_app", "android");
         params.put("platform", "android");
@@ -302,7 +302,7 @@ public class BiliApi {
         Map<String, String> params = new TreeMap<>();
         params.put("appkey", appKey);
         params.put("access_key", user.getAccessToken());
-        params.put("build", "5370000");
+        params.put("build", "105301");
         params.put("channel", "html5_app_bili");
         params.put("mobi_app", "android");
         params.put("platform", "android");

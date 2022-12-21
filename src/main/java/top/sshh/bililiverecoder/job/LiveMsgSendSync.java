@@ -47,7 +47,7 @@ public class LiveMsgSendSync {
 
     @Scheduled(cron = "0 * * * * ?")
     public void sndMsgProcess() {
-        log.error("发送弹幕定时任务开始");
+        log.info("发送弹幕定时任务开始");
         long startTime = System.currentTimeMillis();
         List<RecordHistory> historyList = historyRepository.findByPublishIsTrueAndCode(0);
         if (CollectionUtils.isEmpty(historyList)) {
@@ -87,7 +87,7 @@ public class LiveMsgSendSync {
             msgAllList = msgAllList.stream().sorted((m1, m2) -> (int) (m1.getSendTime() - m2.getSendTime())).collect(Collectors.toList());
             Queue<LiveMsg> msgQueue = new LinkedList<>(msgAllList);
             AtomicInteger count = new AtomicInteger(0);
-            log.error("即将开始弹幕发送操作，剩余待发送弹幕{}条。", msgQueue.size());
+            log.info("即将开始弹幕发送操作，剩余待发送弹幕{}条。", msgQueue.size());
             allUser.stream().parallel().forEach(user -> {
                 while (msgQueue.size() > 0) {
                     if (System.currentTimeMillis() - startTime > 2 * 3600 * 1000) {
@@ -96,8 +96,9 @@ public class LiveMsgSendSync {
                     }
                     LiveMsg msg = msgQueue.poll();
                     count.incrementAndGet();
+                    user = userRepository.findByUid(user.getUid());
                     int code = liveMsgService.sendMsg(user, msg);
-                    if (code != 0 && code != 36703 && code != 36714 && code != -101) {
+                    if (code != 0 && code != 36703 && code != 36714) {
                         log.error("{}用户，发送失败，错误代码{}，一共发送{}条弹幕。", user.getUname(), code, count.get());
                         user.setEnable(false);
                         user = userRepository.save(user);

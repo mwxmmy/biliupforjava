@@ -173,7 +173,7 @@
             <el-form-item :label-width="formLabelWidth" label="投稿封面类型">
                 <el-select @change="coverTypeChange" v-model="room.coverType">
                     <el-option label="系统默认" value="default"></el-option>
-                    <el-option label="直播封面" value="live"></el-option>
+                    <el-option label="直播封面(需录播姬开启保存封面功能)" value="live"></el-option>
                     <el-option label="自定义" value="diy"></el-option>
                 </el-select>
             </el-form-item>
@@ -186,7 +186,7 @@
                         :show-file-list="false"
                         :on-success="handleCoverSuccess"
                         :before-upload="beforeCoverUpload">
-                    <img v-if="room.coverUrl" :src="room.coverUrl" class="avatar">
+                    <img id="coverImg" v-if="room.coverUrl" :src="room.coverUrl" class="avatar">
                     <i v-else class="el-icon-plus avatar-uploader-icon"></i>
                 </el-upload>
             </el-form-item>
@@ -281,15 +281,12 @@
                     this.room.coverUrl = 'live';
                 }
             },
-            handleCoverSuccess(res, file) {
-                this.room.coverUrl = res.coverUrl;
-                let img = new Image();
-                img.src = res.coverUrl;
-                const isLtWH = img.width>1146 && img.height>717;
-                if(!isLtWH){
-                    this.room.coverUrl = '';
-                    this.$message.error('上传图片分辨率不低于1146*717');
-                }
+            handleCoverSuccess(data, file) {
+                this.$message({
+                    message: data.msg,
+                    type: data.type
+                });
+                this.room.coverUrl = data.coverUrl;
             },
             beforeCoverUpload(file) {
                 const isLt2M = file.size / 1024 / 1024 < 2;

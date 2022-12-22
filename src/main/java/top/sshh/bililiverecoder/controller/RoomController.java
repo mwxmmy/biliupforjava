@@ -11,6 +11,8 @@ import top.sshh.bililiverecoder.repo.BiliUserRepository;
 import top.sshh.bililiverecoder.repo.RecordRoomRepository;
 import top.sshh.bililiverecoder.util.BiliApi;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -24,7 +26,6 @@ public class RoomController {
 
     @Autowired
     private BiliUserRepository userRepository;
-
 
 
     @PostMapping
@@ -105,13 +106,13 @@ public class RoomController {
             }
         } catch (Exception e) {
             result.put("type", "error");
-            result.put("msg", "房间删除失败==>"+e.getMessage());
+            result.put("msg", "房间删除失败==>" + e.getMessage());
             return result;
         }
     }
 
     @PostMapping("/uploadCover")
-    public Map<String, String> uploadCover(@RequestParam Long id,@RequestParam("file") MultipartFile file){
+    public Map<String, String> uploadCover(@RequestParam Long id, @RequestParam("file") MultipartFile file) {
 
         Map<String, String> result = new HashMap<>();
         if (id == null) {
@@ -119,18 +120,36 @@ public class RoomController {
             result.put("msg", "请输入房间号");
             return result;
         }
+        try {
+            BufferedImage image = ImageIO.read(file.getInputStream());
+            if (image == null) {
+                result.put("type", "warning");
+                result.put("msg", "请上传图片文件");
+                return result;
+            }
+            if (image.getWidth() < 1146 || image.getHeight() < 717) {
+                result.put("type", "warning");
+                result.put("msg", "上传图片分辨率不低于1146*717,当前分辨率为"+image.getWidth()+"*"+image.getHeight());
+                return result;
+            }
+        } catch (IOException e) {
+            result.put("type", "warning");
+            result.put("msg", "封面上传失败：" + e.getMessage());
+            return result;
+        }
+
         Optional<RecordRoom> roomOptional = roomRepository.findById(id);
         if (roomOptional.isPresent()) {
             try {
                 RecordRoom room = roomOptional.get();
                 Long userId = room.getUploadUserId();
-                if(userId == null){
+                if (userId == null) {
                     result.put("type", "warning");
                     result.put("msg", "房间未绑定上传用户");
                     return result;
                 }
                 Optional<BiliBiliUser> userOptional = userRepository.findById(userId);
-                if(!userOptional.isPresent()){
+                if (!userOptional.isPresent()) {
                     result.put("type", "warning");
                     result.put("msg", "房间未绑定上传用户");
                     return result;
@@ -139,7 +158,7 @@ public class RoomController {
                 byte[] bytes = file.getBytes();
                 String response = BiliApi.uploadCover(user, file.getName(), bytes);
                 String url = JsonPath.read(response, "data.url");
-                if(StringUtils.isNotBlank(url)){
+                if (StringUtils.isNotBlank(url)) {
                     room.setCoverUrl(url);
                     roomRepository.save(room);
                     result.put("type", "success");
@@ -150,7 +169,7 @@ public class RoomController {
 
             } catch (IOException e) {
                 result.put("type", "warning");
-                result.put("msg", "封面上传失败："+e.getMessage());
+                result.put("msg", "封面上传失败：" + e.getMessage());
                 return result;
             }
             result.put("type", "warning");

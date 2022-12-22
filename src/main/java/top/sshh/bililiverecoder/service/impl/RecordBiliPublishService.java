@@ -231,6 +231,9 @@ public class RecordBiliPublishService {
                     try {
                         String filePath = uploadParts.get(0).getFilePath().replaceAll(".flv", ".cover.jpg");
                         File cover = new File(filePath);
+                        if (!cover.exists()){
+                            cover = new File(filePath.replaceAll(".jpg", ".png"));
+                        }
                         byte [] bytes = new byte[(int)cover.length()];
                         FileInputStream inputStream = new FileInputStream(cover);
                         inputStream.read(bytes);

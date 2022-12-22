@@ -94,6 +94,9 @@ public class LiveMsgService {
         int code = response.getCode();
         if (code != 0) {
             log.error("{}发送弹幕错误，code==>{}",user.getUname(), code);
+            if(code == 36701 || code == 36702 || code == 36714){
+                liveMsgRepository.delete(liveMsg);
+            }
         }else {
             liveMsg.setCode(code);
             liveMsgRepository.save(liveMsg);

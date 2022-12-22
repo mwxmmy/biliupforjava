@@ -5,6 +5,9 @@ import com.alibaba.fastjson.TypeReference;
 import com.jayway.jsonpath.JsonPath;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.util.UriComponents;
@@ -16,6 +19,7 @@ import top.sshh.bililiverecoder.entity.data.BiliVideoInfoResponse;
 import top.sshh.bililiverecoder.entity.data.VideoUploadDto;
 
 import javax.crypto.Cipher;
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -220,6 +224,24 @@ public class BiliApi {
 
         String body = JSON.toJSONString(data);
         return HttpClientUtil.post(url, headers, body);
+    }
+
+    public static String uploadCover(BiliBiliUser user,String fileName, byte[] fileBytes) {
+        String url = "https://member.bilibili.com/x/vu/client/cover/up?access_key=" + user.getAccessToken();
+        Map<String, String> query = new HashMap<>();
+        query.put("access_key", user.getAccessToken());
+        String sign = sign(query, appSecret);
+        url = url + "&sign=" + sign;
+        Map<String, String> headers = new HashMap<>();
+        headers.put("User-Agent", "");
+        headers.put("cookie", user.getCookies());
+        MultipartBody multipartBody = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("access_key",user.getAccessToken())
+                .addFormDataPart("sign",sign(query, appSecret))
+                .addFormDataPart("file", fileName, RequestBody.create(fileBytes, MediaType.parse("image/png")))
+                .build();
+        return HttpClientUtil.post(url, headers, multipartBody);
     }
 
     public static String uploadChunk(

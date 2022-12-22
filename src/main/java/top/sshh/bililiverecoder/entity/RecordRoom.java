@@ -38,6 +38,8 @@ public class RecordRoom {
 
     private int copyright = 1;
 
+    private String coverUrl;
+
     private String descTemplate = "直播录像 \n" +
             "${uname}直播间：https://live.bilibili.com/${roomId}";
 

@@ -1,11 +1,17 @@
 package top.sshh.bililiverecoder.controller;
 
+import com.jayway.jsonpath.JsonPath;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import top.sshh.bililiverecoder.entity.BiliBiliUser;
 import top.sshh.bililiverecoder.entity.RecordRoom;
+import top.sshh.bililiverecoder.repo.BiliUserRepository;
 import top.sshh.bililiverecoder.repo.RecordRoomRepository;
+import top.sshh.bililiverecoder.util.BiliApi;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -15,6 +21,9 @@ import java.util.*;
 public class RoomController {
     @Autowired
     private RecordRoomRepository roomRepository;
+
+    @Autowired
+    private BiliUserRepository userRepository;
 
 
 
@@ -39,6 +48,7 @@ public class RoomController {
             dbRoom.setPartTitleTemplate(room.getPartTitleTemplate());
             dbRoom.setDescTemplate(room.getDescTemplate());
             dbRoom.setCopyright(room.getCopyright());
+            dbRoom.setCoverUrl(room.getCoverUrl());
             dbRoom.setFileSizeLimit(room.getFileSizeLimit());
             dbRoom.setDurationLimit(room.getDurationLimit());
             dbRoom.setDeleteFile(room.isDeleteFile());
@@ -96,6 +106,59 @@ public class RoomController {
         } catch (Exception e) {
             result.put("type", "error");
             result.put("msg", "房间删除失败==>"+e.getMessage());
+            return result;
+        }
+    }
+
+    @PostMapping("/uploadCover")
+    public Map<String, String> uploadCover(@RequestParam Long id,@RequestParam("file") MultipartFile file){
+
+        Map<String, String> result = new HashMap<>();
+        if (id == null) {
+            result.put("type", "info");
+            result.put("msg", "请输入房间号");
+            return result;
+        }
+        Optional<RecordRoom> roomOptional = roomRepository.findById(id);
+        if (roomOptional.isPresent()) {
+            try {
+                RecordRoom room = roomOptional.get();
+                Long userId = room.getUploadUserId();
+                if(userId == null){
+                    result.put("type", "warning");
+                    result.put("msg", "房间未绑定上传用户");
+                    return result;
+                }
+                Optional<BiliBiliUser> userOptional = userRepository.findById(userId);
+                if(!userOptional.isPresent()){
+                    result.put("type", "warning");
+                    result.put("msg", "房间未绑定上传用户");
+                    return result;
+                }
+                BiliBiliUser user = userOptional.get();
+                byte[] bytes = file.getBytes();
+                String response = BiliApi.uploadCover(user, file.getName(), bytes);
+                String url = JsonPath.read(response, "data.url");
+                if(StringUtils.isNotBlank(url)){
+                    room.setCoverUrl(url);
+                    roomRepository.save(room);
+                    result.put("type", "success");
+                    result.put("coverUrl", url);
+                    result.put("msg", "封面上传成功");
+                    return result;
+                }
+
+            } catch (IOException e) {
+                result.put("type", "warning");
+                result.put("msg", "封面上传失败："+e.getMessage());
+                return result;
+            }
+            result.put("type", "warning");
+            result.put("msg", "封面上传失败");
+            return result;
+        } else {
+            result.put("type", "warning");
+            result.put("msg", "房间不存在");
             return result;
         }
     }

@@ -37,7 +37,7 @@ public class RefreshTokenJob {
     private BiliBiliUserService userService;
 
 
-    @Scheduled(fixedDelay = 3600000, initialDelay = 0)
+    // @Scheduled(fixedDelay = 3600000, initialDelay = 0)
     public void sndMsgProcess() {
         Iterable<BiliBiliUser> all = userRepository.findAll();
         for (BiliBiliUser user : all) {

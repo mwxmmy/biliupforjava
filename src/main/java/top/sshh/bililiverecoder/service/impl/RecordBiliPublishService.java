@@ -22,6 +22,7 @@ import top.sshh.bililiverecoder.util.BiliApi;
 import top.sshh.bililiverecoder.util.TaskUtil;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -225,10 +226,26 @@ public class RecordBiliPublishService {
                     dto.setFilename(uploadPart.getFileName());
                     dtos.add(dto);
                 }
+                String coverUrl = room.getCoverUrl();
+                if("live".equals(coverUrl)){
+                    try {
+                        String filePath = uploadParts.get(0).getFilePath().replaceAll(".flv", ".cover.jpg");
+                        File cover = new File(filePath);
+                        byte [] bytes = new byte[(int)cover.length()];
+                        FileInputStream inputStream = new FileInputStream(cover);
+                        inputStream.read(bytes);
+                        inputStream.close();
+                        String uploadCoverResponse = BiliApi.uploadCover(biliBiliUser, cover.getName(), bytes);
+                        coverUrl = JsonPath.read(uploadCoverResponse, "data.url");
+                    }catch (Exception e){
+                        log.error("{}==>使用直播封面失败",room.getUname(),e);
+                    }
+                }
                 VideoUploadDto videoUploadDto = new VideoUploadDto();
 
                 map.put("date", startTime);
                 videoUploadDto.setTid(room.getTid());
+                videoUploadDto.setCover(coverUrl);
                 videoUploadDto.setCopyright(room.getCopyright());
                 videoUploadDto.setTitle(this.template(room.getTitleTemplate(), map));
                 videoUploadDto.setSource(this.template(videoUploadDto.getSource(), map));

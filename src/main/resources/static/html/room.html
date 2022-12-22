@@ -9,6 +9,11 @@
                     <el-form-item label="投稿分区id">
                         <span>{{ props.row.tid }}</span>
                     </el-form-item>
+                    <el-form-item label="投稿封面类型">
+                        <span v-if="props.row.coverType==='default'">系统默认</span>
+                        <span v-if="props.row.coverType==='live'">直播封面</span>
+                        <span v-if="props.row.coverType==='diy'">自定义上传</span>
+                    </el-form-item>
                     <el-form-item label="忽略小分片">
                         <span>{{ props.row.fileSizeLimit }}MB(小于该大小的分片会直接删除)</span>
                     </el-form-item>
@@ -165,6 +170,26 @@
                     </el-option>
                 </el-select>
             </el-form-item>
+            <el-form-item :label-width="formLabelWidth" label="投稿封面类型">
+                <el-select @change="coverTypeChange" v-model="room.coverType">
+                    <el-option label="系统默认" value="default"></el-option>
+                    <el-option label="直播封面" value="live"></el-option>
+                    <el-option label="自定义" value="diy"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item v-if="room.coverType == 'diy'" :label-width="formLabelWidth" label="投稿封面上传">
+                <el-upload
+                        class="avatar-uploader"
+                        action="/room/uploadCover"
+                        accept=".jpg, .jpeg, .png"
+                        :data="room"
+                        :show-file-list="false"
+                        :on-success="handleCoverSuccess"
+                        :before-upload="beforeCoverUpload">
+                    <img v-if="room.coverUrl" :src="room.coverUrl" class="avatar">
+                    <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                </el-upload>
+            </el-form-item>
         </el-form>
         <div class="dialog-footer" slot="footer">
             <el-button @click="dialogFormVisible = false">取 消</el-button>
@@ -248,6 +273,36 @@
                     }
                 });
             },
+            coverTypeChange(change){
+                if(change === 'default'){
+                    this.room.coverUrl = '';
+                }
+                if(change === 'live'){
+                    this.room.coverUrl = 'live';
+                }
+            },
+            handleCoverSuccess(res, file) {
+                this.room.coverUrl = res.coverUrl;
+                let img = new Image();
+                img.src = res.coverUrl;
+                const isLtWH = img.width>1146 && img.height>717;
+                if(!isLtWH){
+                    this.room.coverUrl = '';
+                    this.$message.error('上传图片分辨率不低于1146*717');
+                }
+            },
+            beforeCoverUpload(file) {
+                const isLt2M = file.size / 1024 / 1024 < 2;
+                const isImg = file.type === 'image/jpeg' || file.type === 'image/png';
+                if (!isImg) {
+                    this.$message.error('上传图片只能是 JPG/PNG 格式!');
+                }
+
+                if (!isLt2M) {
+                    this.$message.error('上传图片大小不能超过 2MB!');
+                }
+                return isImg && isLt2M;
+            },
             initTable: function () {
                 let _this = this;
                 $.ajax({
@@ -255,6 +310,15 @@
                     type: 'post',
                     dataType: 'json',
                     success: function (data) {
+                        data.forEach(room =>{
+                            if(room.coverUrl === 'live'){
+                                room.coverType = 'live';
+                            }else if(typeof(room.coverUrl)=='string' && room.coverUrl.startsWith("http")){
+                                room.coverType = 'diy';
+                            }else {
+                                room.coverType = 'default';
+                            }
+                        })
                         _this.tableData = data;
                     }
                 });
@@ -288,5 +352,30 @@
         margin-right: 0;
         margin-bottom: 0;
         width: 50%;
+    }
+</style>
+<style>
+    .avatar-uploader .el-upload {
+        border: 1px dashed #d9d9d9;
+        border-radius: 6px;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+    .avatar-uploader .el-upload:hover {
+        border-color: #409EFF;
+    }
+    .avatar-uploader-icon {
+        font-size: 28px;
+        color: #8c939d;
+        width: 178px;
+        height: 178px;
+        line-height: 178px;
+        text-align: center;
+    }
+    .avatar {
+        width: 178px;
+        height: 178px;
+        display: block;
     }
 </style>

@@ -45,7 +45,7 @@ public class LiveMsgSendSync {
 
     private static final Lock lock = new ReentrantLock();
 
-    @Scheduled(cron = "0 * * * * ?")
+    // @Scheduled(cron = "0 * * * * ?")
     public void sndMsgProcess() {
         log.info("发送弹幕定时任务开始");
         long startTime = System.currentTimeMillis();

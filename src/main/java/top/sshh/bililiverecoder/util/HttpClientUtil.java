@@ -52,6 +52,21 @@ public class HttpClientUtil {
             throw new RuntimeException(e.getMessage());
         }
     }
+    public static String post(String url, Map<String, String> headers, RequestBody requestBody) {
+        try {
+            Request build = new Request.Builder()
+                    .headers(Headers.of(headers))
+                    .url(url)
+                    .post(requestBody)
+                    .build();
+            Response response = client.newCall(build).execute();
+            String string = response.body().string();
+            return string;
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e.getMessage());
+        }
+    }
 
     public static String post(String url, Map<String, String> headers,
                               Map<String, String> formParams,
@@ -106,9 +121,9 @@ public class HttpClientUtil {
         MultipartBody.Builder builder = new MultipartBody.Builder().setType(MultipartBody.FORM);
 
         params.forEach((k, v) -> {
-            if (v instanceof String)
+            if (v instanceof String) {
                 builder.addFormDataPart(k, (String) v);
-            else {
+            } else {
                 builder.addFormDataPart(k, "file", RequestBody.create((byte[]) v));
             }
         });

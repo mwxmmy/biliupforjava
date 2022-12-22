@@ -239,6 +239,7 @@ public class RecordBiliPublishService {
                         coverUrl = JsonPath.read(uploadCoverResponse, "data.url");
                     }catch (Exception e){
                         log.error("{}==>使用直播封面失败",room.getUname(),e);
+                        coverUrl = "";
                     }
                 }
                 VideoUploadDto videoUploadDto = new VideoUploadDto();

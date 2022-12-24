@@ -9,7 +9,12 @@ import top.sshh.bililiverecoder.entity.*;
 import top.sshh.bililiverecoder.repo.*;
 import top.sshh.bililiverecoder.service.impl.LiveMsgService;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -117,7 +122,8 @@ public class LiveMsgSendSync {
                 msgRepository.save(msg);
             }
             msgAllList = msgAllList.stream().filter(liveMsg -> liveMsg.getPool() == 0).sorted((m1, m2) -> (int) (m1.getSendTime() - m2.getSendTime())).collect(Collectors.toList());
-            Queue<LiveMsg> msgQueue = new LinkedList<>(msgAllList);
+            BlockingQueue<LiveMsg> msgQueue = new ArrayBlockingQueue<>(msgAllList.size());
+            msgQueue.addAll(msgAllList);
             AtomicInteger count = new AtomicInteger(0);
             log.info("即将开始普通弹幕发送操作，剩余待发送弹幕{}条。", msgQueue.size());
             allUser.stream().parallel().forEach(user -> {
@@ -126,7 +132,15 @@ public class LiveMsgSendSync {
                         log.error("弹幕发送超时，重新启动");
                         return;
                     }
-                    LiveMsg msg = msgQueue.poll();
+                    LiveMsg msg = null;
+                    try {
+                        msg = msgQueue.poll(10, TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    if (msg == null) {
+                        return;
+                    }
                     count.incrementAndGet();
                     user = userRepository.findByUid(user.getUid());
                     if (!(user.isLogin() && user.isEnable())) {

@@ -43,6 +43,14 @@ public class LiveMsg {
     private int fontsize = 25;
 
     /**
+     * 0：普通池
+     * 1：字幕池
+     * 2：特殊池（代码/BAS弹幕）
+     * 默认为0
+     */
+    private int pool = 0;
+
+    /**
      * 1：普通弹幕
      * 4：底部弹幕
      * 5：顶部弹幕
@@ -84,4 +92,23 @@ public class LiveMsg {
      */
     private int code = -1;
 
+
+    /**
+     * type: 1
+     * oid: 4498330
+     * msg: [0,0,"1-1",10,"暗夜sc：111111",0,1,50,50,500,0,1,"SimSun",0]
+     * progress: 1010
+     * color: 16776960
+     * fontsize: 40
+     * pool: 0
+     * mode: 7
+     * rnd: 2
+     * plat: 1
+     * aid: 2878892
+     * polaris_appid: 100
+     * polaris_platfrom: 5
+     * spmid: 333.788.0.0
+     * from_spmid:
+     * csrf: d6424937b906413a5e7f788936be09b2
+     */
 }

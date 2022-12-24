@@ -38,7 +38,7 @@ public class videoSyncJob {
 
 
     // 定时查询直播历史，每十分钟验证一下是否发布成功
-    @Scheduled(fixedDelay = 600000, initialDelay = 0)
+    @Scheduled(fixedDelay = 600000, initialDelay = 5000)
     public void syncVideo() {
         //查询出所有需要同步的录播记录
         log.info("同步视频分p cid 开始");

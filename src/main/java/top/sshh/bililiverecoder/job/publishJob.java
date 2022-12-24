@@ -34,7 +34,7 @@ public class publishJob {
 
 
     // 定时查询直播历史，如果下一次直播开始时间和上一次结束时间小于5min，视为同一次直播
-    @Scheduled(fixedDelay = 60000, initialDelay = 0)
+    @Scheduled(fixedDelay = 60000, initialDelay = 5000)
     public void publish() {
         log.info("视频上传定时任务开始");
         //查询出所有需要上传的房间

@@ -19,7 +19,6 @@ import top.sshh.bililiverecoder.entity.data.BiliVideoInfoResponse;
 import top.sshh.bililiverecoder.entity.data.VideoUploadDto;
 
 import javax.crypto.Cipher;
-import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -331,13 +330,14 @@ public class BiliApi {
         params.put("ts", "" + System.currentTimeMillis() / 1000);
         params.put("sign", sign(params, appSecret));
         params.put("type", "1");
+        params.put("pool", String.valueOf(msg.getPool()));
         params.put("oid", msg.getCid().toString());
         params.put("bvid", msg.getBvid());
         params.put("msg", msg.getContext());
         params.put("color", String.valueOf(msg.getColor()));
         params.put("fontsize", String.valueOf(msg.getFontsize()));
         params.put("progress", msg.getSendTime().toString());
-        params.put("mode", "1");
+        params.put("mode", String.valueOf(msg.getMode()));
         params.put("rnd", String.valueOf(System.currentTimeMillis() * 1000000));
         Map<String, String> headers = new HashMap<>();
         long currentSecond = Instant.now().getEpochSecond();

@@ -140,11 +140,88 @@ public class LiveMsgService {
 
                 //4.拿到根元素
                 Element rootElement = document.getRootElement();
+
+                List<LiveMsg> liveMsgs = new ArrayList<>();
+
+
+                // sc弹幕处理
+                List<Node> scNodes = rootElement.selectNodes("/i/sc");
+                for (Node node : scNodes) {
+                    DefaultElement element = (DefaultElement) node;
+                    String time = element.attribute("ts").getValue();
+                    long sendTime = (long) (Float.parseFloat(time) * 1000);
+                    String userName = element.attribute("user").getValue();
+                    String price = element.attribute("price").getValue();
+                    String text = element.getText();
+                    LiveMsg msg = new LiveMsg();
+                    msg.setPartId(part.getId());
+                    msg.setBvid(bvid);
+                    msg.setCid(part.getCid());
+                    msg.setSendTime(sendTime);
+                    msg.setMode(5);
+                    msg.setPool(1);
+                    msg.setFontsize(64);
+                    msg.setColor(16776960);
+                    StringBuilder builder = new StringBuilder();
+                    builder.append(userName).append("发送了").append(price).append("元留言：").append(text);
+                    if (builder.length() > 100) {
+                        text = builder.substring(0, 99);
+                    } else {
+                        text = builder.toString();
+                    }
+                    msg.setContext(text);
+                    liveMsgs.add(msg);
+                }
+
+                // sc弹幕处理
+                List<Node> guardNodes = rootElement.selectNodes("/i/guard");
+                for (Node node : guardNodes) {
+                    DefaultElement element = (DefaultElement) node;
+                    String time = element.attribute("ts").getValue();
+                    long sendTime = (long) (Float.parseFloat(time) * 1000);
+                    String userName = element.attribute("user").getValue();
+                    String level = element.attribute("level").getValue();
+                    String count = element.attribute("count").getValue();
+                    LiveMsg msg = new LiveMsg();
+                    msg.setPartId(part.getId());
+                    msg.setBvid(bvid);
+                    msg.setCid(part.getCid());
+                    msg.setSendTime(sendTime);
+                    msg.setMode(5);
+                    msg.setPool(1);
+                    msg.setColor(16776960);
+                    StringBuilder builder = new StringBuilder();
+                    builder.append(userName).append("开通了");
+                    if (Integer.parseInt(count) > 1) {
+                        builder.append(count).append("个月");
+                    }
+                    if ("1".equals(level)) {
+                        msg.setFontsize(64);
+                        builder.append("19998/月的总督");
+                    } else if ("2".equals(level)) {
+                        msg.setFontsize(64);
+                        builder.append("1998/月的提督");
+                    } else if ("3".equals(level)) {
+                        msg.setFontsize(64);
+                        builder.append("舰长");
+                    } else {
+                        builder.append("舰长");
+                    }
+                    String text;
+                    if (builder.length() > 100) {
+                        text = builder.substring(0, 99);
+                    } else {
+                        text = builder.toString();
+                    }
+                    msg.setContext(text);
+                    liveMsgs.add(msg);
+                }
+
+                // 普通弹幕处理
                 List<Node> nodes = rootElement.selectNodes("/i/d");
                 //限制每两秒钟最多一条弹幕
                 long time = 0;
                 BloomFilter<CharSequence> bloomFilter = BloomFilter.create(Funnels.stringFunnel(StandardCharsets.UTF_8), 1000000, 0.01);
-                List<LiveMsg> liveMsgs = new ArrayList<>();
                 for (Node node : nodes) {
                     DefaultElement element = (DefaultElement) node;
                     String userName = element.attribute("user").getValue();
@@ -171,26 +248,30 @@ public class LiveMsgService {
 
                     String value = element.attribute("p").getValue();
                     String[] values = value.split(",");
-                    long sendTime = (long) (Float.parseFloat(values[0]) * 1000);
+                    long sendTime = (long) (Float.parseFloat(values[0]) * 1000) - 10000L;
+                    if (sendTime < 0) {
+                        continue;
+                    }
                     int fontsize = Integer.parseInt(values[2]);
                     int color = Integer.parseInt(values[3]);
                     //白色弹幕需要调整间隔
-                    if(color == 1677215){
+                    if (color == 1677215) {
                         //如果显示时间超过当前时间，调整当前时间
-                        if (sendTime > time + 3000) {
+                        if (sendTime > time + 4000) {
                             time = (int) sendTime;
                         } else {
                             continue;
                         }
                     }
-                    if (!bloomFilter.mightContain(text)) {
-                        bloomFilter.put(text);
+                    if (bloomFilter.put(text)) {
                         LiveMsg msg = new LiveMsg();
                         msg.setPartId(part.getId());
                         msg.setBvid(bvid);
                         msg.setCid(part.getCid());
                         msg.setSendTime(sendTime);
                         msg.setFontsize(fontsize);
+                        msg.setMode(1);
+                        msg.setPool(0);
                         msg.setColor(color);
                         msg.setContext(text);
                         liveMsgs.add(msg);

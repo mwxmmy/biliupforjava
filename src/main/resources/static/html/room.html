@@ -125,6 +125,7 @@
                         :options="typeList"
                         :props="{label:'name',value:'id',emitPath:false}"
                         @change="typeChange(true)"
+                        clearable
                         filterable
                         placeholder="试试搜索：电子竞技"
                         ref="typeCascade"
@@ -1758,7 +1759,6 @@
                     this.room.copyrightDisabled = false;
                 }
                 if (node.copy_right === 2) {
-                    console.log(node.copy_right)
                     this.room.copyrightDisabled = true;
                     this.room.copyright = 2;
                 }

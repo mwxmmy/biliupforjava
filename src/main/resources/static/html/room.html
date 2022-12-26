@@ -145,8 +145,8 @@
             </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="是否自制">
                 <el-select :disabled="room.copyrightDisabled" placeholder="请选择" v-model="room.copyright">
-                    <el-option label="是" value="1"></el-option>
-                    <el-option label="否" value="2"></el-option>
+                    <el-option label="是" :value="1"></el-option>
+                    <el-option label="否" :value="2"></el-option>
                 </el-select>
             </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="标题模板">
@@ -166,15 +166,15 @@
 
             <el-form-item :label-width="formLabelWidth" label="删除文件">
                 <el-select placeholder="请选择" v-model="room.deleteType">
-                    <el-option label="不删除" value="0"></el-option>
-                    <el-option label="上传完成后删除" value="1"></el-option>
-                    <el-option label="发布成功后删除" value="2"></el-option>
+                    <el-option label="不删除" :value="0"></el-option>
+                    <el-option label="上传完成后删除" :value="1"></el-option>
+                    <el-option label="发布成功后删除" :value="2"></el-option>
                 </el-select>
             </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="是否上传">
                 <el-select placeholder="请选择" v-model="room.upload">
-                    <el-option label="是" value="true"></el-option>
-                    <el-option label="否" value="false"></el-option>
+                    <el-option label="是" :value="true"></el-option>
+                    <el-option label="否" :value="false"></el-option>
                 </el-select>
             </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="上传用户">

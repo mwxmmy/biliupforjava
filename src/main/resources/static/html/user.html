@@ -79,8 +79,8 @@
         <el-form :model="user">
             <el-form-item :label-width="formLabelWidth" label="是否启用弹幕发送">
                 <el-select placeholder="请选择" v-model="user.enable">
-                    <el-option label="是" value="true"></el-option>
-                    <el-option label="否" value="false"></el-option>
+                    <el-option label="是" :value="true"></el-option>
+                    <el-option label="否" :value="false"></el-option>
                 </el-select>
             </el-form-item>
         </el-form>

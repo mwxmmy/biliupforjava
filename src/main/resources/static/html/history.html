@@ -169,14 +169,14 @@
         <el-form :model="history">
             <el-form-item label="是否上传" label-width="80px">
                 <el-select placeholder="请选择" v-model="history.upload">
-                    <el-option label="是" value="true"></el-option>
-                    <el-option label="否" value="false"></el-option>
+                    <el-option label="是" :value="true"></el-option>
+                    <el-option label="否" :value="false"></el-option>
                 </el-select>
             </el-form-item>
             <el-form-item label="是否录制中" label-width="90px">
                 <el-select placeholder="请选择" v-model="history.recording">
-                    <el-option label="是" value="true"></el-option>
-                    <el-option label="否" value="false"></el-option>
+                    <el-option label="是" :value="true"></el-option>
+                    <el-option label="否" :value="false"></el-option>
                 </el-select>
             </el-form-item>
         </el-form>

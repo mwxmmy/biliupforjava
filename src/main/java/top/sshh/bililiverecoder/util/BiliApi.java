@@ -14,9 +14,7 @@ import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 import top.sshh.bililiverecoder.entity.BiliBiliUser;
 import top.sshh.bililiverecoder.entity.LiveMsg;
-import top.sshh.bililiverecoder.entity.data.BiliDmResponse;
-import top.sshh.bililiverecoder.entity.data.BiliVideoInfoResponse;
-import top.sshh.bililiverecoder.entity.data.VideoUploadDto;
+import top.sshh.bililiverecoder.entity.data.*;
 
 import javax.crypto.Cipher;
 import java.io.BufferedInputStream;
@@ -356,6 +354,64 @@ public class BiliApi {
         headers.put("app-key", "android64");
         String response = HttpClientUtil.post(url, headers, params, true);
         return JSON.parseObject(response, BiliDmResponse.class);
+    }
+
+    public static BiliReplyResponse sendVideoReply(BiliBiliUser user, BiliReply reply) {
+        String url = "https://api.bilibili.com/x/v2/reply/add";
+        Map<String, String> params = new TreeMap<>();
+        params.put("appkey", appKey);
+        params.put("access_key", user.getAccessToken());
+        params.put("build", "105301");
+        params.put("channel", "html5_app_bili");
+        params.put("mobi_app", "android");
+        params.put("platform", "android");
+        params.put("ts", "" + System.currentTimeMillis() / 1000);
+        params.put("sign", sign(params, appSecret));
+        params.put("type", reply.getType());
+        params.put("message", reply.getMessage());
+        params.put("oid", reply.getOid());
+        params.put("plat", "2");
+        Map<String, String> headers = new HashMap<>();
+        long currentSecond = Instant.now().getEpochSecond();
+        headers.put("Display-ID", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5-" + currentSecond);
+        headers.put("Buvid", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5");
+        headers.put("User-Agent", "Mozilla/5.0 BiliDroid/5.37.0 (bbcallen@gmail.com)");
+        headers.put("Device-ID", "aBRoDWAVeRhsA3FDewMzS3lLMwM");
+        headers.put("cookie", user.getCookies());
+        headers.put("x-bili-aurora-eid", "UlMFQVcABlAH");
+        headers.put("x-bili-aurora-zone", "sh001");
+        headers.put("app-key", "android64");
+        String response = HttpClientUtil.post(url, headers, params, true);
+        return JSON.parseObject(response, BiliReplyResponse.class);
+    }
+
+    public static BiliReplyResponse topVideoReply(BiliBiliUser user, BiliReply reply) {
+        String url = "https://api.bilibili.com/x/v2/reply/top";
+        Map<String, String> params = new TreeMap<>();
+        params.put("appkey", appKey);
+        params.put("access_key", user.getAccessToken());
+        params.put("build", "105301");
+        params.put("channel", "html5_app_bili");
+        params.put("mobi_app", "android");
+        params.put("platform", "android");
+        params.put("ts", "" + System.currentTimeMillis() / 1000);
+        params.put("sign", sign(params, appSecret));
+        params.put("type", reply.getType());
+        params.put("oid", reply.getOid());
+        params.put("rpid", reply.getRpid());
+        params.put("action", reply.getAction());
+        Map<String, String> headers = new HashMap<>();
+        long currentSecond = Instant.now().getEpochSecond();
+        headers.put("Display-ID", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5-" + currentSecond);
+        headers.put("Buvid", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5");
+        headers.put("User-Agent", "Mozilla/5.0 BiliDroid/5.37.0 (bbcallen@gmail.com)");
+        headers.put("Device-ID", "aBRoDWAVeRhsA3FDewMzS3lLMwM");
+        headers.put("cookie", user.getCookies());
+        headers.put("x-bili-aurora-eid", "UlMFQVcABlAH");
+        headers.put("x-bili-aurora-zone", "sh001");
+        headers.put("app-key", "android64");
+        String response = HttpClientUtil.post(url, headers, params, true);
+        return JSON.parseObject(response, BiliReplyResponse.class);
     }
 
 

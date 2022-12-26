@@ -251,11 +251,9 @@ public class BiliApi {
             RandomAccessFile r, long size, int nowChunk,
             int chunkNum) throws IOException {
         ShardingInputStream shardingInputStream = new ShardingInputStream(r,((nowChunk-1)*size),size);
-        BufferedInputStream bufferedInputStream = new BufferedInputStream(shardingInputStream);
-        bufferedInputStream.mark((int)size);
-        String md5 = DigestUtils.md5Hex(bufferedInputStream);
-        bufferedInputStream.reset();
+        String md5 = DigestUtils.md5Hex(shardingInputStream);
         shardingInputStream.reset();
+        BufferedInputStream bufferedInputStream = new BufferedInputStream(shardingInputStream);
         ChunkUploadRequestBody chunkUploadRequestBody = new ChunkUploadRequestBody(bufferedInputStream);
         shardingInputStream.reset();
         Map<String, Object> params = new LinkedHashMap<>();

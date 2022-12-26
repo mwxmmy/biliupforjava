@@ -47,8 +47,11 @@ public class RecordRoom {
 
     /**
      * 上传完成是否删除文件
+     * 0-不删除
+     * 1-上传完成删除
+     * 2-发布成功删除
      */
-    private boolean deleteFile = true;
+    private int deleteType = 0;
 
     private String sessionId;
 

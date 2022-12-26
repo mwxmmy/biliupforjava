@@ -52,7 +52,7 @@ public class RoomController {
             dbRoom.setCoverUrl(room.getCoverUrl());
             dbRoom.setFileSizeLimit(room.getFileSizeLimit());
             dbRoom.setDurationLimit(room.getDurationLimit());
-            dbRoom.setDeleteFile(room.isDeleteFile());
+            dbRoom.setDeleteType(room.getDeleteType());
             roomRepository.save(dbRoom);
             return true;
         }

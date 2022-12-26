@@ -184,8 +184,8 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                             part.setUpload(true);
                             part.setUpdateTime(LocalDateTime.now());
                             part = partRepository.save(part);
-                            //如果配置上传删除，则删除文件
-                            if (room.isDeleteFile()) {
+                            //如果配置上传完成删除，则删除文件
+                            if (room.getDeleteType()==1) {
                                 boolean delete = uploadFile.delete();
                                 if (delete) {
                                     log.error("{}=>文件删除成功！！！", filePath);

@@ -6,4 +6,4 @@ EXPOSE 80
 
 RUN bash -c 'touch /ROOT.war'
 ENV JAVA_OPTS = ""
-ENTRYPOINT java ${JAVA_OPTS} -XX:+UseZGC -XX:MaxRAMPercentage=75.0 -Duser.timezone=Asia/Shanghai -Djava.security.egd=file:/dev/./urandom -jar /ROOT.war
+ENTRYPOINT java ${JAVA_OPTS} -XX:+UseZGC -XX:MinRAMPercentage=75.0 -XX:MaxRAMPercentage=75.0 -Duser.timezone=Asia/Shanghai -Djava.security.egd=file:/dev/./urandom -jar /ROOT.war

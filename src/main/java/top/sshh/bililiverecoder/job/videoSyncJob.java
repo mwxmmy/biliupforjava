@@ -63,6 +63,7 @@ public class videoSyncJob {
                         if(recordRoom != null && recordRoom.getDeleteType() == 2){
                             File file = new File(part.getFilePath());
                             file.deleteOnExit();
+                            log.error("{}=>文件删除成功！！！", part.getFilePath());
                         }
                         //解析弹幕入库
                         liveMsgService.processing(part);

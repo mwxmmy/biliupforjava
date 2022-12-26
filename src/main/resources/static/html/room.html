@@ -67,15 +67,6 @@
             </template>
         </el-table-column>
         <el-table-column
-                label="删除文件"
-                prop="deleteFile"
-                width="120">
-            <template slot-scope="scope">
-                <el-button circle class="el-icon-check" type="success" v-if="scope.row.deleteFile"></el-button>
-                <el-button circle class="el-icon-close" type="danger" v-if="!scope.row.deleteFile"></el-button>
-            </template>
-        </el-table-column>
-        <el-table-column
                 label="录制中"
                 prop="recording"
                 width="100">
@@ -91,6 +82,16 @@
             <template slot-scope="scope">
                 <el-button circle class="el-icon-check" type="success" v-if="scope.row.upload"></el-button>
                 <el-button circle class="el-icon-close" type="danger" v-if="!scope.row.upload"></el-button>
+            </template>
+        </el-table-column>
+        <el-table-column
+                label="删除文件"
+                prop="deleteFile"
+                width="120">
+            <template slot-scope="scope">
+                <span v-if="scope.row.deleteType == 0">不删除</span>
+                <span v-if="scope.row.deleteType == 1">上传完成后删除</span>
+                <span v-if="scope.row.deleteType == 2">发布成功后删除</span>
             </template>
         </el-table-column>
         <el-table-column
@@ -164,9 +165,10 @@
             </el-form-item>
 
             <el-form-item :label-width="formLabelWidth" label="删除文件">
-                <el-select placeholder="请选择" v-model="room.deleteFile">
-                    <el-option label="是" value="true"></el-option>
-                    <el-option label="否" value="false"></el-option>
+                <el-select placeholder="请选择" v-model="room.deleteType">
+                    <el-option label="不删除" value="0"></el-option>
+                    <el-option label="上传完成后删除" value="1"></el-option>
+                    <el-option label="发布成功后删除" value="2"></el-option>
                 </el-select>
             </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="是否上传">

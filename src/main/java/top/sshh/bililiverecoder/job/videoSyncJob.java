@@ -7,6 +7,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import top.sshh.bililiverecoder.entity.RecordHistory;
 import top.sshh.bililiverecoder.entity.RecordHistoryPart;
+import top.sshh.bililiverecoder.entity.RecordRoom;
 import top.sshh.bililiverecoder.entity.data.BiliVideoInfoResponse;
 import top.sshh.bililiverecoder.repo.RecordHistoryPartRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
@@ -15,6 +16,7 @@ import top.sshh.bililiverecoder.service.impl.LiveMsgService;
 import top.sshh.bililiverecoder.service.impl.RecordBiliPublishService;
 import top.sshh.bililiverecoder.util.BiliApi;
 
+import java.io.File;
 import java.util.List;
 
 @Slf4j
@@ -47,6 +49,7 @@ public class videoSyncJob {
             next.setCode(videoInfoResponse.getCode());
             next = historyRepository.save(next);
             if (videoInfoResponse.getCode() == 0) {
+                RecordRoom recordRoom = roomRepository.findByRoomId(next.getRoomId());
                 List<BiliVideoInfoResponse.BiliVideoInfoPart> pages = videoInfoResponse.getData().getPages();
                 for (BiliVideoInfoResponse.BiliVideoInfoPart page : pages) {
                     RecordHistoryPart part = partRepository.findByHistoryIdAndTitle(next.getId(), page.getPart());
@@ -56,6 +59,11 @@ public class videoSyncJob {
                         part.setDuration(page.getDuration());
                         part = partRepository.save(part);
 
+                        //如果配置成发布完成后删除则删除文件
+                        if(recordRoom != null && recordRoom.getDeleteType() == 2){
+                            File file = new File(part.getFilePath());
+                            file.deleteOnExit();
+                        }
                         //解析弹幕入库
                         liveMsgService.processing(part);
                         log.info("同步视频分p 成功==>{}", JSON.toJSONString(part));

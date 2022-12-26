@@ -19,6 +19,8 @@ public class RecordHistory {
     @Transient
     private String roomName;
 
+    private String avId;
+
     private String bvId;
 
     private String title;
@@ -39,6 +41,9 @@ public class RecordHistory {
 
     // 是否发布成功
     private boolean publish;
+
+    //是否已发布评论
+    private boolean sendReply;
 
     private int code = -1;
 

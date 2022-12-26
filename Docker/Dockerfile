@@ -5,5 +5,5 @@ ADD ROOT.war /ROOT.war
 EXPOSE 80
 
 RUN bash -c 'touch /ROOT.war'
-
-CMD ["java","-Djava.security.egd=file:/dev/./urandom","-XX:+UseZGC","-XX:MaxRAMPercentage=75.0", "-Duser.timezone=Asia/Shanghai","-jar","/ROOT.war"]
+ENV JAVA_OPTS = ""
+ENTRYPOINT java ${JAVA_OPTS} -XX:+UseZGC -Duser.timezone=Asia/Shanghai -Djava.security.egd=file:/dev/./urandom -jar /ROOT.war

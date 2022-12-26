@@ -6,4 +6,4 @@ EXPOSE 80
 
 RUN bash -c 'touch /ROOT.war'
 
-CMD ["java","-Djava.security.egd=file:/dev/./urandom","-XX:+UseZGC","-XX:+UnlockExperimentalVMOptions","-XX:+UseCGroupMemoryLimitForHeap","-XX:MaxRAMPercentage=75.0", "-Duser.timezone=Asia/Shanghai","-jar","/ROOT.war"]
+CMD ["java","-Djava.security.egd=file:/dev/./urandom","-XX:+UseZGC","-XX:MaxRAMPercentage=75.0", "-Duser.timezone=Asia/Shanghai","-jar","/ROOT.war"]

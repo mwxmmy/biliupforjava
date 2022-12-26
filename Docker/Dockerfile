@@ -1,9 +1,8 @@
-FROM anapsix/alpine-java:8_server-jre
+FROM khipu/openjdk17-alpine
 
 ADD ROOT.war /ROOT.war
 
 EXPOSE 80
 
 RUN bash -c 'touch /ROOT.war'
-
-CMD ["java","-Djava.security.egd=file:/dev/./urandom","-Xmx128m","-Xms64m", "-Duser.timezone=Asia/Shanghai","-jar","/ROOT.war"]
+ENTRYPOINT java -XX:+UseZGC -XX:MinRAMPercentage=75.0 -XX:MaxRAMPercentage=75.0 -Duser.timezone=Asia/Shanghai -Djava.security.egd=file:/dev/./urandom -jar /ROOT.war

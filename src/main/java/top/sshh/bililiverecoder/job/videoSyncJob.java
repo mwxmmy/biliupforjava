@@ -62,7 +62,12 @@ public class videoSyncJob {
                         //如果配置成发布完成后删除则删除文件
                         if(recordRoom != null && recordRoom.getDeleteType() == 2){
                             File file = new File(part.getFilePath());
-                            file.deleteOnExit();
+                            boolean delete = file.delete();
+                            if(delete){
+                                log.error("{}=>文件删除成功！！！", part.getFilePath());
+                            }else {
+                                log.error("{}=>文件删除失败！！！", part.getFilePath());
+                            }
                         }
                         //解析弹幕入库
                         liveMsgService.processing(part);

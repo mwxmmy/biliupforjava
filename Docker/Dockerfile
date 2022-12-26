@@ -1,4 +1,4 @@
-FROM khipu/openjdk17-alpine
+FROM openjdk:17.0.2-oraclelinux8
 
 ADD ROOT.war /ROOT.war
 

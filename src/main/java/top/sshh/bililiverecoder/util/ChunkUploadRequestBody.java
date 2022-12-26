@@ -37,6 +37,6 @@ public class ChunkUploadRequestBody extends RequestBody {
     @Override
     public void writeTo(@NotNull BufferedSink bufferedSink) throws IOException {
         Source source = Okio.source(in);
-        bufferedSink.write(source,in.available());
+        bufferedSink.writeAll(source);
     }
 }

@@ -92,6 +92,7 @@ public class ShardingInputStream extends InputStream {
     public synchronized void reset() {
         try {
             this.in.seek(start);
+            this.hasLength = this.length;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

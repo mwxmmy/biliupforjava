@@ -3,8 +3,14 @@ package top.sshh.bililiverecoder.util;
 import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
+import okio.BufferedSink;
+import okio.Okio;
+import okio.Source;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.util.Collections;
@@ -124,7 +130,7 @@ public class HttpClientUtil {
             if (v instanceof String) {
                 builder.addFormDataPart(k, (String) v);
             } else {
-                builder.addFormDataPart(k, "file", RequestBody.create((byte[]) v));
+                builder.addFormDataPart(k, "file", (RequestBody)v);
             }
         });
 

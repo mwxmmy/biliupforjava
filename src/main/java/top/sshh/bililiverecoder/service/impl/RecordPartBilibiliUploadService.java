@@ -130,15 +130,8 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                                     int tryCount = 0;
                                     while (tryCount < 5) {
                                         try {
-                                            r.seek(finalI * chunkSize);
-                                            byte[] bytes = new byte[(int) chunkSize];
-                                            int read = r.read(bytes);
-                                            if (read == -1) {
-                                                break;
-                                            }
-                                            if (read != bytes.length)
-                                                bytes = ArrayUtils.subarray(bytes, 0, read);
-                                            String s = BiliApi.uploadChunk(url, filename, bytes, read,
+                                            // 上传
+                                            String s = BiliApi.uploadChunk(url, filename, r, chunkSize,
                                                     finalI + 1, (int) chunkNum);
                                             if (!s.contains("OK")) {
                                                 throw new RuntimeException("上传返回异常");

@@ -19,7 +19,9 @@ import top.sshh.bililiverecoder.entity.data.BiliVideoInfoResponse;
 import top.sshh.bililiverecoder.entity.data.VideoUploadDto;
 
 import javax.crypto.Cipher;
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -246,16 +248,23 @@ public class BiliApi {
     public static String uploadChunk(
             String uploadUrl,
             String fileName,
-            byte[] bytes, long size, int nowChunk,
-            int chunkNum) throws ExecutionException, InterruptedException, IOException {
-        String md5 = DigestUtils.md5Hex(bytes);
+            RandomAccessFile r, long size, int nowChunk,
+            int chunkNum) throws IOException {
+        ShardingInputStream shardingInputStream = new ShardingInputStream(r,((nowChunk-1)*size),size);
+        BufferedInputStream bufferedInputStream = new BufferedInputStream(shardingInputStream);
+        bufferedInputStream.mark((int)size);
+        String md5 = DigestUtils.md5Hex(bufferedInputStream);
+        bufferedInputStream.reset();
+        shardingInputStream.reset();
+        ChunkUploadRequestBody chunkUploadRequestBody = new ChunkUploadRequestBody(bufferedInputStream);
+        shardingInputStream.reset();
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("version", "2.0.0.1054");
         params.put("filesize", "" + size);
         params.put("chunk", "" + nowChunk);
         params.put("chunks", "" + chunkNum);
         params.put("md5", md5);
-        params.put("file", bytes);
+        params.put("file", chunkUploadRequestBody);
         Map<String, String> headers = new HashMap<>();
         headers.put("Cookie", "PHPSESSID=" + fileName);
         return HttpClientUtil.upload(uploadUrl, headers, params);

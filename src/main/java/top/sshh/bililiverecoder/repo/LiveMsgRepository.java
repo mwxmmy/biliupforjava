@@ -11,6 +11,14 @@ public interface LiveMsgRepository extends CrudRepository<LiveMsg, Long> {
 
     List<LiveMsg> findByPartIdAndCode(Long partId, int code);
 
+    /**
+     * 查询字幕池弹幕
+     * @param partId
+     * @param pool
+     * @return
+     */
+    List<LiveMsg> findByPartIdAndPoolOrderBySendTimeAsc(Long partId, int pool);
+
     int countByPartId(Long partId);
 
     int countByBvid(String bvId);

@@ -82,7 +82,7 @@ public class RecordBiliPublishService {
             log.error("视频没有设置分区，退出==>{}", JSON.toJSONString(history));
             return false;
         }
-        List<RecordHistoryPart> uploadParts = partRepository.findByHistoryId(history.getId());
+        List<RecordHistoryPart> uploadParts = partRepository.findByHistoryIdOrderByStartTimeAsc(history.getId());
         if (uploadParts.size() == 0) {
             log.info("发布视频事件分p不能为空，删除分p：{}", JSON.toJSONString(history));
             historyRepository.delete(history);
@@ -154,7 +154,7 @@ public class RecordBiliPublishService {
         }
         int preSize = uploadParts.size();
         //重新加载上传列表
-        uploadParts = partRepository.findByHistoryId(history.getId());
+        uploadParts = partRepository.findByHistoryIdOrderByStartTimeAsc(history.getId());
         if(preSize != uploadParts.size()){
             log.error("发布视频事件错误，分p数量发生变动==>{}", JSON.toJSONString(history));
         }
@@ -214,9 +214,11 @@ public class RecordBiliPublishService {
                 map.put("${roomId}", room.getRoomId());
                 map.put("${areaName}", "");
                 List<SingleVideoDto> dtos = new ArrayList<>();
-                for (RecordHistoryPart uploadPart : uploadParts) {
+                for (int i = 0; i < uploadParts.size(); i++) {
+                    RecordHistoryPart uploadPart = uploadParts.get(i);
                     SingleVideoDto dto = new SingleVideoDto();
                     map.put("date", uploadPart.getStartTime());
+                    map.put("${index}", i+1);
                     map.put("${areaName}", uploadPart.getAreaName());
                     dto.setTitle(this.template(room.getPartTitleTemplate(), map));
                     //同步标题

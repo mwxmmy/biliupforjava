@@ -94,4 +94,12 @@ public class DmTest {
             log.info("调用置顶评论接口返回：{}", JSON.toJSONString(replyResponse));
         }
     }
+
+    // @Test
+    public void ascTest(){
+        List<RecordHistoryPart> parts = partRepository.findByHistoryIdOrderByStartTimeAsc(3529L);
+        for (RecordHistoryPart part : parts) {
+            log.info(JSON.toJSONString(part));
+        }
+    }
 }

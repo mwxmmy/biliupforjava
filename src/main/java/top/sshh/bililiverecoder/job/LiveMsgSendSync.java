@@ -1,17 +1,21 @@
 package top.sshh.bililiverecoder.job;
 
+import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import top.sshh.bililiverecoder.entity.*;
+import top.sshh.bililiverecoder.entity.data.BiliReply;
+import top.sshh.bililiverecoder.entity.data.BiliReplyResponse;
 import top.sshh.bililiverecoder.repo.*;
 import top.sshh.bililiverecoder.service.impl.LiveMsgService;
+import top.sshh.bililiverecoder.util.BiliApi;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -52,9 +56,89 @@ public class LiveMsgSendSync {
         if (CollectionUtils.isEmpty(historyList)) {
             return;
         }
+
+        DateFormat format = new SimpleDateFormat("HH:mm:ss");
+        format.setTimeZone(TimeZone.getTimeZone("UTC"));
         List<RecordHistoryPart> partList = new ArrayList<>();
         for (RecordHistory history : historyList) {
-            List<RecordHistoryPart> parts = partRepository.findByHistoryIdAndCidIsNotNull(history.getId());
+            List<RecordHistoryPart> parts = partRepository.findByHistoryIdAndCidIsNotNullOrderByPageAsc(history.getId());
+            //如果没有发送评论
+            if(!history.isSendReply()) {
+                RecordRoom room = roomRepository.findByRoomId(history.getRoomId());
+                BiliBiliUser user = null;
+                if (room != null) {
+                    Long uploadUserId = room.getUploadUserId();
+                    Optional<BiliBiliUser> userOptional = userRepository.findById(uploadUserId);
+                    if (userOptional.isPresent()) {
+                        user = userOptional.get();
+                        if (!(user.isLogin() && user.isEnable())) {
+                            continue;
+                        }
+                    }
+                }
+                List<BiliReply> replies = new ArrayList<>();
+                StringBuilder context = new StringBuilder();
+                context.append("sc和上舰列表\n");
+                for (RecordHistoryPart part : parts) {
+                    List<LiveMsg> msgList = msgRepository.findByPartIdAndPoolOrderBySendTimeAsc(part.getId(), 1);
+                    for (LiveMsg liveMsg : msgList) {
+                        StringBuilder builder = new StringBuilder();
+                        builder.append(part.getPage()).append('#').append(format.format(new Date(liveMsg.getSendTime()))).append("  ").append(liveMsg.getContext()).append('\n');
+                        //发送限制为1000
+                        if(context.length()+builder.length()>1000){
+                            BiliReply reply = new BiliReply();
+                            reply.setType("1");
+                            reply.setOid(history.getAvId());
+                            reply.setAction("1");
+                            reply.setMessage(context.toString());
+                            replies.add(reply);
+                            //重置
+                            context = new StringBuilder();
+                            context.append("sc和上舰列表\n");
+                        }
+                        context.append(builder);
+                    }
+                }
+                if(context.length()>10){
+                    BiliReply reply = new BiliReply();
+                    reply.setType("1");
+                    reply.setOid(history.getAvId());
+                    reply.setAction("1");
+                    reply.setMessage(context.toString());
+                    replies.add(reply);
+                }
+                try {
+                    for (int i = 0; i < replies.size(); i++) {
+                        BiliReply reply = replies.get(i);
+                        BiliReplyResponse replyResponse = BiliApi.sendVideoReply(user,reply);
+                        if(replyResponse.getCode() == 0){
+                            log.info("av{}发送评论成功：{}",reply.getOid(),reply.getMessage());
+                            history.setSendReply(true);
+                            history = historyRepository.save(history);
+                            //第一个评论进行置顶操作
+                            if(i == 0){
+                                //等待一段时间，否则无法置顶
+                                Thread.sleep(2000L);
+                                reply.setRpid(replyResponse.getData().getRpid());
+                                reply.setAction("1");
+                                BiliReplyResponse response = BiliApi.topVideoReply(user, reply);
+                                if(response.getCode() != 0){
+                                    log.error("av{}评论置顶失败：{}",reply.getOid(),JSON.toJSONString(response));
+                                }
+                                if(response.getCode() == 404){
+                                    //等待一段时间，否则无法置顶
+                                    Thread.sleep(2000L);
+                                    BiliApi.topVideoReply(user, reply);
+                                }
+                            }
+                        }
+                        //等待一段时间在发送
+                        Thread.sleep(5000L);
+                    }
+                }catch (Exception e){
+                    log.error("发送sc评论失败：{}", JSON.toJSONString(replies),e);
+                }
+            }
             partList.addAll(parts);
         }
         if (CollectionUtils.isEmpty(partList)) {
@@ -84,7 +168,7 @@ public class LiveMsgSendSync {
                 return;
             }
             //高优先级弹幕，如sc,舰长，只能由视频发布账号发送
-            List<LiveMsg> highLevelMsg = msgAllList.stream().filter(liveMsg -> liveMsg.getPool() == 1).sorted((m1, m2) -> (int) (m1.getSendTime() - m2.getSendTime())).collect(Collectors.toList());
+            List<LiveMsg> highLevelMsg = msgAllList.stream().filter(liveMsg -> liveMsg.getPool() == 1).sorted((m1, m2) -> (int)(m1.getSendTime() - m2.getSendTime())).toList();
             log.info("即将开始高级弹幕发送操作，剩余待发送弹幕{}条。", highLevelMsg.size());
             for (LiveMsg msg : highLevelMsg) {
                 Long partId = msg.getPartId();

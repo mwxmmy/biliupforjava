@@ -125,7 +125,7 @@ public class HistoryController {
             RecordHistory history = historyOptional.get();
             List<LiveMsg> liveMsgs = msgRepository.queryByBvid(history.getBvId());
             msgRepository.deleteAll(liveMsgs);
-            List<RecordHistoryPart> partList = partRepository.findByHistoryId(history.getId());
+            List<RecordHistoryPart> partList = partRepository.findByHistoryIdOrderByStartTimeAsc(history.getId());
             partRepository.deleteAll(partList);
             historyRepository.delete(history);
             result.put("type", "success");
@@ -172,7 +172,7 @@ public class HistoryController {
         Optional<RecordHistory> historyOptional = historyRepository.findById(id);
         if (historyOptional.isPresent()) {
             RecordHistory history = historyOptional.get();
-            List<RecordHistoryPart> partList = partRepository.findByHistoryId(history.getId());
+            List<RecordHistoryPart> partList = partRepository.findByHistoryIdOrderByStartTimeAsc(history.getId());
             for (RecordHistoryPart part : partList) {
                 part.setRecording(false);
                 partRepository.save(part);

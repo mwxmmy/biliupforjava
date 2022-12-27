@@ -78,7 +78,7 @@ public class LiveMsgSendSync {
                 }
                 List<BiliReply> replies = new ArrayList<>();
                 StringBuilder context = new StringBuilder();
-                context.append("sc和上舰列表\n");
+                context.append("sc和上舰列表,网页可跳转\n");
                 for (RecordHistoryPart part : parts) {
                     List<LiveMsg> msgList = msgRepository.findByPartIdAndPoolOrderBySendTimeAsc(part.getId(), 1);
                     for (LiveMsg liveMsg : msgList) {
@@ -94,12 +94,12 @@ public class LiveMsgSendSync {
                             replies.add(reply);
                             //重置
                             context = new StringBuilder();
-                            context.append("sc和上舰列表\n");
+                            context.append("sc和上舰列表,网页可跳转\n");
                         }
                         context.append(builder);
                     }
                 }
-                if(context.length()>10){
+                if(context.length()>20){
                     BiliReply reply = new BiliReply();
                     reply.setType("1");
                     reply.setOid(history.getAvId());

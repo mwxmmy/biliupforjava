@@ -13,7 +13,7 @@ public interface RecordHistoryPartRepository extends CrudRepository<RecordHistor
 
     RecordHistoryPart findByHistoryIdAndTitle(Long historyId, String title);
 
-    List<RecordHistoryPart> findByHistoryId(Long historyId);
+    List<RecordHistoryPart> findByHistoryIdOrderByStartTimeAsc(Long historyId);
 
     List<RecordHistoryPart> findByHistoryIdAndCidIsNotNullOrderByPageAsc(Long historyId);
 

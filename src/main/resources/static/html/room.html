@@ -14,6 +14,13 @@
                         <span v-if="props.row.coverType==='live'">直播封面</span>
                         <span v-if="props.row.coverType==='diy'">自定义上传</span>
                     </el-form-item>
+                    <el-form-item label="消息通知用户">
+                        <span v-if="props.row.wxuid == null || props.row.wxuid == '' || props.row.wxuid == 'undefined'">不通知</span>
+                        <span v-if="props.row.wxuid != null && props.row.wxuid != '' && props.row.wxuid != 'undefined'">{{props.row.wxuid}}}</span>
+                    </el-form-item>
+                    <el-form-item label="消息通知类型">
+                        <span>{{ props.row.pushMsgTags }}</span>
+                    </el-form-item>
                     <el-form-item label="忽略小分片">
                         <span>{{ props.row.fileSizeLimit }}MB(小于该大小的分片会直接删除)</span>
                     </el-form-item>
@@ -164,6 +171,16 @@
                 <el-input autocomplete="off" v-model="room.tags"></el-input>
             </el-form-item>
 
+            <el-form-item :label-width="formLabelWidth" label="微信消息uid">
+                <el-button
+                        @click="wxDialogVisible = true" size="mini"
+                        type="primary">微信扫码获取uid
+                </el-button>
+                <el-input autocomplete="off" v-model="room.wxuid"></el-input>
+            </el-form-item>
+            <el-form-item :label-width="formLabelWidth" label="微信消息类型">
+                <el-input autocomplete="off" v-model="room.pushMsgTags"></el-input>
+            </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="删除文件">
                 <el-select placeholder="请选择" v-model="room.deleteType">
                     <el-option label="不删除" :value="0"></el-option>
@@ -222,6 +239,16 @@
         <div class="dialog-footer" slot="footer">
             <el-button @click="addRoomDialog = false">取 消</el-button>
             <el-button @click="addRoomF()" type="primary">确 定</el-button>
+        </div>
+    </el-dialog>
+
+    <el-dialog :visible.sync="wxDialogVisible" title="微信关注扫码获取uid">
+        <el-image
+                src="https://wxpusher.zjiecode.com/api/qrcode/gg2nIKVGMMp1paStVFVtFWrdoQFWHCymwGVXXTStk5c4k8Dp4DSQFNRJAKwtLZ7G.jpg" fit="fill"
+                justify="center"
+                style="width: 250px; height: 250px"></el-image>
+        <div class="dialog-footer" slot="footer">
+            <el-button @click="wxDialogVisible = false" type="primary">关 闭</el-button>
         </div>
     </el-dialog>
 </div>
@@ -1696,6 +1723,7 @@
             ],
             formLabelWidth: '160px',
             dialogFormVisible: false,
+            wxDialogVisible: false,
             addRoomDialog: false,
             room: {},
             addRoom: {},

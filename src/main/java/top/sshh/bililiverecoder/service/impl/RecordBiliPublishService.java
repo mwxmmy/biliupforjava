@@ -2,9 +2,12 @@ package top.sshh.bililiverecoder.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.jayway.jsonpath.JsonPath;
+import com.zjiecode.wxpusher.client.WxPusher;
+import com.zjiecode.wxpusher.client.bean.Message;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import top.sshh.bililiverecoder.entity.BiliBiliUser;
@@ -31,6 +34,16 @@ import java.util.*;
 @Component
 public class RecordBiliPublishService {
 
+    @Value("${record.wx-push-token}")
+    private String wxToken;
+
+    private static final String WX_MSG_FORMAT= """
+            收到主播%s投稿事件
+            房间名: %s
+            时间: %s
+            投稿结果: %s
+            原因: %s
+            """;
     @Autowired
     private BiliUserRepository biliUserRepository;
     @Autowired
@@ -74,6 +87,8 @@ public class RecordBiliPublishService {
         TaskUtil.publishTask.put(history.getId(), Thread.currentThread());
 
         RecordRoom room = roomRepository.findByRoomId(history.getRoomId());
+        String wxuid = room.getWxuid();
+        String pushMsgTags = room.getPushMsgTags();
         log.info("发布视频事件开始：{}", room.getUname());
 
         if (room.getTid() == null) {
@@ -157,6 +172,17 @@ public class RecordBiliPublishService {
         uploadParts = partRepository.findByHistoryIdOrderByStartTimeAsc(history.getId());
         if(preSize != uploadParts.size()){
             log.error("发布视频事件错误，分p数量发生变动==>{}", JSON.toJSONString(history));
+            if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("视频投稿")){
+                Message message = new Message();
+                message.setAppToken(wxToken);
+                message.setContentType(Message.CONTENT_TYPE_TEXT);
+                message.setContent(WX_MSG_FORMAT.formatted(room.getUname(),room.getTitle(),
+                       LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
+                        "投稿失败","分p数量发生变动"));
+                message.setUid(wxuid);
+                WxPusher.send(message);
+            }
+            return false;
         }
         long count = uploadParts.stream().filter(RecordHistoryPart::isUpload).count();
         if (count != uploadParts.size()) {
@@ -198,6 +224,16 @@ public class RecordBiliPublishService {
                     biliBiliUser.setLogin(false);
                     biliBiliUser = biliUserRepository.save(biliBiliUser);
                     TaskUtil.publishTask.remove(history.getId());
+                    if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("视频投稿")){
+                        Message message = new Message();
+                        message.setAppToken(wxToken);
+                        message.setContentType(Message.CONTENT_TYPE_TEXT);
+                        message.setContent(WX_MSG_FORMAT.formatted(room.getUname(),room.getTitle(),
+                                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
+                                "投稿失败",biliBiliUser.getUname()+"登录已过期，请重新登录"));
+                        message.setUid(wxuid);
+                        WxPusher.send(message);
+                    }
                     throw new RuntimeException("{}登录已过期，请重新登录! " + biliBiliUser.getUname());
                 }
 
@@ -266,10 +302,30 @@ public class RecordBiliPublishService {
                     history.setPublish(true);
                     history = historyRepository.save(history);
                     log.info("发布={}=视频成功 == > {}", room.getUname(), JSON.toJSONString(history));
+                    if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("视频投稿")){
+                        Message message = new Message();
+                        message.setAppToken(wxToken);
+                        message.setContentType(Message.CONTENT_TYPE_TEXT);
+                        message.setContent(WX_MSG_FORMAT.formatted(room.getUname(),room.getTitle(),
+                                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
+                                "投稿成功",""));
+                        message.setUid(wxuid);
+                        WxPusher.send(message);
+                    }
                 } catch (Exception e) {
                     history.setUploadRetryCount(history.getUploadRetryCount() + 1);
                     history = historyRepository.save(history);
                     log.info("发布={}=视频失败 == > {}", room.getUname(), JSON.toJSONString(history), e);
+                    if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("视频投稿")){
+                        Message message = new Message();
+                        message.setAppToken(wxToken);
+                        message.setContentType(Message.CONTENT_TYPE_TEXT);
+                        message.setContent(WX_MSG_FORMAT.formatted(room.getUname(),room.getTitle(),
+                                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
+                                "投稿失败",e.getMessage()));
+                        message.setUid(wxuid);
+                        WxPusher.send(message);
+                    }
                 } finally {
                     TaskUtil.publishTask.remove(history.getId());
                 }

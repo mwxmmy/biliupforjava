@@ -1,8 +1,12 @@
 package top.sshh.bililiverecoder.job;
 
 import com.alibaba.fastjson.JSON;
+import com.zjiecode.wxpusher.client.WxPusher;
+import com.zjiecode.wxpusher.client.bean.Message;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -15,6 +19,8 @@ import top.sshh.bililiverecoder.util.BiliApi;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -28,6 +34,18 @@ import java.util.stream.Collectors;
 @Component
 public class LiveMsgSendSync {
 
+    @Value("${record.wx-push-token}")
+    private String wxToken;
+    private static final String WX_MSG_FORMAT= """
+            收到弹幕评论发送事件
+            主播名: %s
+            房间名: %s
+            BV号: %s
+            时间: %s
+            发送内容: %s
+            发送结果: %s
+            原因: %s
+            """;
     @Autowired
     private BiliUserRepository userRepository;
 
@@ -65,8 +83,12 @@ public class LiveMsgSendSync {
             //如果没有发送评论
             if(!history.isSendReply()) {
                 RecordRoom room = roomRepository.findByRoomId(history.getRoomId());
+                String wxuid = null;
+                String pushMsgTags = null;
                 BiliBiliUser user = null;
                 if (room != null) {
+                    wxuid = room.getWxuid();
+                    pushMsgTags = room.getPushMsgTags();
                     Long uploadUserId = room.getUploadUserId();
                     Optional<BiliBiliUser> userOptional = userRepository.findById(uploadUserId);
                     if (userOptional.isPresent()) {
@@ -131,12 +153,41 @@ public class LiveMsgSendSync {
                                     BiliApi.topVideoReply(user, reply);
                                 }
                             }
+
+                            try {
+                                if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("视频评论")){
+                                    Message message = new Message();
+                                    message.setAppToken(wxToken);
+                                    message.setContentType(Message.CONTENT_TYPE_TEXT);
+                                    message.setContent(WX_MSG_FORMAT.formatted(room.getUname(),history.getTitle(),history.getBvId(),
+                                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
+                                            reply.getMessage(),"发送成功",user.getUname()+""));
+                                    message.setUid(wxuid);
+                                    WxPusher.send(message);
+                                }
+                            }catch (Exception ignored){
+
+                            }
                         }
                         //等待一段时间在发送
                         Thread.sleep(5000L);
                     }
                 }catch (Exception e){
                     log.error("发送sc评论失败：{}", JSON.toJSONString(replies),e);
+                    try {
+                        if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("视频评论")){
+                            Message message = new Message();
+                            message.setAppToken(wxToken);
+                            message.setContentType(Message.CONTENT_TYPE_TEXT);
+                            message.setContent(WX_MSG_FORMAT.formatted(room.getUname(),history.getTitle(),history.getBvId(),
+                                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
+                                    JSON.toJSONString(replies),"发送失败",e.getMessage()));
+                            message.setUid(wxuid);
+                            WxPusher.send(message);
+                        }
+                    }catch (Exception ignored){
+
+                    }
                 }
             }
             partList.addAll(parts);
@@ -178,6 +229,8 @@ public class LiveMsgSendSync {
                     String roomId = part.getRoomId();
                     RecordRoom room = roomRepository.findByRoomId(roomId);
                     if (room != null) {
+                        String wxuid = room.getWxuid();
+                        String pushMsgTags = room.getPushMsgTags();
                         Long uploadUserId = room.getUploadUserId();
                         Optional<BiliBiliUser> userOptional = userRepository.findById(uploadUserId);
                         if (userOptional.isPresent()) {
@@ -188,6 +241,20 @@ public class LiveMsgSendSync {
                             int code = liveMsgService.sendMsg(user, msg);
                             if (code != 0) {
                                 log.error("{}用户，发送失败，错误代码{}，弹幕内容为。==>{}", user.getUname(), code, msg.getContext());
+                                try {
+                                    if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("高级弹幕")){
+                                        Message message = new Message();
+                                        message.setAppToken(wxToken);
+                                        message.setContentType(Message.CONTENT_TYPE_TEXT);
+                                        message.setContent(WX_MSG_FORMAT.formatted(room.getUname(),part.getTitle(),msg.getBvid(),
+                                                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
+                                                msg.getContext(),"发送失败",user.getUname()+"-->code: "+code));
+                                        message.setUid(wxuid);
+                                        WxPusher.send(message);
+                                    }
+                                }catch (Exception ignored){
+
+                                }
                             }
                             try {
                                 if (code == 36703) {

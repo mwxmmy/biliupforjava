@@ -50,6 +50,8 @@ public class RoomController {
             dbRoom.setDescTemplate(room.getDescTemplate());
             dbRoom.setCopyright(room.getCopyright());
             dbRoom.setCoverUrl(room.getCoverUrl());
+            dbRoom.setWxuid(room.getWxuid());
+            dbRoom.setPushMsgTags(room.getPushMsgTags());
             dbRoom.setFileSizeLimit(room.getFileSizeLimit());
             dbRoom.setDurationLimit(room.getDurationLimit());
             dbRoom.setDeleteType(room.getDeleteType());

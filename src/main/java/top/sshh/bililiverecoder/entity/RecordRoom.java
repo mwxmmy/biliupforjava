@@ -53,7 +53,7 @@ public class RecordRoom {
     private String descTemplate = "直播录像 \n" +
             "${uname}直播间：https://live.bilibili.com/${roomId}";
 
-    private String partTitleTemplate = "P{index}-${areaName}-${MM月dd日HH点mm分}";
+    private String partTitleTemplate = "P${index}-${areaName}-${MM月dd日HH点mm分}";
 
     /**
      * 上传完成是否删除文件

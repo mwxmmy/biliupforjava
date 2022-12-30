@@ -30,22 +30,15 @@ public class RecordEventFactory {
 
 
     public RecordEventService getEventService(String eventType){
-        switch (eventType) {
-            case RecordEventType.SessionStarted:
-                return recordEventRecordStartedService;
-            case RecordEventType.SessionEnded:
-                return recordEventRecordEndService;
-            case RecordEventType.StreamStarted:
-                return recordEventStreamStartService;
-            case RecordEventType.StreamEnded:
-                return recordEventStreamEndService;
-            case RecordEventType.FileOpening:
-                return recordEventFileOpenService;
-            case RecordEventType.FileClosed:
-                return recordEventFileClosedService;
-            default:
-                return recordEventEmptyService;
-        }
+        return switch (eventType) {
+            case RecordEventType.SessionStarted -> recordEventRecordStartedService;
+            case RecordEventType.SessionEnded -> recordEventRecordEndService;
+            case RecordEventType.StreamStarted -> recordEventStreamStartService;
+            case RecordEventType.StreamEnded -> recordEventStreamEndService;
+            case RecordEventType.FileOpening -> recordEventFileOpenService;
+            case RecordEventType.FileClosed -> recordEventFileClosedService;
+            default -> recordEventEmptyService;
+        };
     }
 
     @Async

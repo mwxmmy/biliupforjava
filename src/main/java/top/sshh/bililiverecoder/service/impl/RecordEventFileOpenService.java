@@ -56,6 +56,13 @@ public class RecordEventFileOpenService implements RecordEventService {
             room.setUname(eventData.getName());
             room.setTitle(eventData.getTitle());
             room = roomRepository.save(room);
+        } else {
+            room.setUname(eventData.getName());
+            room.setTitle(eventData.getTitle());
+            room.setSessionId(eventData.getSessionId());
+            room.setRecording(eventData.isRecording());
+            room.setStreaming(eventData.isStreaming());
+            room = roomRepository.save(room);
         }
         Optional<RecordHistory> historyOptional = historyRepository.findById(room.getHistoryId());
         RecordHistory history;
@@ -98,6 +105,10 @@ public class RecordEventFileOpenService implements RecordEventService {
         part = historyPartRepository.save(part);
         log.info("分p开始录制事件,成功保存数据库==>{}", JSON.toJSONString(part));
         String relativePath = eventData.getRelativePath();
+        history.setTitle(eventData.getTitle());
+        history.setSessionId(eventData.getSessionId());
+        history.setRecording(eventData.isRecording());
+        history.setStreaming(eventData.isStreaming());
         history.setFilePath(workPath + File.separator + relativePath.substring(0, relativePath.lastIndexOf('/')));
         history.setEndTime(LocalDateTime.now());
         historyRepository.save(history);

@@ -254,7 +254,7 @@ public class RecordBiliPublishService {
                     RecordHistoryPart uploadPart = uploadParts.get(i);
                     SingleVideoDto dto = new SingleVideoDto();
                     map.put("date", uploadPart.getStartTime());
-                    map.put("${index}", i+1);
+                    map.put("${index}", Integer.valueOf(i + 1));
                     map.put("${areaName}", uploadPart.getAreaName());
                     dto.setTitle(this.template(room.getPartTitleTemplate(), map));
                     //同步标题

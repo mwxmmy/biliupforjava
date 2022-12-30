@@ -338,6 +338,7 @@ public class RecordBiliPublishService {
     private String template(String template, Map<String, Object> map) {
         template = template.replace("${uname}", map.get("${uname}").toString())
                 .replace("${title}", map.get("${title}").toString())
+                .replace("${index}", map.get("${index}").toString())
                 .replace("${areaName}", map.get("${areaName}").toString())
                 .replace("${roomId}", map.get("${roomId}").toString());
         if (template.contains("${")) {

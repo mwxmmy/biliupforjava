@@ -9,7 +9,7 @@ public class BiliReplyResponse {
     private BiliReply data;
 
     @Data
-    public class BiliReply {
+    public static class Reply {
         private String rpid;
     }
 }

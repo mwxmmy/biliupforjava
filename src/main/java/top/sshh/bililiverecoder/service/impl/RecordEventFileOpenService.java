@@ -43,7 +43,7 @@ public class RecordEventFileOpenService implements RecordEventService {
         log.info("分p开始录制事件==>{}", eventData.getRelativePath());
         String sessionId = eventData.getSessionId();
         try {
-            Thread.sleep(2000L);
+            Thread.sleep(4000L);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -96,7 +96,7 @@ public class RecordEventFileOpenService implements RecordEventService {
         part.setStartTime(LocalDateTime.now());
         part.setEndTime(LocalDateTime.now());
         part = historyPartRepository.save(part);
-        log.info("分p开始录制事件结束,成功保存录制结果==>{}", JSON.toJSONString(part));
+        log.info("分p开始录制事件,成功保存数据库==>{}", JSON.toJSONString(part));
         String relativePath = eventData.getRelativePath();
         history.setFilePath(workPath + File.separator + relativePath.substring(0, relativePath.lastIndexOf('/')));
         history.setEndTime(LocalDateTime.now());

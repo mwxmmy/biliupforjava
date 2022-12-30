@@ -7,7 +7,6 @@ import com.zjiecode.wxpusher.client.WxPusher;
 import com.zjiecode.wxpusher.client.bean.Message;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,10 +42,13 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
     @Value("${record.wx-push-token}")
     private String wxToken;
     private static final String WX_MSG_FORMAT= """
-            收到主播%s分P上传事件
+            收到主播%s分P上传%s事件
             房间名: %s
             时间: %s
             文件路径: %s
+            文件录制开始时间: %s
+            文件录制时长: %s 分钟
+            文件录制大小: %s GB
             上传结果: %s
             原因: %s
             """;
@@ -130,9 +132,9 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                                 Message message = new Message();
                                 message.setAppToken(wxToken);
                                 message.setContentType(Message.CONTENT_TYPE_TEXT);
-                                message.setContent(WX_MSG_FORMAT.formatted(room.getUname(),room.getTitle(),
+                                message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), "开始", room.getTitle(),
                                         LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                        part.getFilePath(),"上传失败",biliBiliUser.getUname()+"登录已过期，请重新登录"));
+                                        part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, (int) part.getFileSize() / 1024 / 1024 / 1024, "上传失败", biliBiliUser.getUname() + "登录已过期，请重新登录"));
                                 message.setUid(wxuid);
                                 WxPusher.send(message);
                             }
@@ -188,6 +190,16 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                         }
 
                         //并发上传
+
+                        Message message = new Message();
+                        message.setAppToken(wxToken);
+                        message.setContentType(Message.CONTENT_TYPE_TEXT);
+                        message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), "开始", room.getTitle(),
+                                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
+                                part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, (int) part.getFileSize() / 1024 / 1024 / 1024, "开始上传", biliBiliUser.getUname()));
+                        message.setUid(wxuid);
+                        WxPusher.send(message);
+
                         runnableList.stream().parallel().forEach(Runnable::run);
                         if (isThrow.get()) {
                             part.setUpload(false);
@@ -201,12 +213,11 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                             //存在异常
                             TaskUtil.partUploadTask.remove(part.getId());
                             if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("分P上传")){
-                                Message message = new Message();
                                 message.setAppToken(wxToken);
                                 message.setContentType(Message.CONTENT_TYPE_TEXT);
-                                message.setContent(WX_MSG_FORMAT.formatted(room.getUname(),room.getTitle(),
+                                message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), "开始", room.getTitle(),
                                         LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                        part.getFilePath(),"上传失败",biliBiliUser.getUname()+"并发上传失败，存在异常"));
+                                        part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, (int) part.getFileSize() / 1024 / 1024 / 1024, "上传失败", biliBiliUser.getUname() + "并发上传失败，存在异常"));
                                 message.setUid(wxuid);
                                 WxPusher.send(message);
                             }
@@ -236,12 +247,11 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                             log.info("partId={},文件上传成功==>{}", part.getId(), filePath);
 
                             if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("分P上传")){
-                                Message message = new Message();
                                 message.setAppToken(wxToken);
                                 message.setContentType(Message.CONTENT_TYPE_TEXT);
-                                message.setContent(WX_MSG_FORMAT.formatted(room.getUname(),room.getTitle(),
+                                message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), "结束", room.getTitle(),
                                         LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                        part.getFilePath(),"上传成功","服务器文件名称\n"+part.getFileName()));
+                                        part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, (int) part.getFileSize() / 1024 / 1024 / 1024, "上传成功", "服务器文件名称\n" + part.getFileName()));
                                 message.setUid(wxuid);
                                 WxPusher.send(message);
                             }
@@ -250,12 +260,11 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                             TaskUtil.partUploadTask.remove(part.getId());
                             log.error("partId={},文件上传失败==>{}", part.getId(), filePath, e);
                             if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("分P上传")){
-                                Message message = new Message();
                                 message.setAppToken(wxToken);
                                 message.setContentType(Message.CONTENT_TYPE_TEXT);
-                                message.setContent(WX_MSG_FORMAT.formatted(room.getUname(),room.getTitle(),
+                                message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), "结束", room.getTitle(),
                                         LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                        part.getFilePath(),"上传失败",e.getMessage()));
+                                        part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, (int) part.getFileSize() / 1024 / 1024 / 1024, "上传失败", e.getMessage()));
                                 message.setUid(wxuid);
                                 WxPusher.send(message);
                             }

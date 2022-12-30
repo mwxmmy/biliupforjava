@@ -1,8 +1,8 @@
 package top.sshh.bililiverecoder.entity;
 
+import jakarta.persistence.*;
 import lombok.Data;
 
-import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Data

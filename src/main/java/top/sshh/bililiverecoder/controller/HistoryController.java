@@ -1,6 +1,13 @@
 package top.sshh.bililiverecoder.controller;
 
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,13 +19,6 @@ import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
 import top.sshh.bililiverecoder.repo.RecordRoomRepository;
 import top.sshh.bililiverecoder.service.impl.RecordBiliPublishService;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -75,7 +75,9 @@ public class HistoryController {
             predicatesList.add(criteriaBuilder.and(criteriaBuilder.between(root.get("endTime"), request.getFrom(), request.getTo())));
         }
         //where()拼接查询条件
-        criteriaQuery.where(predicatesList.toArray(new Predicate[predicatesList.size()]));
+        if (predicatesList.size() > 0) {
+            criteriaQuery.where(predicatesList.toArray(new Predicate[predicatesList.size()]));
+        }
         criteriaQuery.orderBy(criteriaBuilder.desc(root.get("endTime")));
         TypedQuery<RecordHistory> typedQuery = entityManager.createQuery(criteriaQuery);
         List<RecordHistory> list = typedQuery.getResultList();

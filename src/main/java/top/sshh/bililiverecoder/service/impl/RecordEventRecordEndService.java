@@ -27,7 +27,7 @@ public class RecordEventRecordEndService implements RecordEventService {
     private String wxToken;
 
     private static final String WX_MSG_FORMAT= """
-            收到主播%s开录制结束
+            收到主播%s下播，录制结束
             房间名: %s
             父分区: %s
             子分区: %s

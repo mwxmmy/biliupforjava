@@ -7,5 +7,5 @@ public class SingleVideoDto {
     private String title;
     private String desc;
     private String filename;
-    private String cid;
+    private Long cid;
 }

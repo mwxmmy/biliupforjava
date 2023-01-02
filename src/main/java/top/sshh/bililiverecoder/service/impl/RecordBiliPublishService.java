@@ -126,7 +126,7 @@ public class RecordBiliPublishService {
             dto.setDesc("");
             dto.setFilename(uploadPart.getFileName());
             if (uploadPart.getCid() != null && uploadPart.getCid() > 0) {
-                dto.setCid(uploadPart.getCid().toString());
+                dto.setCid(uploadPart.getCid());
             }
             dtos.add(dto);
         }
@@ -142,20 +142,34 @@ public class RecordBiliPublishService {
         videoUploadDto.setDynamic(this.template(room.getDescTemplate(), map));
         videoUploadDto.setVideos(dtos);
         videoUploadDto.setTag(room.getTags());
-        videoUploadDto.setAid(history.getAvId());
+        videoUploadDto.setAid(Integer.valueOf(history.getAvId()));
         String republishRes = BiliApi.editPublish(biliBiliUser.getAccessToken(), videoUploadDto);
-        log.error(republishRes);
-        log.info("重新投稿={}=视频成功 == > {}", room.getUname(), JSON.toJSONString(history));
-//        if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("视频投稿")) {
-//            Message message = new Message();
-//            message.setAppToken(wxToken);
-//            message.setContentType(Message.CONTENT_TYPE_TEXT);
-//            message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), room.getTitle(),
-//                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-//                    "重新投稿成功", ""));
-//            message.setUid(wxuid);
-//            WxPusher.send(message);
-//        }
+        log.info("重新投稿={}", republishRes);
+        Integer code = JsonPath.read(republishRes, "code");
+        if (code == 0) {
+            if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("视频投稿")) {
+                Message message = new Message();
+                message.setAppToken(wxToken);
+                message.setContentType(Message.CONTENT_TYPE_TEXT);
+                message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), room.getTitle(),
+                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
+                        "重新投稿成功", ""));
+                message.setUid(wxuid);
+                WxPusher.send(message);
+            }
+        } else {
+            if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("视频投稿")) {
+                Message message = new Message();
+                message.setAppToken(wxToken);
+                message.setContentType(Message.CONTENT_TYPE_TEXT);
+                message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), room.getTitle(),
+                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
+                        "重新投稿失败", JsonPath.read(republishRes, "message")));
+                message.setUid(wxuid);
+                WxPusher.send(message);
+            }
+        }
+
     }
 
     public boolean publishRecordHistory(RecordHistory history) {

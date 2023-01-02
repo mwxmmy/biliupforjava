@@ -60,6 +60,103 @@ public class RecordBiliPublishService {
         this.publishRecordHistory(history);
     }
 
+    @Async
+    public void asyncRepublishRecordHistory(RecordHistory history) {
+
+        RecordRoom room = roomRepository.findByRoomId(history.getRoomId());
+        String wxuid = room.getWxuid();
+        String pushMsgTags = room.getPushMsgTags();
+        Optional<BiliBiliUser> userOptional = biliUserRepository.findById(room.getUploadUserId());
+        if (!userOptional.isPresent()) {
+            log.error("视频发布事件，用户不存在，无法发布 ==>{}", JSON.toJSONString(room));
+        }
+        BiliBiliUser biliBiliUser = userOptional.get();
+        if (!biliBiliUser.isLogin()) {
+            log.error("视频发布事件，用户登录状态失效，无法发布，请重新登录 ==>{}", JSON.toJSONString(room));
+        }
+
+        List<RecordHistoryPart> uploadParts = partRepository.findByHistoryIdOrderByStartTimeAsc(history.getId());
+        for (RecordHistoryPart uploadPart : uploadParts) {
+            // 已经发布成功的不需要在上传
+            if (uploadPart.getCid() != null && uploadPart.getCid() > 0) {
+                continue;
+            } else {
+                uploadPart.setUpload(false);
+                uploadPart = partRepository.save(uploadPart);
+                String filePath = uploadPart.getFilePath().intern();
+                File file = new File(filePath);
+                if (file.exists()) {
+                    synchronized (filePath) {
+                        log.error("视频重新发布流程获取part上传锁成功，即将再次检查是否已上传完成");
+                        //再次检查是否上传完成
+                        Optional<RecordHistoryPart> partOptional = partRepository.findById(uploadPart.getId());
+                        if (partOptional.isPresent()) {
+                            RecordHistoryPart part = partOptional.get();
+                            if (!part.isUpload()) {
+                                log.error("视频发布流程获取part上传锁成功，检查到未上传完成");
+                                uploadService.upload(uploadPart);
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+        Map<String, Object> map = new HashMap<>();
+        LocalDateTime startTime = history.getStartTime();
+        map.put("date", startTime);
+
+        String uname = room.getUname();
+        map.put("${uname}", uname);
+        String title = StringUtils.isNotBlank(history.getTitle()) ? history.getTitle() : "直播录像";
+        map.put("${title}", title);
+        map.put("${roomId}", room.getRoomId());
+        map.put("${areaName}", "");
+        List<SingleVideoDto> dtos = new ArrayList<>();
+        for (int i = 0; i < uploadParts.size(); i++) {
+            RecordHistoryPart uploadPart = uploadParts.get(i);
+            SingleVideoDto dto = new SingleVideoDto();
+            map.put("date", uploadPart.getStartTime());
+            map.put("${index}", Integer.valueOf(i + 1));
+            map.put("${areaName}", uploadPart.getAreaName());
+            dto.setTitle(this.template(room.getPartTitleTemplate(), map));
+            //同步标题
+            uploadPart.setTitle(this.template(room.getPartTitleTemplate(), map));
+            uploadPart = partRepository.save(uploadPart);
+            dto.setDesc("");
+            dto.setFilename(uploadPart.getFileName());
+            if (uploadPart.getCid() != null && uploadPart.getCid() > 0) {
+                dto.setCid(uploadPart.getCid().toString());
+            }
+            dtos.add(dto);
+        }
+        VideoUploadDto videoUploadDto = new VideoUploadDto();
+
+        map.put("date", startTime);
+        videoUploadDto.setTid(room.getTid());
+        videoUploadDto.setCover(history.getCoverUrl());
+        videoUploadDto.setCopyright(room.getCopyright());
+        videoUploadDto.setTitle(this.template(room.getTitleTemplate(), map));
+        videoUploadDto.setSource(this.template(videoUploadDto.getSource(), map));
+        videoUploadDto.setDesc(this.template(room.getDescTemplate(), map));
+        videoUploadDto.setDynamic(this.template(room.getDescTemplate(), map));
+        videoUploadDto.setVideos(dtos);
+        videoUploadDto.setTag(room.getTags());
+        videoUploadDto.setAid(history.getAvId());
+        String republishRes = BiliApi.editPublish(biliBiliUser.getAccessToken(), videoUploadDto);
+        log.info("重新投稿={}=视频成功 == > {}", room.getUname(), JSON.toJSONString(history));
+        if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("视频投稿")) {
+            Message message = new Message();
+            message.setAppToken(wxToken);
+            message.setContentType(Message.CONTENT_TYPE_TEXT);
+            message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), room.getTitle(),
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
+                    "重新投稿成功", ""));
+            message.setUid(wxuid);
+            WxPusher.send(message);
+        }
+    }
+
     public boolean publishRecordHistory(RecordHistory history) {
         if (history.isPublish()) {
             log.error("视频状态为已发布，退出==>{}", JSON.toJSONString(history));

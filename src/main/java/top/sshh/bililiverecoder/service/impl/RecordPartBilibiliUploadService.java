@@ -77,10 +77,10 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
         TaskUtil.partUploadTask.put(part.getId(), Thread.currentThread());
         RecordRoom room = roomRepository.findByRoomId(part.getRoomId());
 
-        String wxuid = room.getWxuid();
-        String pushMsgTags = room.getPushMsgTags();
 
         if (room != null) {
+            String wxuid = room.getWxuid();
+            String pushMsgTags = room.getPushMsgTags();
             if (room.getTid() == null) {
                 //没有设置分区，直接取消上传
                 return;

@@ -25,6 +25,11 @@ public class RecordHistory {
 
     private String title;
 
+    /**
+     * 封面url
+     */
+    private String coverUrl;
+
     private String eventId;
 
     private String sessionId;

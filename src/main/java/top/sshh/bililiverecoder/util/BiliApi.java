@@ -17,7 +17,6 @@ import top.sshh.bililiverecoder.entity.LiveMsg;
 import top.sshh.bililiverecoder.entity.data.*;
 
 import javax.crypto.Cipher;
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
@@ -28,7 +27,6 @@ import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -225,7 +223,24 @@ public class BiliApi {
         return HttpClientUtil.post(url, headers, body);
     }
 
-    public static String uploadCover(BiliBiliUser user,String fileName, byte[] fileBytes) {
+    public static String editPublish(String accessToken, VideoUploadDto data) {
+        String url = "https://member.bilibili.com/x/vu/client/edit?access_key=" + accessToken;
+        Map<String, String> query = new HashMap<>();
+        query.put("access_key", accessToken);
+        String sign = sign(query, appSecret);
+        url = url + "&sign=" + sign;
+        Map<String, String> headers = new HashMap<>();
+        long currentSecond = Instant.now().getEpochSecond();
+        headers.put("Display-ID", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5-" + currentSecond);
+        headers.put("Buvid", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5");
+        headers.put("User-Agent", "Mozilla/5.0 BiliDroid/5.37.0 (bbcallen@gmail.com)");
+        headers.put("Device-ID", "aBRoDWAVeRhsA3FDewMzS3lLMwM");
+
+        String body = JSON.toJSONString(data);
+        return HttpClientUtil.post(url, headers, body);
+    }
+
+    public static String uploadCover(BiliBiliUser user, String fileName, byte[] fileBytes) {
         String url = "https://member.bilibili.com/x/vu/client/cover/up?access_key=" + user.getAccessToken();
         Map<String, String> query = new HashMap<>();
         query.put("access_key", user.getAccessToken());

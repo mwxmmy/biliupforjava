@@ -210,4 +210,26 @@ public class HistoryController {
             return result;
         }
     }
+
+    @GetMapping("/rePublish/{id}")
+    public Map<String, String> rePublish(@PathVariable("id") Long id) {
+        Map<String, String> result = new HashMap<>();
+        if (id == null) {
+            result.put("type", "info");
+            result.put("msg", "请输入id");
+            return result;
+        }
+        Optional<RecordHistory> historyOptional = historyRepository.findById(id);
+        if (historyOptional.isPresent()) {
+            RecordHistory history = historyOptional.get();
+            publishService.asyncRepublishRecordHistory(history);
+            result.put("type", "success");
+            result.put("msg", "触发重新发布事件成功");
+            return result;
+        } else {
+            result.put("type", "warning");
+            result.put("msg", "录制历史不存在");
+            return result;
+        }
+    }
 }

@@ -17,6 +17,7 @@ public class BiliVideoInfoResponse {
         private String aid;
         private int videos;
         private int tid;
+        private String pic;
         private int state;
         private int duration;
         private List<BiliVideoInfoPart> pages;

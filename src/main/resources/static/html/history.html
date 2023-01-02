@@ -165,6 +165,10 @@
                         type="primary">触发发布事件
                 </el-button>
                 <el-button
+                        @click="rePublish(scope.row.id)" size="mini"
+                        type="primary">重新发布
+                </el-button>
+                <el-button
                         @click="deleteHistoryMsg(scope.row.id)" size="mini"
                         type="danger">删除弹幕
                 </el-button>
@@ -263,6 +267,22 @@
                 let _this = this;
                 $.ajax({
                     url: '/history/touchPublish/' + id,
+                    contentType: 'application/json;charset=utf-8',
+                    type: 'get',
+                    dataType: 'json',
+                    success: function (data) {
+                        _this.$message({
+                            message: data.msg,
+                            type: data.type
+                        });
+                        _this.initTable();
+                    }
+                });
+            },
+            rePublish: function (id) {
+                let _this = this;
+                $.ajax({
+                    url: '/history/rePublish/' + id,
                     contentType: 'application/json;charset=utf-8',
                     type: 'get',
                     dataType: 'json',

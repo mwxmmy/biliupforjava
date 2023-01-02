@@ -48,8 +48,10 @@ public class videoSyncJob {
             BiliVideoInfoResponse videoInfoResponse = BiliApi.getVideoInfo(next.getBvId());
             next.setCode(videoInfoResponse.getCode());
             if (videoInfoResponse.getData() != null) {
-                next.setAvId(videoInfoResponse.getData().getAid());
-                next.setBvId(videoInfoResponse.getData().getBvid());
+                BiliVideoInfoResponse.BiliVideoInfo data = videoInfoResponse.getData();
+                next.setAvId(data.getAid());
+                next.setBvId(data.getBvid());
+                next.setCoverUrl(data.getPic());
             }
             next = historyRepository.save(next);
             if (videoInfoResponse.getCode() == 0) {

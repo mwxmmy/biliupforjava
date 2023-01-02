@@ -47,7 +47,10 @@ public class videoSyncJob {
         for (RecordHistory next : historyRepository.findByBvIdNotNullAndPublishIsTrueAndCodeLessThan(0)) {
             BiliVideoInfoResponse videoInfoResponse = BiliApi.getVideoInfo(next.getBvId());
             next.setCode(videoInfoResponse.getCode());
-            next.setAvId(videoInfoResponse.getData().getAid());
+            if (videoInfoResponse.getData() != null) {
+                next.setAvId(videoInfoResponse.getData().getAid());
+                next.setBvId(videoInfoResponse.getData().getBvid());
+            }
             next = historyRepository.save(next);
             if (videoInfoResponse.getCode() == 0) {
                 RecordRoom recordRoom = roomRepository.findByRoomId(next.getRoomId());

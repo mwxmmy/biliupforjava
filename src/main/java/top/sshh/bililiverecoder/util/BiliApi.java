@@ -184,7 +184,7 @@ public class BiliApi {
         Map<String, String> params = new TreeMap<>();
         params.put("appkey", appKey);
         params.put("access_key", accessToken);
-        params.put("build", "101800");
+        params.put("build", "2100400");
         params.put("channel", "html5_app_bili");
         params.put("mobi_app", "android");
         params.put("platform", "android");

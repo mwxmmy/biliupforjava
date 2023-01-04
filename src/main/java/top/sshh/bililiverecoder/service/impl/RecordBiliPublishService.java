@@ -102,6 +102,11 @@ public class RecordBiliPublishService {
                 }
             }
         }
+        userOptional = biliUserRepository.findById(room.getUploadUserId());
+        if (!userOptional.isPresent()) {
+            log.error("视频发布事件，用户不存在，无法发布 ==>{}", JSON.toJSONString(room));
+        }
+        biliBiliUser = userOptional.get();
         Map<String, Object> map = new HashMap<>();
         LocalDateTime startTime = history.getStartTime();
         map.put("date", startTime);

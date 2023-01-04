@@ -142,6 +142,7 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                         }
                         // 登录验证结束
                         String preRes = BiliApi.preUpload(biliBiliUser.getAccessToken(), biliBiliUser.getUid(), "ugcfr/pc3");
+                        log.error("预上传请求==>"+preRes);
                         JSONObject preResObj = JSON.parseObject(preRes);
                         String url = preResObj.getString("url");
                         String complete = preResObj.getString("complete");
@@ -165,7 +166,7 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                                             String s = BiliApi.uploadChunk(url, filename, r, chunkSize,
                                                     finalI + 1, (int) chunkNum);
                                             if (!s.contains("OK")) {
-                                                throw new RuntimeException("上传返回异常==>"+s);
+                                                throw new RuntimeException("上传返回异常");
                                             }
                                             int count = upCount.incrementAndGet();
                                             log.info("{}==>[{}] 上传视频part {} 进度{}/{}, resp={}", Thread.currentThread().getName(), room.getTitle(),

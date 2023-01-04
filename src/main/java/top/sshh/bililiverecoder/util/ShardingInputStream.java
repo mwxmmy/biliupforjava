@@ -15,8 +15,12 @@ public class ShardingInputStream extends InputStream {
     private final long length;
     private long hasLength;
 
-    public ShardingInputStream(RandomAccessFile in, long start, long length) {
+    public ShardingInputStream(RandomAccessFile in, long start, long length) throws IOException {
         this.in = in;
+        long allLength = in.length();
+        if(start+length>allLength){
+            length = allLength-start;
+        }
         this.start = start;
         this.length = length;
         this.hasLength = length;

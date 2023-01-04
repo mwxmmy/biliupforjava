@@ -165,7 +165,7 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                                             String s = BiliApi.uploadChunk(url, filename, r, chunkSize,
                                                     finalI + 1, (int) chunkNum);
                                             if (!s.contains("OK")) {
-                                                throw new RuntimeException("上传返回异常");
+                                                throw new RuntimeException("上传返回异常==>"+s);
                                             }
                                             int count = upCount.incrementAndGet();
                                             log.info("{}==>[{}] 上传视频part {} 进度{}/{}, resp={}", Thread.currentThread().getName(), room.getTitle(),

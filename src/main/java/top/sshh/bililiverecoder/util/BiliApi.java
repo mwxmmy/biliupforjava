@@ -263,7 +263,13 @@ public class BiliApi {
             String fileName,
             RandomAccessFile r, long size, int nowChunk,
             int chunkNum) throws IOException {
-        ShardingInputStream shardingInputStream = new ShardingInputStream(r,((nowChunk-1)*size),size);
+
+        long allLength = r.length();
+        long start = (nowChunk - 1) * size;
+        if(start+size>allLength){
+            size = allLength-start;
+        }
+        ShardingInputStream shardingInputStream = new ShardingInputStream(r, start,size);
         String md5 = DigestUtils.md5Hex(shardingInputStream);
         shardingInputStream.reset();
         ChunkUploadRequestBody chunkUploadRequestBody = new ChunkUploadRequestBody(shardingInputStream);

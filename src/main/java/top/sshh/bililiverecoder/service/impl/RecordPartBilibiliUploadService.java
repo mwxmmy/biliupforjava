@@ -7,6 +7,7 @@ import com.zjiecode.wxpusher.client.WxPusher;
 import com.zjiecode.wxpusher.client.bean.Message;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -163,7 +164,16 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                                     while (tryCount < 5) {
                                         try {
                                             // 上传
-                                            String s = BiliApi.uploadChunk(url, filename, r, chunkSize,
+                                            r.seek(finalI * chunkSize);
+                                            byte[] bytes = new byte[(int) chunkSize];
+                                            int read = r.read(bytes);
+                                            if (read == -1) {
+                                                break;
+                                            }
+                                            if (read != bytes.length) {
+                                                bytes = ArrayUtils.subarray(bytes, 0, read);
+                                            }
+                                            String s = BiliApi.uploadChunk(url, filename, bytes, read,
                                                     finalI + 1, (int) chunkNum);
                                             if (!s.contains("OK")) {
                                                 throw new RuntimeException("上传返回异常");

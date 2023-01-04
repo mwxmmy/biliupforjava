@@ -27,6 +27,7 @@ import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -261,25 +262,16 @@ public class BiliApi {
     public static String uploadChunk(
             String uploadUrl,
             String fileName,
-            RandomAccessFile r, long size, int nowChunk,
+            byte[] bytes, long size, int nowChunk,
             int chunkNum) throws IOException {
-
-        long allLength = r.length();
-        long start = (nowChunk - 1) * size;
-        if(start+size>allLength){
-            size = allLength-start;
-        }
-        ShardingInputStream shardingInputStream = new ShardingInputStream(r, start,size);
-        String md5 = DigestUtils.md5Hex(shardingInputStream);
-        shardingInputStream.reset();
-        ChunkUploadRequestBody chunkUploadRequestBody = new ChunkUploadRequestBody(shardingInputStream);
+        String md5 = DigestUtils.md5Hex(bytes);
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("version", "2.0.0.1054");
         params.put("filesize", "" + size);
         params.put("chunk", "" + nowChunk);
         params.put("chunks", "" + chunkNum);
         params.put("md5", md5);
-        params.put("file", chunkUploadRequestBody);
+        params.put("file", bytes);
         Map<String, String> headers = new HashMap<>();
         headers.put("Cookie", "PHPSESSID=" + fileName);
         return HttpClientUtil.upload(uploadUrl, headers, params);

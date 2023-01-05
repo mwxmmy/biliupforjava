@@ -43,10 +43,13 @@
                         @click="handleEdit(scope.$index, scope.row)" size="mini"
                         type="primary">编辑
                 </el-button>
-                <el-button
-                        @click="deleteUser(scope.row.id)" size="mini"
-                        type="danger">删除
-                </el-button>
+                <el-popconfirm
+                        @confirm="deleteUser(scope.row.id)"
+                        title="确定删除吗？">
+                    <el-button slot="reference" size="mini"
+                               type="danger">删除
+                    </el-button>
+                </el-popconfirm>
             </template>
         </el-table-column>
     </el-table>

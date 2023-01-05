@@ -189,6 +189,36 @@ public class HistoryController {
         }
     }
 
+    @GetMapping("/updatePublishStatus/{id}")
+    public Map<String, String> updatePublishStatus(@PathVariable("id") Long id) {
+        Map<String, String> result = new HashMap<>();
+        if (id == null) {
+            result.put("type", "info");
+            result.put("msg", "请输入id");
+            return result;
+        }
+        Optional<RecordHistory> historyOptional = historyRepository.findById(id);
+        if (historyOptional.isPresent()) {
+            RecordHistory history = historyOptional.get();
+            history.setPublish(false);
+            history.setBvId(null);
+            history.setCode(-1);
+            historyRepository.save(history);
+            List<RecordHistoryPart> partList = partRepository.findByHistoryIdOrderByStartTimeAsc(history.getId());
+            for (RecordHistoryPart part : partList) {
+                part.setUpload(false);
+                partRepository.save(part);
+            }
+            result.put("type", "success");
+            result.put("msg", "状态更新成功");
+            return result;
+        } else {
+            result.put("type", "warning");
+            result.put("msg", "录制历史不存在");
+            return result;
+        }
+    }
+
     @GetMapping("/touchPublish/{id}")
     public Map<String, String> touchPublish(@PathVariable("id") Long id) {
         Map<String, String> result = new HashMap<>();

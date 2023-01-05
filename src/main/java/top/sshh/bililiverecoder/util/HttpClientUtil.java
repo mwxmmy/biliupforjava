@@ -128,7 +128,7 @@ public class HttpClientUtil {
             if (v instanceof String) {
                 builder.addFormDataPart(k, (String) v);
             } else {
-                builder.addFormDataPart(k, "file", RequestBody.create((byte[]) v));
+                builder.addFormDataPart(k, "file", (RequestBody)v);
             }
         });
 

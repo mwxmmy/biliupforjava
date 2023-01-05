@@ -227,11 +227,18 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                         }
 
                         try {
+                            log.info("上传完毕等待十秒==>{}", JSON.toJSONString(part));
+                            Thread.sleep(10000L);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+                        try {
                             FileInputStream stream = new FileInputStream(uploadFile);
                             String md5 = DigestUtils.md5Hex(stream).toLowerCase();
                             stream.close();
                             BiliApi.completeUpload(complete, (int) chunkNum, fileSize, md5,
-                                    uploadFile.getName(), "2.0.0.1054");
+                                    uploadFile.getName(), "2.3.0.1088");
                             part.setFileName(filename);
                             part.setUpload(true);
                             part.setUpdateTime(LocalDateTime.now());

@@ -75,6 +75,8 @@ public class RecordBiliPublishService {
             log.error("视频发布事件，用户登录状态失效，无法发布，请重新登录 ==>{}", JSON.toJSONString(room));
         }
 
+        // 发布任务入队列
+        TaskUtil.publishTask.put(history.getId(), Thread.currentThread());
         List<RecordHistoryPart> uploadParts = partRepository.findByHistoryIdOrderByStartTimeAsc(history.getId());
         for (RecordHistoryPart uploadPart : uploadParts) {
             // 已经发布成功的不需要在上传
@@ -156,6 +158,9 @@ public class RecordBiliPublishService {
         }
         String republishRes = BiliApi.editPublish(biliBiliUser.getAccessToken(), videoUploadDto);
         log.info("重新投稿={}", republishRes);
+
+        // 发布任务出队列
+        TaskUtil.publishTask.remove(history.getId());
         Integer code = JsonPath.read(republishRes, "code");
         if (code == 0) {
             if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("视频投稿")) {

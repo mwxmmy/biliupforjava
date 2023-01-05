@@ -270,8 +270,8 @@ public class BiliApi {
         if(start+size>allLength){
             size = allLength-start;
         }
-        log.error("fileName,part==>{},size=>{}",nowChunk,size);
         ShardingInputStream shardingInputStream = new ShardingInputStream(r, start,size);
+        log.error("fileName,part==>{},filesize=>{},size=>{},streamLength=>{}",nowChunk,allLength,size,shardingInputStream.available());
         String md5 = DigestUtils.md5Hex(shardingInputStream);
         shardingInputStream.reset();
         ChunkUploadRequestBody chunkUploadRequestBody = new ChunkUploadRequestBody(shardingInputStream);

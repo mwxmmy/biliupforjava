@@ -150,7 +150,7 @@
                 width="170">
         </el-table-column>
         <el-table-column label="操作"
-                         width="150">
+                         width="200">
             <template slot-scope="scope">
                 <el-button
                         @click="handleEdit(scope.$index, scope.row)" size="mini"
@@ -176,19 +176,6 @@
                         </el-col>
                         <el-col :span="6">
                             <el-popconfirm
-                                    @confirm="updatePublishStatus(scope.row.id)"
-                                    title="确定重置为未上传发布吗？">
-                                <el-tooltip slot="reference" class="item" effect="dark"
-                                            content="把状态修改为未发布,分p全部未上传状态,重置后点击触发发布事件会重新投稿"
-                                            placement="top">
-                                    <el-button size="mini"
-                                               type="danger">重置为未上传发布
-                                    </el-button>
-                                </el-tooltip>
-                            </el-popconfirm>
-                        </el-col>
-                        <el-col :span="6">
-                            <el-popconfirm
                                     @confirm="touchPublish(scope.row.id)"
                                     title="确定触发发布事件吗？">
                                 <el-tooltip slot="reference" class="item" effect="dark"
@@ -203,7 +190,20 @@
                     </el-row>
                     <el-row type="flex" justify="space-around">
 
-                        <el-col :span="6">
+                        <el-col :span="8">
+                            <el-popconfirm
+                                    @confirm="updatePublishStatus(scope.row.id)"
+                                    title="确定重置为未上传发布吗？">
+                                <el-tooltip slot="reference" class="item" effect="dark"
+                                            content="把状态修改为未发布,分p全部未上传状态,重置后点击触发发布事件会重新投稿"
+                                            placement="top">
+                                    <el-button size="mini"
+                                               type="danger">重置为未上传发布
+                                    </el-button>
+                                </el-tooltip>
+                            </el-popconfirm>
+                        </el-col>
+                        <el-col :span="5">
                             <el-popconfirm
                                     @confirm="rePublish(scope.row.id)"
                                     title="确定更新稿件吗？">
@@ -215,7 +215,7 @@
                                 </el-tooltip>
                             </el-popconfirm>
                         </el-col>
-                        <el-col :span="6">
+                        <el-col :span="5">
                             <el-popconfirm
                                     @confirm="deleteHistoryMsg(scope.row.id)"
                                     title="确定删除弹幕吗？">
@@ -224,19 +224,16 @@
                                 </el-button>
                             </el-popconfirm>
                         </el-col>
-                        <el-col :span="6">
-                            <el-popconfirm
-                                    @confirm="deleteHistory(scope.row.id)"
-                                    title="确定删除吗？">
-                                <el-button slot="reference" size="mini"
-                                           type="danger">删除
-                                </el-button>
-                            </el-popconfirm>
-                        </el-col>
                     </el-row>
-
                     <el-button slot="reference" size="mini" type="primary">更多</el-button>
                 </el-popover>
+                <el-popconfirm
+                        @confirm="deleteHistory(scope.row.id)"
+                        title="确定删除吗？">
+                    <el-button slot="reference" size="mini"
+                               type="danger">删除
+                    </el-button>
+                </el-popconfirm>
             </template>
         </el-table-column>
     </el-table>

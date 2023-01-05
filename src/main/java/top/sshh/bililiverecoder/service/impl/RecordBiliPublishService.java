@@ -148,6 +148,12 @@ public class RecordBiliPublishService {
         videoUploadDto.setVideos(dtos);
         videoUploadDto.setTag(room.getTags());
         videoUploadDto.setAid(Integer.valueOf(history.getAvId()));
+        try {
+            log.info("重新投稿等待十秒==>{}", JSON.toJSONString(history));
+            Thread.sleep(10000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         String republishRes = BiliApi.editPublish(biliBiliUser.getAccessToken(), videoUploadDto);
         log.info("重新投稿={}", republishRes);
         Integer code = JsonPath.read(republishRes, "code");
@@ -415,7 +421,9 @@ public class RecordBiliPublishService {
                 try {
                     String uploadRes = BiliApi.publish(biliBiliUser.getAccessToken(), videoUploadDto);
                     String bvid = JSON.parseObject(uploadRes).getJSONObject("data").getString("bvid");
+                    String aid = JSON.parseObject(uploadRes).getJSONObject("data").getString("aid");
                     history.setBvId(bvid);
+                    history.setAvId(aid);
                     history.setPublish(true);
                     history = historyRepository.save(history);
                     log.info("发布={}=视频成功 == > {}", room.getUname(), JSON.toJSONString(history));

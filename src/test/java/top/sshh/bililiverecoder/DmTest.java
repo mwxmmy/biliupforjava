@@ -107,7 +107,10 @@ public class DmTest {
         BiliBiliUser biliUser = biliUserRepository.findByUid(3493090360821990L);
         VideoUploadDto videoUploadDto = new VideoUploadDto();
         SingleVideoDto sing = new SingleVideoDto();
-        sing.setFilename("n23010507ii06uwd2ob251ujie4th1p0");
+        sing.setFilename("n230105011h0tnkav99mnh3jadrrk94q");
+        sing.setTitle("1");
+        SingleVideoDto sing2 = new SingleVideoDto();
+        sing.setFilename("n230105152etb645cwt0p419rsuzi92p");
         sing.setTitle("1");
         videoUploadDto.setTid(21);
         videoUploadDto.setCover("");
@@ -118,7 +121,8 @@ public class DmTest {
         videoUploadDto.setDynamic("");
         videoUploadDto.setVideos(Collections.singletonList(sing));
         videoUploadDto.setTag("1");
-        String publish = BiliApi.publish(biliUser.getAccessToken(), videoUploadDto);
+        videoUploadDto.setAid(649775256);
+        String publish = BiliApi.editPublish(biliUser.getAccessToken(), videoUploadDto);
         System.out.println(publish);
     }
 }

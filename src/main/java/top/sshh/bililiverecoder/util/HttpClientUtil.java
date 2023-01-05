@@ -17,7 +17,10 @@ public class HttpClientUtil {
     private static OkHttpClient clientAllowCookie;
 
     static {
+        HttpsTrustManager.allowAllSSL();
+        HttpsTrustManager manager = new HttpsTrustManager();
         client = new OkHttpClient().newBuilder()
+                .sslSocketFactory(HttpsTrustManager.createSSLSocketFactory(),manager)
                 .connectTimeout(150, TimeUnit.SECONDS)
                 .readTimeout(150, TimeUnit.SECONDS)
                 .protocols(Collections.singletonList(Protocol.HTTP_1_1))
@@ -28,6 +31,7 @@ public class HttpClientUtil {
         cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
         CookieJar cookieJar = new JavaNetCookieJar(cookieManager);
         clientAllowCookie = new OkHttpClient().newBuilder()
+                .sslSocketFactory(HttpsTrustManager.createSSLSocketFactory(),manager)
                 .connectTimeout(150, TimeUnit.SECONDS)
                 .readTimeout(150, TimeUnit.SECONDS)
                 .protocols(Collections.singletonList(Protocol.HTTP_1_1))

@@ -11,6 +11,8 @@ import top.sshh.bililiverecoder.entity.LiveMsg;
 import top.sshh.bililiverecoder.entity.RecordHistoryPart;
 import top.sshh.bililiverecoder.entity.data.BiliReply;
 import top.sshh.bililiverecoder.entity.data.BiliReplyResponse;
+import top.sshh.bililiverecoder.entity.data.SingleVideoDto;
+import top.sshh.bililiverecoder.entity.data.VideoUploadDto;
 import top.sshh.bililiverecoder.repo.BiliUserRepository;
 import top.sshh.bililiverecoder.repo.LiveMsgRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryPartRepository;
@@ -25,10 +27,7 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.TimeZone;
+import java.util.*;
 
 @Slf4j
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -101,5 +100,25 @@ public class DmTest {
         for (RecordHistoryPart part : parts) {
             log.info(JSON.toJSONString(part));
         }
+    }
+
+    @Test
+    public void preUploadTest(){
+        BiliBiliUser biliUser = biliUserRepository.findByUid(3493090360821990L);
+        VideoUploadDto videoUploadDto = new VideoUploadDto();
+        SingleVideoDto sing = new SingleVideoDto();
+        sing.setFilename("n23010507ii06uwd2ob251ujie4th1p0");
+        sing.setTitle("1");
+        videoUploadDto.setTid(21);
+        videoUploadDto.setCover("");
+        videoUploadDto.setCopyright(1);
+        videoUploadDto.setTitle("1");
+        videoUploadDto.setSource("1");
+        videoUploadDto.setDesc("1");
+        videoUploadDto.setDynamic("");
+        videoUploadDto.setVideos(Collections.singletonList(sing));
+        videoUploadDto.setTag("1");
+        String publish = BiliApi.publish(biliUser.getAccessToken(), videoUploadDto);
+        System.out.println(publish);
     }
 }

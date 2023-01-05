@@ -61,4 +61,19 @@ public class HttpsTrustManager implements X509TrustManager {
 
         HttpsURLConnection.setDefaultSSLSocketFactory(context != null ? context.getSocketFactory() : null);
     }
+
+    public static SSLSocketFactory createSSLSocketFactory() {
+
+        SSLSocketFactory sSLSocketFactory = null;
+
+        try {
+            SSLContext sc = SSLContext.getInstance("TLS");
+            sc.init(null, new TrustManager[]{new HttpsTrustManager()},
+                    new SecureRandom());
+            sSLSocketFactory = sc.getSocketFactory();
+        } catch (Exception e) {
+        }
+
+        return sSLSocketFactory;
+    }
 }

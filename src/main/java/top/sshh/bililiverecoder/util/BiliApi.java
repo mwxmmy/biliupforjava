@@ -180,11 +180,11 @@ public class BiliApi {
         }
     }
 
-    public static String preUpload(String accessToken, Long mid, String profile) {
+    public static String preUpload(BiliBiliUser user, String profile) {
         String url = "https://member.bilibili.com/preupload";
         Map<String, String> params = new TreeMap<>();
         params.put("appkey", appKey);
-        params.put("access_key", accessToken);
+        params.put("access_key", user.getAccessToken());
         params.put("build", "2100400");
         params.put("channel", "html5_app_bili");
         params.put("mobi_app", "android");
@@ -193,7 +193,7 @@ public class BiliApi {
         params.put("sign", sign(params, appSecret));
 
         params.put("profile", profile);
-        params.put("mid", mid.toString());
+        params.put("mid", user.getUid().toString());
 
         Map<String, String> headers = new HashMap<>();
         long currentSecond = Instant.now().getEpochSecond();

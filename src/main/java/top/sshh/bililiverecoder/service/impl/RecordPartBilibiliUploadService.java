@@ -142,7 +142,7 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                             throw new RuntimeException("{}登录已过期，请重新登录! " + biliBiliUser.getUname());
                         }
                         // 登录验证结束
-                        String preRes = BiliApi.preUpload(biliBiliUser.getAccessToken(), biliBiliUser.getUid(), "ugcfr/pc3");
+                        String preRes = BiliApi.preUpload(biliBiliUser, "ugcfr/pc3");
                         log.error("预上传请求==>"+preRes);
                         JSONObject preResObj = JSON.parseObject(preRes);
                         String url = preResObj.getString("url");

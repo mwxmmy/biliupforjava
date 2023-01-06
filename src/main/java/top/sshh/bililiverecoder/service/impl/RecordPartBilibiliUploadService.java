@@ -215,7 +215,7 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                             throw new RuntimeException("并发上传失败，存在异常", e);
                         }
                         // 分段上传
-                        AtomicInteger upCount = new AtomicInteger(0);
+                        AtomicInteger upCount = new AtomicInteger(1);
                         AtomicBoolean isThrow = new AtomicBoolean(false);
                         List<Runnable> runnableList = new ArrayList<>();
                         for (int i = 1; i < chunkNum; i++) {
@@ -255,10 +255,8 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                                             tryCount = 5;
                                             isThrow.set(false);
                                         } catch (Exception e) {
-
-                                            int count = upCount.get();
-                                            log.info("{}==>[{}] 上传视频part {} 进度{}/{}, exception={}", Thread.currentThread().getName(), room.getTitle(),
-                                                    filePath, count, chunkNum, ExceptionUtils.getStackTrace(e));
+                                            log.info("{}==>[{}] 上传视频part {}, index {}, size {}, start {}, end {}, exception={}", Thread.currentThread().getName(), room.getTitle(),
+                                                    filePath, finalI, finalChunkSize1, finalI * finalChunkSize1, (finalI + 1) * finalChunkSize1, ExceptionUtils.getStackTrace(e));
                                             try {
 //                                                log.info("上传失败等待十秒==>{}", uploadFile.getName());
                                                 Thread.sleep(10000L);

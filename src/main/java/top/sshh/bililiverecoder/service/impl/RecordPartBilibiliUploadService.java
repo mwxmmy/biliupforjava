@@ -145,13 +145,16 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                         // 登录验证结束
                         File uploadFile = new File(filePath);
                         WebCookie webCookie = Cookie.parse(biliBiliUser.getCookies());
-                        Map<String,String> preParams = new HashMap<>();
-                        preParams.put("r","upos");
-                        preParams.put("profile","ugcupos/bup");
-                        preParams.put("name",uploadFile.getName());
+                        Map<String, String> preParams = new HashMap<>();
+                        preParams.put("r", "upos");
+                        preParams.put("profile", "ugcupos/bup");
+                        preParams.put("name", uploadFile.getName());
                         preParams.put("size", String.valueOf(uploadFile.length()));
-                        PreUploadRequest preuploadRequest = new PreUploadRequest(webCookie,preParams);
-                        PreUploadBean preUploadBean =null;
+                        long fileSize = uploadFile.length();
+                        long chunkSize = 1024 * 1024 * 5;
+                        long chunkNum = (long) Math.ceil((double) fileSize / chunkSize);
+                        PreUploadRequest preuploadRequest = new PreUploadRequest(webCookie, preParams);
+                        PreUploadBean preUploadBean;
                         LineUploadBean uploadBean = null;
                         try {
                             do {
@@ -163,11 +166,39 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                                     } catch (InterruptedException e) {
                                         e.printStackTrace();
                                     }
+                                } else {
+                                    try {
+                                        log.info("预上传请求==>{}", JSON.toJSONString(preUploadBean));
+                                        chunkSize = preUploadBean.getChunk_size();
+                                        LineUploadRequest uploadRequest = new LineUploadRequest(webCookie, preUploadBean);
+                                        uploadBean = uploadRequest.getPojo();
+                                        Map<String, String> chunkParams = new HashMap<>();
+                                        chunkParams.put("partNumber", String.valueOf(1));
+                                        chunkParams.put("uploadId", uploadBean.getUpload_id());
+                                        chunkParams.put("name", uploadFile.getName());
+                                        chunkParams.put("chunk", String.valueOf(0));
+                                        chunkParams.put("chunks", String.valueOf(chunkNum));
+                                        chunkParams.put("size", String.valueOf(chunkSize));
+                                        chunkParams.put("start", String.valueOf(0));
+                                        chunkParams.put("end", String.valueOf(chunkSize));
+                                        chunkParams.put("total", String.valueOf(fileSize));
+                                        if (chunkSize > fileSize) {
+                                            chunkParams.put("size", String.valueOf(fileSize));
+                                            chunkParams.put("end", String.valueOf(fileSize));
+                                        }
+                                        ChunkUploadRequest chunkUploadRequest = new ChunkUploadRequest(preUploadBean, chunkParams, new RandomAccessFile(filePath, "r"));
+                                        chunkUploadRequest.getPage();
+                                    } catch (Exception e) {
+                                        log.error("上传报错，等待十秒进行重试。", e);
+                                        preUploadBean.setOK(0);
+                                        try {
+                                            Thread.sleep(10000L);
+                                        } catch (InterruptedException ex) {
+                                            ex.printStackTrace();
+                                        }
+                                    }
                                 }
                             } while (preUploadBean.getOK() == 0);
-                            log.info("预上传请求==>{}", JSON.toJSONString(preUploadBean));
-                            LineUploadRequest uploadRequest = new LineUploadRequest(webCookie, preUploadBean);
-                            uploadBean = uploadRequest.getPojo();
                         }catch (Exception e){
                             //存在异常
                             TaskUtil.partUploadTask.remove(part.getId());
@@ -184,25 +215,22 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                             throw new RuntimeException("并发上传失败，存在异常", e);
                         }
                         // 分段上传
-                        long fileSize = uploadFile.length();
-                        long chunkSize = preUploadBean.getChunk_size();
-//                        long chunkSize = 1024 * 1024 * 5;
-                        long chunkNum = (long) Math.ceil((double) fileSize / chunkSize);
                         AtomicInteger upCount = new AtomicInteger(0);
                         AtomicBoolean isThrow = new AtomicBoolean(false);
                         List<Runnable> runnableList = new ArrayList<>();
-                        for (int i = 0; i < chunkNum; i++) {
+                        for (int i = 1; i < chunkNum; i++) {
                             int finalI = i;
                             LineUploadBean finalUploadBean = uploadBean;
                             PreUploadBean finalPreUploadBean = preUploadBean;
+                            long finalChunkSize1 = chunkSize;
                             Runnable runnable = () -> {
                                 try {
                                     int tryCount = 0;
                                     while (tryCount < 5) {
                                         try {
                                             // 上传
-                                            long endSize = (finalI + 1) * chunkSize;
-                                            long finalChunkSize = chunkSize;
+                                            long endSize = (finalI + 1) * finalChunkSize1;
+                                            long finalChunkSize = finalChunkSize1;
                                             Map<String, String> chunkParams = new HashMap<>();
                                             chunkParams.put("partNumber", String.valueOf(finalI + 1));
                                             chunkParams.put("uploadId", finalUploadBean.getUpload_id());

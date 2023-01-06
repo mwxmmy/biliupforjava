@@ -203,14 +203,14 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                                             // 上传
                                             long endSize = (finalI + 1) * chunkSize;
                                             long finalChunkSize = chunkSize;
-                                            Map<String, Object> chunkParams = new HashMap<>();
-                                            chunkParams.put("partNumber", finalI + 1);
+                                            Map<String, String> chunkParams = new HashMap<>();
+                                            chunkParams.put("partNumber", String.valueOf(finalI + 1));
                                             chunkParams.put("uploadId", finalUploadBean.getUpload_id());
                                             chunkParams.put("name", uploadFile.getName());
-                                            chunkParams.put("chunk",finalI);
-                                            chunkParams.put("chunks",chunkNum);
-                                            chunkParams.put("size",String.valueOf(finalChunkSize));
-                                            chunkParams.put("start",finalI*finalChunkSize);
+                                            chunkParams.put("chunk", String.valueOf(finalI));
+                                            chunkParams.put("chunks", String.valueOf(chunkNum));
+                                            chunkParams.put("size", String.valueOf(finalChunkSize));
+                                            chunkParams.put("start", String.valueOf(finalI * finalChunkSize));
                                             chunkParams.put("end", String.valueOf(endSize));
                                             chunkParams.put("total", String.valueOf(fileSize));
                                             if (endSize > fileSize) {

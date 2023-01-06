@@ -219,7 +219,7 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                         AtomicBoolean isThrow = new AtomicBoolean(false);
                         List<Runnable> runnableList = new ArrayList<>();
                         for (int i = 1; i < chunkNum; i++) {
-                            int finalI = i;
+                            long finalI = i;
                             LineUploadBean finalUploadBean = uploadBean;
                             PreUploadBean finalPreUploadBean = preUploadBean;
                             long finalChunkSize1 = chunkSize;

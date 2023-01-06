@@ -3,7 +3,6 @@ package top.sshh.bililiverecoder.util;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.jayway.jsonpath.JsonPath;
-import github.zimoyin.bili.cookie.Cookie;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
@@ -28,7 +27,6 @@ import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @Slf4j

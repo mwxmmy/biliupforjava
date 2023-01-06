@@ -169,7 +169,9 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                                 } else {
                                     try {
                                         log.info("预上传请求==>{}", JSON.toJSONString(preUploadBean));
+                                        // 同步更新
                                         chunkSize = preUploadBean.getChunk_size();
+                                        chunkNum = (long) Math.ceil((double) fileSize / chunkSize);
                                         LineUploadRequest uploadRequest = new LineUploadRequest(webCookie, preUploadBean);
                                         uploadBean = uploadRequest.getPojo();
                                         Map<String, String> chunkParams = new HashMap<>();
@@ -223,6 +225,7 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                             LineUploadBean finalUploadBean = uploadBean;
                             PreUploadBean finalPreUploadBean = preUploadBean;
                             long finalChunkSize1 = chunkSize;
+                            long finalChunkNum = chunkNum;
                             Runnable runnable = () -> {
                                 try {
                                     int tryCount = 0;
@@ -236,7 +239,7 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                                             chunkParams.put("uploadId", finalUploadBean.getUpload_id());
                                             chunkParams.put("name", uploadFile.getName());
                                             chunkParams.put("chunk", String.valueOf(finalI));
-                                            chunkParams.put("chunks", String.valueOf(chunkNum));
+                                            chunkParams.put("chunks", String.valueOf(finalChunkNum));
                                             chunkParams.put("size", String.valueOf(finalChunkSize));
                                             chunkParams.put("start", String.valueOf(finalI * finalChunkSize));
                                             chunkParams.put("end", String.valueOf(endSize));
@@ -252,7 +255,7 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                                             chunkUploadRequest.getPage();
                                             int count = upCount.incrementAndGet();
                                             log.info("{}==>[{}] 上传视频part {} 进度{}/{}", Thread.currentThread().getName(), room.getTitle(),
-                                                    filePath, count, chunkNum);
+                                                    filePath, count, finalChunkNum);
                                             tryCount = 5;
                                             isThrow.set(false);
                                         } catch (Exception e) {

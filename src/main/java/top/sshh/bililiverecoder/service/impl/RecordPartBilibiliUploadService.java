@@ -158,7 +158,7 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                                 preUploadBean = preuploadRequest.getPojo();
                                 if (preUploadBean != null && preUploadBean.getOK() == 0) {
                                     try {
-                                        log.info("上传限流等待十秒==>{}", JSON.toJSONString(part));
+                                        log.info("上传限流等待十秒==>{}", uploadFile.getName());
                                         Thread.sleep(10000L);
                                     } catch (InterruptedException e) {
                                         e.printStackTrace();
@@ -219,7 +219,6 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                                                 chunkParams.put("size", String.valueOf(finalChunkSize));
                                                 chunkParams.put("end", String.valueOf(endSize));
                                             }
-                                            log.error("即将上传分片，i={},开始位置{}，结束位置{}", finalI, chunkParams.get("start"), chunkParams.get("end"));
                                             ChunkUploadRequest chunkUploadRequest = new ChunkUploadRequest(finalPreUploadBean, chunkParams, new RandomAccessFile(filePath, "r"));
                                             chunkUploadRequest.getPage();
                                             int count = upCount.incrementAndGet();

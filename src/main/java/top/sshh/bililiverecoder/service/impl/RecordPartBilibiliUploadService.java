@@ -1,18 +1,24 @@
 package top.sshh.bililiverecoder.service.impl;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.jayway.jsonpath.JsonPath;
 import com.zjiecode.wxpusher.client.WxPusher;
 import com.zjiecode.wxpusher.client.bean.Message;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import top.sshh.bili.cookie.Cookie;
+import top.sshh.bili.cookie.WebCookie;
+import top.sshh.bili.upload.CheckUploadRequest;
+import top.sshh.bili.upload.ChunkUploadRequest;
+import top.sshh.bili.upload.LineUploadRequest;
+import top.sshh.bili.upload.PreUploadRequest;
+import top.sshh.bili.upload.pojo.CheckUploadBean;
+import top.sshh.bili.upload.pojo.LineUploadBean;
+import top.sshh.bili.upload.pojo.PreUploadBean;
 import top.sshh.bililiverecoder.entity.BiliBiliUser;
 import top.sshh.bililiverecoder.entity.RecordHistory;
 import top.sshh.bililiverecoder.entity.RecordHistoryPart;
@@ -26,13 +32,10 @@ import top.sshh.bililiverecoder.util.BiliApi;
 import top.sshh.bililiverecoder.util.TaskUtil;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.RandomAccessFile;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -142,36 +145,84 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                             throw new RuntimeException("{}登录已过期，请重新登录! " + biliBiliUser.getUname());
                         }
                         // 登录验证结束
-                        String preRes = BiliApi.preUpload(biliBiliUser, "ugcfr/pc3");
-                        log.error("预上传请求==>"+preRes);
-                        JSONObject preResObj = JSON.parseObject(preRes);
-                        String url = preResObj.getString("url");
-                        String complete = preResObj.getString("complete");
-                        String filename = preResObj.getString("filename");
-                        // 分段上传
                         File uploadFile = new File(filePath);
+                        WebCookie webCookie = Cookie.parse(biliBiliUser.getCookies());
+                        Map<String,String> preParams = new HashMap<>();
+                        preParams.put("r","upos");
+                        preParams.put("profile","ugcupos/bup");
+                        preParams.put("name",uploadFile.getName());
+                        preParams.put("size", String.valueOf(uploadFile.length()));
+                        PreUploadRequest preuploadRequest = new PreUploadRequest(webCookie,preParams);
+                        PreUploadBean preUploadBean =null;
+                        LineUploadBean uploadBean = null;
+                        try {
+                            preUploadBean = preuploadRequest.getPojo();
+                            log.info("预上传请求==>{}",JSON.toJSONString(preUploadBean));
+                            LineUploadRequest uploadRequest = new LineUploadRequest(webCookie,preUploadBean);
+                            uploadBean = uploadRequest.getPojo();
+                        }catch (Exception e){
+                            //存在异常
+                            TaskUtil.partUploadTask.remove(part.getId());
+                            if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("分P上传")){
+                                Message message = new Message();
+                                message.setAppToken(wxToken);
+                                message.setContentType(Message.CONTENT_TYPE_TEXT);
+                                message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), "开始", room.getTitle(),
+                                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
+                                        part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, ((float) part.getFileSize() / 1024 / 1024 / 1024), "上传失败", biliBiliUser.getUname() + "并发上传失败，存在异常"));
+                                message.setUid(wxuid);
+                                WxPusher.send(message);
+                            }
+                            throw new RuntimeException("partId={}===并发上传失败，存在异常");
+                        }
+                        // 分段上传
                         long fileSize = uploadFile.length();
-                        long chunkSize = 1024 * 1024 * 5;
+                        long chunkSize = preUploadBean.getChunk_size();
                         long chunkNum = (long) Math.ceil((double) fileSize / chunkSize);
                         AtomicInteger upCount = new AtomicInteger(0);
                         AtomicBoolean isThrow = new AtomicBoolean(false);
                         List<Runnable> runnableList = new ArrayList<>();
                         for (int i = 0; i < chunkNum; i++) {
                             int finalI = i;
+                            LineUploadBean finalUploadBean = uploadBean;
+                            PreUploadBean finalPreUploadBean = preUploadBean;
                             Runnable runnable = () -> {
                                 try (RandomAccessFile r = new RandomAccessFile(filePath, "r")) {
                                     int tryCount = 0;
                                     while (tryCount < 5) {
                                         try {
                                             // 上传
-                                            String s = BiliApi.uploadChunk(url, filename, r, chunkSize,
-                                                    finalI + 1, (int) chunkNum);
-                                            if (!s.contains("OK")) {
+                                            long endSize = (finalI + 1) * chunkSize;
+                                            long finalChunkSize = chunkSize;
+                                            Map<String,Object> chunkParams = new HashMap<>();
+                                            chunkParams.put("partNumber",finalI+1);
+                                            chunkParams.put("uploadId", finalUploadBean.getUpload_id());
+                                            chunkParams.put("name",uploadFile.getName());
+                                            chunkParams.put("chunk",finalI);
+                                            chunkParams.put("chunks",chunkNum);
+                                            chunkParams.put("size",String.valueOf(finalChunkSize));
+                                            chunkParams.put("start",finalI*finalChunkSize);
+                                            chunkParams.put("end", String.valueOf(endSize));
+                                            chunkParams.put("total",String.valueOf(fileSize));
+                                            if(endSize > fileSize){
+                                                endSize = fileSize;
+                                                finalChunkSize = fileSize-(finalI*chunkSize);
+                                                chunkParams.put("size",String.valueOf(finalChunkSize));
+                                                chunkParams.put("end", String.valueOf(endSize));
+                                            }
+                                            ChunkUploadRequest chunkUploadRequest = new ChunkUploadRequest(finalPreUploadBean,chunkParams,r);
+                                            chunkUploadRequest.getPage();
+                                            Map<String,String> checkParams = new HashMap<>();
+                                            checkParams.put("uploadId", finalUploadBean.getUpload_id());
+                                            checkParams.put("biz_id", String.valueOf(finalPreUploadBean.getBiz_id()));
+                                            CheckUploadRequest checkUploadRequest = new CheckUploadRequest(finalPreUploadBean,checkParams);
+                                            CheckUploadBean checkUploadBean = checkUploadRequest.getPojo();
+                                            if (checkUploadBean.getOK() != 1) {
                                                 throw new RuntimeException("上传返回异常");
                                             }
                                             int count = upCount.incrementAndGet();
                                             log.info("{}==>[{}] 上传视频part {} 进度{}/{}, resp={}", Thread.currentThread().getName(), room.getTitle(),
-                                                    filePath, count, chunkNum, s);
+                                                    filePath, count, chunkNum, JSON.toJSONString(checkUploadBean));
                                             tryCount = 5;
                                             isThrow.set(false);
                                         } catch (Exception e) {
@@ -234,12 +285,6 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                         }
 
                         try {
-                            FileInputStream stream = new FileInputStream(uploadFile);
-                            String md5 = DigestUtils.md5Hex(stream).toLowerCase();
-                            stream.close();
-                            BiliApi.completeUpload(complete, (int) chunkNum, fileSize, md5,
-                                    uploadFile.getName(), "2.3.0.1088");
-                            part.setFileName(filename);
                             part.setUpload(true);
                             part.setUpdateTime(LocalDateTime.now());
                             part = partRepository.save(part);

@@ -3,6 +3,7 @@ package top.sshh.bililiverecoder.util;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.jayway.jsonpath.JsonPath;
+import github.zimoyin.bili.cookie.Cookie;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
@@ -201,6 +202,31 @@ public class BiliApi {
         headers.put("Buvid", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5");
         headers.put("User-Agent", "Mozilla/5.0 BiliDroid/5.37.0 (bbcallen@gmail.com)");
         headers.put("Device-ID", "aBRoDWAVeRhsA3FDewMzS3lLMwM");
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(url);
+        params.forEach(uriBuilder::queryParam);
+        return HttpClientUtil.get(uriBuilder.toUriString(), headers);
+    }
+    public static String preUpload(BiliBiliUser user, Map<String, String> param) {
+        String url = "https://member.bilibili.com/preupload";
+        Map<String, String> params = new TreeMap<>();
+        // params.put("appkey", appKey);
+        // params.put("access_key", user.getAccessToken());
+        params.put("build", "2100400");
+        params.put("channel", "html5_app_bili");
+        params.put("mobi_app", "android");
+        params.put("platform", "android");
+        params.put("ts", "" + System.currentTimeMillis() / 1000);
+        // params.put("sign", sign(params, appSecret));
+        params.putAll(param);
+
+        Map<String, String> headers = new HashMap<>();
+        long currentSecond = Instant.now().getEpochSecond();
+        headers.put("Display-ID", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5-" + currentSecond);
+        headers.put("Buvid", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5");
+        headers.put("User-Agent", "Mozilla/5.0 BiliDroid/5.37.0 (bbcallen@gmail.com)");
+        headers.put("Device-ID", "aBRoDWAVeRhsA3FDewMzS3lLMwM");
+
+        headers.put("cookie", user.getCookies());
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(url);
         params.forEach(uriBuilder::queryParam);
         return HttpClientUtil.get(uriBuilder.toUriString(), headers);

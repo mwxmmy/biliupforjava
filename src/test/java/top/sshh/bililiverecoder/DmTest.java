@@ -104,25 +104,14 @@ public class DmTest {
 
     @Test
     public void preUploadTest(){
-        BiliBiliUser biliUser = biliUserRepository.findByUid(3493090360821990L);
-        VideoUploadDto videoUploadDto = new VideoUploadDto();
-        SingleVideoDto sing = new SingleVideoDto();
-        sing.setFilename("n230105011h0tnkav99mnh3jadrrk94q");
-        sing.setTitle("1");
-        SingleVideoDto sing2 = new SingleVideoDto();
-        sing.setFilename("n230105152etb645cwt0p419rsuzi92p");
-        sing.setTitle("1");
-        videoUploadDto.setTid(21);
-        videoUploadDto.setCover("");
-        videoUploadDto.setCopyright(1);
-        videoUploadDto.setTitle("1");
-        videoUploadDto.setSource("1");
-        videoUploadDto.setDesc("1");
-        videoUploadDto.setDynamic("");
-        videoUploadDto.setVideos(Collections.singletonList(sing));
-        videoUploadDto.setTag("1");
-        videoUploadDto.setAid(649775256);
-        String publish = BiliApi.editPublish(biliUser.getAccessToken(), videoUploadDto);
-        System.out.println(publish);
+        BiliBiliUser biliUser = new BiliBiliUser();
+        biliUser.setCookies("bili_jct=a951dd04c28cffc2afabeb61cbec4972;DedeUserID=10043269;gourl=http%3A%2F%2Fwww.bilibili.com;Expires=15551000;DedeUserID__ckMd5=7cc21642fb0885c3;SESSDATA=d4f40ee7%2C1688531766%2Cfc874%2A11;");
+        Map<String, String> params = new TreeMap<>();
+        params.put("r","upos");
+        params.put("profile","ugcupos/bup");
+        params.put("name","1.flv");
+        params.put("size","1213123");
+        String preUpload = BiliApi.preUpload(biliUser, params);
+        System.out.println(preUpload);
     }
 }

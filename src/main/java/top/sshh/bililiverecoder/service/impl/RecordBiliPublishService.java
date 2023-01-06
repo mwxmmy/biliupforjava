@@ -10,6 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import top.sshh.bili.cookie.Cookie;
+import top.sshh.bili.upload.PublishVideoRequest;
+import top.sshh.bili.upload.pojo.PublishVideoBean;
 import top.sshh.bililiverecoder.entity.BiliBiliUser;
 import top.sshh.bililiverecoder.entity.RecordHistory;
 import top.sshh.bililiverecoder.entity.RecordHistoryPart;
@@ -424,11 +427,13 @@ public class RecordBiliPublishService {
                 videoUploadDto.setVideos(dtos);
                 videoUploadDto.setTag(room.getTags());
                 try {
-                    String uploadRes = BiliApi.publish(biliBiliUser.getAccessToken(), videoUploadDto);
-                    String bvid = JSON.parseObject(uploadRes).getJSONObject("data").getString("bvid");
-                    String aid = JSON.parseObject(uploadRes).getJSONObject("data").getString("aid");
-                    history.setBvId(bvid);
-                    history.setAvId(aid);
+                    PublishVideoRequest publishVideoRequest = new PublishVideoRequest(Cookie.parse(biliBiliUser.getCookies()),JSON.toJSONString(videoUploadDto));
+                    PublishVideoBean videoBean = publishVideoRequest.getPojo();
+                    if(videoBean.getCode() != 0){
+                        throw new RuntimeException(JSON.toJSONString(videoBean));
+                    }
+                    history.setBvId(videoBean.getData().getBvid());
+                    history.setAvId(videoBean.getData().getAid());
                     history.setPublish(true);
                     history = historyRepository.save(history);
                     log.info("发布={}=视频成功 == > {}", room.getUname(), JSON.toJSONString(history));

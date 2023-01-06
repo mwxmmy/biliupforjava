@@ -243,6 +243,7 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                                             chunkParams.put("total", String.valueOf(fileSize));
                                             if (endSize > fileSize) {
                                                 endSize = fileSize;
+
                                                 finalChunkSize = fileSize - (finalI * finalChunkSize);
                                                 chunkParams.put("size", String.valueOf(finalChunkSize));
                                                 chunkParams.put("end", String.valueOf(endSize));

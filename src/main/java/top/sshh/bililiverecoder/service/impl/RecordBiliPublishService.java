@@ -10,9 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import top.sshh.bili.cookie.Cookie;
-import top.sshh.bili.upload.PublishVideoRequest;
-import top.sshh.bili.upload.pojo.PublishVideoBean;
 import top.sshh.bililiverecoder.entity.BiliBiliUser;
 import top.sshh.bililiverecoder.entity.RecordHistory;
 import top.sshh.bililiverecoder.entity.RecordHistoryPart;
@@ -307,9 +304,9 @@ public class RecordBiliPublishService {
                 Message message = new Message();
                 message.setAppToken(wxToken);
                 message.setContentType(Message.CONTENT_TYPE_TEXT);
-                message.setContent(WX_MSG_FORMAT.formatted(room.getUname(),room.getTitle(),
-                       LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                        "投稿失败","分p数量发生变动"));
+                message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), room.getTitle(),
+                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
+                        "投稿失败", "分p数量发生变动"));
                 message.setUid(wxuid);
                 WxPusher.send(message);
             }
@@ -427,23 +424,21 @@ public class RecordBiliPublishService {
                 videoUploadDto.setVideos(dtos);
                 videoUploadDto.setTag(room.getTags());
                 try {
-                    PublishVideoRequest publishVideoRequest = new PublishVideoRequest(Cookie.parse(biliBiliUser.getCookies()),JSON.toJSONString(videoUploadDto));
-                    PublishVideoBean videoBean = publishVideoRequest.getPojo();
-                    if(videoBean.getCode() != 0){
-                        throw new RuntimeException(JSON.toJSONString(videoBean));
-                    }
-                    history.setBvId(videoBean.getData().getBvid());
-                    history.setAvId(videoBean.getData().getAid());
+                    String uploadRes = BiliApi.publish(biliBiliUser.getAccessToken(), videoUploadDto);
+                    String bvid = JSON.parseObject(uploadRes).getJSONObject("data").getString("bvid");
+                    String aid = JSON.parseObject(uploadRes).getJSONObject("data").getString("aid");
+                    history.setBvId(bvid);
+                    history.setAvId(aid);
                     history.setPublish(true);
                     history = historyRepository.save(history);
                     log.info("发布={}=视频成功 == > {}", room.getUname(), JSON.toJSONString(history));
-                    if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("视频投稿")){
+                    if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("视频投稿")) {
                         Message message = new Message();
                         message.setAppToken(wxToken);
                         message.setContentType(Message.CONTENT_TYPE_TEXT);
-                        message.setContent(WX_MSG_FORMAT.formatted(room.getUname(),room.getTitle(),
+                        message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), room.getTitle(),
                                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                "投稿成功",""));
+                                "投稿成功", ""));
                         message.setUid(wxuid);
                         WxPusher.send(message);
                     }

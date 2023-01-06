@@ -215,10 +215,11 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                                             chunkParams.put("total", String.valueOf(fileSize));
                                             if (endSize > fileSize) {
                                                 endSize = fileSize;
-                                                finalChunkSize = fileSize - (finalI * chunkSize);
+                                                finalChunkSize = fileSize - (finalI * finalChunkSize);
                                                 chunkParams.put("size", String.valueOf(finalChunkSize));
                                                 chunkParams.put("end", String.valueOf(endSize));
                                             }
+                                            log.error("即将上传分片，i={},开始位置{}，结束位置{}", finalI, chunkParams.get("start"), chunkParams.get("end"));
                                             ChunkUploadRequest chunkUploadRequest = new ChunkUploadRequest(finalPreUploadBean, chunkParams, new RandomAccessFile(filePath, "r"));
                                             chunkUploadRequest.getPage();
                                             int count = upCount.incrementAndGet();

@@ -185,8 +185,8 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                         }
                         // 分段上传
                         long fileSize = uploadFile.length();
-                        long chunkSize = preUploadBean.getChunk_size();
-//                        long chunkSize = 1024 * 1024 * 5;
+//                        long chunkSize = preUploadBean.getChunk_size();
+                        long chunkSize = 1024 * 1024 * 5;
                         long chunkNum = (long) Math.ceil((double) fileSize / chunkSize);
                         AtomicInteger upCount = new AtomicInteger(0);
                         AtomicBoolean isThrow = new AtomicBoolean(false);
@@ -227,9 +227,16 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                                             tryCount = 5;
                                             isThrow.set(false);
                                         } catch (Exception e) {
+
                                             int count = upCount.get();
                                             log.info("{}==>[{}] 上传视频part {} 进度{}/{}, exception={}", Thread.currentThread().getName(), room.getTitle(),
                                                     filePath, count, chunkNum, ExceptionUtils.getStackTrace(e));
+                                            try {
+//                                                log.info("上传失败等待十秒==>{}", uploadFile.getName());
+                                                Thread.sleep(10000L);
+                                            } catch (InterruptedException ex) {
+                                                ex.printStackTrace();
+                                            }
                                             isThrow.set(true);
                                         }
                                     }

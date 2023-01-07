@@ -1,24 +1,17 @@
 package top.sshh.bililiverecoder.service.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.jayway.jsonpath.JsonPath;
 import com.zjiecode.wxpusher.client.WxPusher;
 import com.zjiecode.wxpusher.client.bean.Message;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import top.sshh.bili.cookie.Cookie;
-import top.sshh.bili.cookie.WebCookie;
-import top.sshh.bili.upload.ChunkUploadRequest;
-import top.sshh.bili.upload.CompleteUploadRequest;
-import top.sshh.bili.upload.LineUploadRequest;
-import top.sshh.bili.upload.PreUploadRequest;
-import top.sshh.bili.upload.pojo.CompleteUploadBean;
-import top.sshh.bili.upload.pojo.LineUploadBean;
-import top.sshh.bili.upload.pojo.PreUploadBean;
+import org.springframework.stereotype.Service;
 import top.sshh.bililiverecoder.entity.BiliBiliUser;
 import top.sshh.bililiverecoder.entity.RecordHistory;
 import top.sshh.bililiverecoder.entity.RecordHistoryPart;
@@ -32,20 +25,22 @@ import top.sshh.bililiverecoder.util.BiliApi;
 import top.sshh.bililiverecoder.util.TaskUtil;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.RandomAccessFile;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
-@Component
-public class RecordPartBilibiliUploadService implements RecordPartUploadService {
+@Service("appRecordPartBilibiliUploadService")
+public class AppRecordPartBilibiliUploadService implements RecordPartUploadService {
 
-    @Value("${record.wx-push-token}")
-    private String wxToken;
-    private static final String WX_MSG_FORMAT= """
+    public static final String OS = "app";
+    private static final String WX_MSG_FORMAT = """
             收到主播%s分P上传%s事件
             房间名: %s
             时间: %s
@@ -56,6 +51,8 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
             上传结果: %s
             原因: %s
             """;
+    @Value("${record.wx-push-token}")
+    private String wxToken;
     @Autowired
     private BiliUserRepository biliUserRepository;
     @Autowired
@@ -132,7 +129,7 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                             biliBiliUser.setLogin(false);
                             biliBiliUser = biliUserRepository.save(biliBiliUser);
                             TaskUtil.partUploadTask.remove(part.getId());
-                            if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("分P上传")){
+                            if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("分P上传")) {
                                 Message message = new Message();
                                 message.setAppToken(wxToken);
                                 message.setContentType(Message.CONTENT_TYPE_TEXT);
@@ -145,103 +142,42 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                             throw new RuntimeException("{}登录已过期，请重新登录! " + biliBiliUser.getUname());
                         }
                         // 登录验证结束
+                        String preRes = BiliApi.preUpload(biliBiliUser, "ugcfr/pc3");
+                        log.error("预上传请求==>" + preRes);
+                        JSONObject preResObj = JSON.parseObject(preRes);
+                        String url = preResObj.getString("url");
+                        String complete = preResObj.getString("complete");
+                        String filename = preResObj.getString("filename");
+                        // 分段上传
                         File uploadFile = new File(filePath);
-                        WebCookie webCookie = Cookie.parse(biliBiliUser.getCookies());
-                        Map<String, String> preParams = new HashMap<>();
-                        preParams.put("r", "upos");
-                        preParams.put("profile", "ugcupos/bup");
-                        preParams.put("name", uploadFile.getName());
-                        preParams.put("size", String.valueOf(uploadFile.length()));
                         long fileSize = uploadFile.length();
                         long chunkSize = 1024 * 1024 * 5;
                         long chunkNum = (long) Math.ceil((double) fileSize / chunkSize);
-                        PreUploadRequest preuploadRequest = new PreUploadRequest(webCookie, preParams);
-                        PreUploadBean preUploadBean;
-                        LineUploadBean uploadBean = null;
-                        try {
-                            do {
-                                preUploadBean = preuploadRequest.getPojo();
-                                if (preUploadBean != null && preUploadBean.getOK() == 0) {
-                                    try {
-                                        log.info("上传限流等待十秒==>{}", uploadFile.getName());
-                                        Thread.sleep(10000L);
-                                    } catch (InterruptedException e) {
-                                        e.printStackTrace();
-                                    }
-                                } else {
-                                    // 同步更新
-                                    chunkSize = preUploadBean.getChunk_size();
-                                    chunkNum = (long) Math.ceil((double) fileSize / chunkSize);
-                                    LineUploadRequest uploadRequest = new LineUploadRequest(webCookie, preUploadBean);
-                                    uploadBean = uploadRequest.getPojo();
-                                    log.error("uploadBean==>{}", JSON.toJSONString(uploadBean));
-                                }
-                            } while (preUploadBean.getOK() == 0);
-                        }catch (Exception e){
-                            //存在异常
-                            TaskUtil.partUploadTask.remove(part.getId());
-                            if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("分P上传")){
-                                Message message = new Message();
-                                message.setAppToken(wxToken);
-                                message.setContentType(Message.CONTENT_TYPE_TEXT);
-                                message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), "开始", room.getTitle(),
-                                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                        part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, ((float) part.getFileSize() / 1024 / 1024 / 1024), "上传失败", biliBiliUser.getUname() + "并发上传失败，存在异常"));
-                                message.setUid(wxuid);
-                                WxPusher.send(message);
-                            }
-                            throw new RuntimeException("并发上传失败，存在异常", e);
-                        }
-                        // 分段上传
                         AtomicInteger upCount = new AtomicInteger(0);
                         AtomicBoolean isThrow = new AtomicBoolean(false);
                         List<Runnable> runnableList = new ArrayList<>();
                         for (int i = 0; i < chunkNum; i++) {
-                            long finalI = i;
-                            LineUploadBean finalUploadBean = uploadBean;
-                            PreUploadBean finalPreUploadBean = preUploadBean;
-                            long finalChunkSize1 = chunkSize;
-                            long finalChunkNum = chunkNum;
+                            int finalI = i;
                             Runnable runnable = () -> {
-                                try {
+                                try (RandomAccessFile r = new RandomAccessFile(filePath, "r")) {
                                     int tryCount = 0;
                                     while (tryCount < 5) {
                                         try {
                                             // 上传
-                                            long endSize = (finalI + 1) * finalChunkSize1;
-                                            long finalChunkSize = finalChunkSize1;
-                                            Map<String, String> chunkParams = new HashMap<>();
-                                            chunkParams.put("partNumber", String.valueOf(finalI + 1));
-                                            chunkParams.put("uploadId", finalUploadBean.getUpload_id());
-                                            chunkParams.put("chunk", String.valueOf(finalI));
-                                            chunkParams.put("chunks", String.valueOf(finalChunkNum));
-                                            chunkParams.put("size", String.valueOf(finalChunkSize));
-                                            chunkParams.put("start", String.valueOf(finalI * finalChunkSize));
-                                            chunkParams.put("end", String.valueOf(endSize));
-                                            chunkParams.put("total", String.valueOf(fileSize));
-                                            if (endSize > fileSize) {
-                                                endSize = fileSize;
-
-                                                finalChunkSize = fileSize - (finalI * finalChunkSize);
-                                                chunkParams.put("size", String.valueOf(finalChunkSize));
-                                                chunkParams.put("end", String.valueOf(endSize));
+                                            String s = BiliApi.uploadChunk(url, filename, r, chunkSize,
+                                                    finalI + 1, (int) chunkNum);
+                                            if (!s.contains("OK")) {
+                                                throw new RuntimeException("上传返回异常");
                                             }
-                                            ChunkUploadRequest chunkUploadRequest = new ChunkUploadRequest(finalPreUploadBean, chunkParams, new RandomAccessFile(filePath, "r"));
-                                            chunkUploadRequest.getPage();
                                             int count = upCount.incrementAndGet();
-                                            log.info("{}==>[{}] 上传视频part {} 进度{}/{}", Thread.currentThread().getName(), room.getTitle(),
-                                                    filePath, count, finalChunkNum);
+                                            log.info("{}==>[{}] 上传视频part {} 进度{}/{}, resp={}", Thread.currentThread().getName(), room.getTitle(),
+                                                    filePath, count, chunkNum, s);
                                             tryCount = 5;
                                             isThrow.set(false);
                                         } catch (Exception e) {
-                                            log.info("{}==>[{}] 上传视频part {}, index {}, size {}, start {}, end {}, exception={}", Thread.currentThread().getName(), room.getTitle(),
-                                                    filePath, finalI, finalChunkSize1, finalI * finalChunkSize1, (finalI + 1) * finalChunkSize1, ExceptionUtils.getStackTrace(e));
-                                            try {
-//                                                log.info("上传失败等待十秒==>{}", uploadFile.getName());
-                                                Thread.sleep(10000L);
-                                            } catch (InterruptedException ex) {
-                                                ex.printStackTrace();
-                                            }
+                                            int count = upCount.get();
+                                            log.info("{}==>[{}] 上传视频part {} 进度{}/{}, exception={}", Thread.currentThread().getName(), room.getTitle(),
+                                                    filePath, count, chunkNum, ExceptionUtils.getStackTrace(e));
                                             isThrow.set(true);
                                         }
                                     }
@@ -278,7 +214,7 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                             }
                             //存在异常
                             TaskUtil.partUploadTask.remove(part.getId());
-                            if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("分P上传")){
+                            if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("分P上传")) {
                                 message.setAppToken(wxToken);
                                 message.setContentType(Message.CONTENT_TYPE_TEXT);
                                 message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), "开始", room.getTitle(),
@@ -289,60 +225,50 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                             }
                             throw new RuntimeException("partId={}===并发上传失败，存在异常");
                         }
-                        //通知服务器上传完成
-                        Map<String, String> completeParams = new HashMap<>();
-                        completeParams.put("profile", "ugcupos/bup");
-                        completeParams.put("name", uploadFile.getName());
-                        completeParams.put("uploadId", uploadBean.getUpload_id());
-                        completeParams.put("biz_id", String.valueOf(preUploadBean.getBiz_id()));
-                        Map<String, Object> bodyMap = new LinkedHashMap<>(1);
-                        List<Map<String, String>> chunkMaps = new ArrayList<>((int) chunkNum);
-                        for (int i = 1; i <= chunkNum; i++) {
-                            Map<String, String> partMap = new LinkedHashMap<>(2);
-                            partMap.put("partNumber", String.valueOf(i));
-                            partMap.put("eTag", "etag");
-                            chunkMaps.add(partMap);
-                        }
-                        bodyMap.put("parts", chunkMaps);
-                        CompleteUploadRequest completeUploadRequest = new CompleteUploadRequest(preUploadBean, completeParams, JSON.toJSONString(bodyMap));
 
                         try {
-                            CompleteUploadBean pojo = completeUploadRequest.getPojo();
-                            if (pojo.getOK() == 1) {
-                                part.setUpload(true);
-                                part.setFileName(uploadBean.getFileName());
-                                part.setUpdateTime(LocalDateTime.now());
-                                part = partRepository.save(part);
-                                //如果配置上传完成删除，则删除文件
-                                if (room.getDeleteType() == 1) {
-                                    boolean delete = uploadFile.delete();
-                                    if (delete) {
-                                        log.error("{}=>文件删除成功！！！", filePath);
-                                    } else {
-                                        log.error("{}=>文件删除失败！！！", filePath);
-                                    }
-                                }
-                                TaskUtil.partUploadTask.remove(part.getId());
-                                log.info("partId={},文件上传成功==>{},complete==>{}", part.getId(), filePath, JSON.toJSONString(pojo));
+                            log.info("上传完毕等待十秒==>{}", JSON.toJSONString(part));
+                            Thread.sleep(10000L);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
 
-                                if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("分P上传")) {
-                                    message.setAppToken(wxToken);
-                                    message.setContentType(Message.CONTENT_TYPE_TEXT);
-                                    message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), "结束", room.getTitle(),
-                                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                            part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, ((float) part.getFileSize() / 1024 / 1024 / 1024), "上传成功", "服务器文件名称\n" + part.getFileName()));
-                                    message.setUid(wxuid);
-                                    WxPusher.send(message);
+                        try {
+                            FileInputStream stream = new FileInputStream(uploadFile);
+                            String md5 = DigestUtils.md5Hex(stream).toLowerCase();
+                            stream.close();
+                            BiliApi.completeUpload(complete, (int) chunkNum, fileSize, md5,
+                                    uploadFile.getName(), "2.3.0.1088");
+                            part.setFileName(filename);
+                            part.setUpload(true);
+                            part.setUpdateTime(LocalDateTime.now());
+                            part = partRepository.save(part);
+                            //如果配置上传完成删除，则删除文件
+                            if (room.getDeleteType() == 1) {
+                                boolean delete = uploadFile.delete();
+                                if (delete) {
+                                    log.error("{}=>文件删除成功！！！", filePath);
+                                } else {
+                                    log.error("{}=>文件删除失败！！！", filePath);
                                 }
-                            } else {
-                                throw new RuntimeException("合并上传文件失败：" + JSON.toJSONString(pojo));
                             }
+                            TaskUtil.partUploadTask.remove(part.getId());
+                            log.info("partId={},文件上传成功==>{}", part.getId(), filePath);
 
+                            if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("分P上传")) {
+                                message.setAppToken(wxToken);
+                                message.setContentType(Message.CONTENT_TYPE_TEXT);
+                                message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), "结束", room.getTitle(),
+                                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
+                                        part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, ((float) part.getFileSize() / 1024 / 1024 / 1024), "上传成功", "服务器文件名称\n" + part.getFileName()));
+                                message.setUid(wxuid);
+                                WxPusher.send(message);
+                            }
                         } catch (Exception e) {
                             //存在异常
                             TaskUtil.partUploadTask.remove(part.getId());
                             log.error("partId={},文件上传失败==>{}", part.getId(), filePath, e);
-                            if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("分P上传")){
+                            if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("分P上传")) {
                                 message.setAppToken(wxToken);
                                 message.setContentType(Message.CONTENT_TYPE_TEXT);
                                 message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), "结束", room.getTitle(),

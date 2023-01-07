@@ -38,7 +38,12 @@ public class RecordRoom {
 
     private int copyright = 1;
 
-    private String coverUrl;
+    private String coverUrl = "live";
+
+    /**
+     * 上传线路
+     */
+    private String line = "sz-bda2";
 
     /**
      * 微信uid
@@ -48,7 +53,7 @@ public class RecordRoom {
     /**
      * 允许发送推送的tag
      */
-    private String pushMsgTags="开始直播,录制结束,分P上传,视频投稿,高级弹幕,视频评论";
+    private String pushMsgTags = "开始直播,录制结束,分P上传,视频投稿,高级弹幕,视频评论";
 
     private String descTemplate = "直播录像 \n" +
             "${uname}直播间：https://live.bilibili.com/${roomId}";

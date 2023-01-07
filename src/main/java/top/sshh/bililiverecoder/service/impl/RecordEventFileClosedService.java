@@ -10,7 +10,7 @@ import top.sshh.bililiverecoder.repo.RecordHistoryPartRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
 import top.sshh.bililiverecoder.repo.RecordRoomRepository;
 import top.sshh.bililiverecoder.service.RecordEventService;
-import top.sshh.bililiverecoder.service.RecordPartUploadService;
+import top.sshh.bililiverecoder.service.UploadServiceFactory;
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -37,7 +37,7 @@ public class RecordEventFileClosedService implements RecordEventService {
     private RecordHistoryPartRepository historyPartRepository;
 
     @Autowired
-    private RecordPartUploadService uploadService;
+    private UploadServiceFactory uploadServiceFactory;
 
 
     @Override
@@ -88,7 +88,7 @@ public class RecordEventFileClosedService implements RecordEventService {
             //开始上传该视频分片，异步上传任务。
             // 小于设定文件大小和时长不上传
             if (fileSize > 1024 * 1024 * room.getFileSizeLimit() && part.getDuration() > room.getDurationLimit()) {
-                uploadService.asyncUpload(part);
+                uploadServiceFactory.getUploadService(room.getLine()).asyncUpload(part);
             } else {
                 log.error("文件大小小于设置的忽略大小或时长，删除。");
                 historyPartRepository.delete(part);

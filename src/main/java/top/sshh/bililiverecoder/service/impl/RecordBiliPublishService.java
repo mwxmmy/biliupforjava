@@ -20,7 +20,7 @@ import top.sshh.bililiverecoder.repo.BiliUserRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryPartRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
 import top.sshh.bililiverecoder.repo.RecordRoomRepository;
-import top.sshh.bililiverecoder.service.RecordPartUploadService;
+import top.sshh.bililiverecoder.service.UploadServiceFactory;
 import top.sshh.bililiverecoder.util.BiliApi;
 import top.sshh.bililiverecoder.util.TaskUtil;
 
@@ -53,7 +53,7 @@ public class RecordBiliPublishService {
     @Autowired
     private RecordRoomRepository roomRepository;
     @Autowired
-    private RecordPartUploadService uploadService;
+    private UploadServiceFactory uploadServiceFactory;
 
     @Async
     public void asyncPublishRecordHistory(RecordHistory history) {
@@ -96,7 +96,7 @@ public class RecordBiliPublishService {
                             RecordHistoryPart part = partOptional.get();
                             if (!part.isUpload()) {
                                 log.error("视频发布流程获取part上传锁成功，检查到未上传完成");
-                                uploadService.upload(uploadPart);
+                                uploadServiceFactory.getUploadService(room.getLine()).upload(uploadPart);
                             }
                         }
 
@@ -272,14 +272,14 @@ public class RecordBiliPublishService {
                         RecordHistoryPart part = partOptional.get();
                         if (!part.isUpload()) {
                             log.error("视频发布流程获取part上传锁成功，检查到未上传完成");
-                            uploadService.upload(uploadPart);
+                            uploadServiceFactory.getUploadService(room.getLine()).upload(uploadPart);
                         }
                     }
 
                 }
             } else {
                 log.error("视频发布流程,检查到未上传完成,开始上传！");
-                uploadService.upload(uploadPart);
+                uploadServiceFactory.getUploadService(room.getLine()).upload(uploadPart);
             }
 
         }

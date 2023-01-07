@@ -10,6 +10,7 @@ import top.sshh.bililiverecoder.entity.RecordRoom;
 import top.sshh.bililiverecoder.repo.BiliUserRepository;
 import top.sshh.bililiverecoder.repo.RecordRoomRepository;
 import top.sshh.bililiverecoder.util.BiliApi;
+import top.sshh.bililiverecoder.util.UploadEnums;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -49,6 +50,7 @@ public class RoomController {
             dbRoom.setPartTitleTemplate(room.getPartTitleTemplate());
             dbRoom.setDescTemplate(room.getDescTemplate());
             dbRoom.setCopyright(room.getCopyright());
+            dbRoom.setLine(room.getLine());
             dbRoom.setCoverUrl(room.getCoverUrl());
             dbRoom.setWxuid(room.getWxuid());
             dbRoom.setPushMsgTags(room.getPushMsgTags());
@@ -182,6 +184,11 @@ public class RoomController {
             result.put("msg", "房间不存在");
             return result;
         }
+    }
+
+    @GetMapping("/lines")
+    public UploadEnums[] lines() {
+        return UploadEnums.values();
     }
 
     @GetMapping("/verification")

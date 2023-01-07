@@ -9,8 +9,11 @@
                     <el-form-item label="投稿分区id">
                         <span>{{ props.row.tid }}</span>
                     </el-form-item>
+                    <el-form-item label="上传线路">
+                        <span>{{ props.row.line }}</span>
+                    </el-form-item>
                     <el-form-item label="投稿封面类型">
-                        <span v-if="props.row.coverType==='default'">系统默认</span>
+                        <span v-if="props.row.coverType==='default'">系统默认(非app上传无封面)</span>
                         <span v-if="props.row.coverType==='live'">直播封面</span>
                         <span v-if="props.row.coverType==='diy'">自定义上传</span>
                     </el-form-item>
@@ -157,6 +160,11 @@
                 <el-select :disabled="room.copyrightDisabled" placeholder="请选择" v-model="room.copyright">
                     <el-option label="是" :value="1"></el-option>
                     <el-option label="否" :value="2"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item :label-width="formLabelWidth" label="上传线路">
+                <el-select placeholder="请选择" v-model="room.line">
+                    <el-option :label="item" :value="item" v-for="item in lines"></el-option>
                 </el-select>
             </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="标题模板">
@@ -1731,6 +1739,7 @@
             room: {},
             addRoom: {},
             tableData: [],
+            lines: [],
             users: []
         },
         methods: {
@@ -1852,6 +1861,14 @@
                 dataType: 'json',
                 success: function (data) {
                     _this.users = data;
+                }
+            });
+            $.ajax({
+                url: '/room/lines',
+                type: 'get',
+                dataType: 'json',
+                success: function (data) {
+                    _this.lines = data;
                 }
             });
             this.initTable();

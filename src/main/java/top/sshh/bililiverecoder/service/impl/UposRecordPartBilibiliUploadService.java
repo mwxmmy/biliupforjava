@@ -159,6 +159,7 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
                         long chunkSize = 1024 * 1024 * 5;
                         long chunkNum = (long) Math.ceil((double) fileSize / chunkSize);
                         PreUploadRequest preuploadRequest = new PreUploadRequest(webCookie, preParams);
+                        preuploadRequest.setLineQuery(uploadEnums.getLineQuery());
                         PreUploadBean preUploadBean;
                         LineUploadBean uploadBean = null;
                         try {

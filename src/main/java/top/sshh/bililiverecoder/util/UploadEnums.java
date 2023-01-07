@@ -11,7 +11,7 @@ public enum UploadEnums {
     private final String zone;
     private final String cdn;
     private final String profile;
-    private final String value;
+    private final String lineQuery;
 
     UploadEnums(String line, String os, String zone, String cdn, String profile) {
         this.line = line;
@@ -19,12 +19,12 @@ public enum UploadEnums {
         this.zone = zone;
         this.cdn = cdn;
         this.profile = profile;
-        this.value = "os=" + os + "&zone=" + zone + "&upcdn=" + cdn;
+        this.lineQuery = "?os=" + os + "&zone=" + zone + "&upcdn=" + cdn;
     }
 
     public static UploadEnums find(String line) {
         for (UploadEnums value : UploadEnums.values()) {
-            if (line.equals(value.getLine())) {
+            if (value.getLine().equals(line)) {
                 return value;
             }
         }
@@ -51,7 +51,7 @@ public enum UploadEnums {
         return profile;
     }
 
-    public String getValue() {
-        return value;
+    public String getLineQuery() {
+        return lineQuery;
     }
 }

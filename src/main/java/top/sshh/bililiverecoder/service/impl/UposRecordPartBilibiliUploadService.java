@@ -165,7 +165,7 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
                         try {
                             do {
                                 preUploadBean = preuploadRequest.getPojo();
-                                if (preUploadBean != null && preUploadBean.getOK() == 0) {
+                                if (preUploadBean == null || preUploadBean.getOK() == 0) {
                                     try {
                                         log.info("上传限流等待十秒==>{}", uploadFile.getName());
                                         Thread.sleep(10000L);
@@ -176,6 +176,15 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
                                     // 同步更新
 //                                    chunkSize = preUploadBean.getChunk_size();
 //                                    chunkNum = (long) Math.ceil((double) fileSize / chunkSize);
+                                    // 如果返回的线路不是指定的线路，则从备用线路选择
+                                    if (!preUploadBean.getEndpoint().contains(("upcdn" + uploadEnums.getCdn()))) {
+                                        String[] endpoints = preUploadBean.getEndpoints();
+                                        for (String endpoint : endpoints) {
+                                            if (preUploadBean.getEndpoint().contains(("upcdn" + uploadEnums.getCdn()))) {
+                                                preUploadBean.setEndpoint(endpoint);
+                                            }
+                                        }
+                                    }
                                     LineUploadRequest uploadRequest = new LineUploadRequest(webCookie, preUploadBean);
                                     uploadBean = uploadRequest.getPojo();
                                     log.error("uploadBean==>{}", JSON.toJSONString(uploadBean));
@@ -204,21 +213,19 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
                             long finalI = i;
                             LineUploadBean finalUploadBean = uploadBean;
                             PreUploadBean finalPreUploadBean = preUploadBean;
-                            long finalChunkSize1 = chunkSize;
-                            long finalChunkNum = chunkNum;
                             Runnable runnable = () -> {
                                 try {
                                     int tryCount = 0;
                                     while (tryCount < 5) {
                                         try {
                                             // 上传
-                                            long endSize = (finalI + 1) * finalChunkSize1;
-                                            long finalChunkSize = finalChunkSize1;
+                                            long endSize = (finalI + 1) * chunkSize;
+                                            long finalChunkSize = chunkSize;
                                             Map<String, String> chunkParams = new HashMap<>();
                                             chunkParams.put("partNumber", String.valueOf(finalI + 1));
                                             chunkParams.put("uploadId", finalUploadBean.getUpload_id());
                                             chunkParams.put("chunk", String.valueOf(finalI));
-                                            chunkParams.put("chunks", String.valueOf(finalChunkNum));
+                                            chunkParams.put("chunks", String.valueOf(chunkNum));
                                             chunkParams.put("size", String.valueOf(finalChunkSize));
                                             chunkParams.put("start", String.valueOf(finalI * finalChunkSize));
                                             chunkParams.put("end", String.valueOf(endSize));
@@ -234,12 +241,12 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
                                             chunkUploadRequest.getPage();
                                             int count = upCount.incrementAndGet();
                                             log.info("{}==>[{}] 上传视频part {} 进度{}/{}", Thread.currentThread().getName(), room.getTitle(),
-                                                    filePath, count, finalChunkNum);
+                                                    filePath, count, chunkNum);
                                             tryCount = 5;
                                             isThrow.set(false);
                                         } catch (Exception e) {
                                             log.info("{}==>[{}] 上传视频part {}, index {}, size {}, start {}, end {}, exception={}", Thread.currentThread().getName(), room.getTitle(),
-                                                    filePath, finalI, finalChunkSize1, finalI * finalChunkSize1, (finalI + 1) * finalChunkSize1, ExceptionUtils.getStackTrace(e));
+                                                    filePath, finalI, chunkSize, finalI * chunkSize, (finalI + 1) * chunkSize, ExceptionUtils.getStackTrace(e));
                                             try {
 //                                                log.info("上传失败等待十秒==>{}", uploadFile.getName());
                                                 Thread.sleep(10000L);

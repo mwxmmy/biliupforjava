@@ -180,7 +180,7 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
                                     if (!preUploadBean.getEndpoint().contains(("upcdn" + uploadEnums.getCdn()))) {
                                         String[] endpoints = preUploadBean.getEndpoints();
                                         for (String endpoint : endpoints) {
-                                            if (preUploadBean.getEndpoint().contains(("upcdn" + uploadEnums.getCdn()))) {
+                                            if (endpoint.contains("upcdn" + uploadEnums.getCdn())) {
                                                 preUploadBean.setEndpoint(endpoint);
                                             }
                                         }

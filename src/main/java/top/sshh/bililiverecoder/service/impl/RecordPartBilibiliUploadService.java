@@ -169,40 +169,12 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                                         e.printStackTrace();
                                     }
                                 } else {
-                                    try {
-                                        log.info("预上传请求==>{}", JSON.toJSONString(preUploadBean));
-                                        // 同步更新
-                                        chunkSize = preUploadBean.getChunk_size();
-                                        chunkNum = (long) Math.ceil((double) fileSize / chunkSize);
-                                        LineUploadRequest uploadRequest = new LineUploadRequest(webCookie, preUploadBean);
-                                        uploadBean = uploadRequest.getPojo();
-                                        log.error("uploadBean==>{}", JSON.toJSONString(uploadBean));
-                                        Thread.sleep(5000L);
-                                        Map<String, String> chunkParams = new HashMap<>();
-                                        chunkParams.put("partNumber", String.valueOf(1));
-                                        chunkParams.put("uploadId", uploadBean.getUpload_id());
-                                        chunkParams.put("name", uploadFile.getName());
-                                        chunkParams.put("chunk", String.valueOf(0));
-                                        chunkParams.put("chunks", String.valueOf(chunkNum));
-                                        chunkParams.put("size", String.valueOf(chunkSize));
-                                        chunkParams.put("start", String.valueOf(0));
-                                        chunkParams.put("end", String.valueOf(chunkSize));
-                                        chunkParams.put("total", String.valueOf(fileSize));
-                                        if (chunkSize > fileSize) {
-                                            chunkParams.put("size", String.valueOf(fileSize));
-                                            chunkParams.put("end", String.valueOf(fileSize));
-                                        }
-                                        ChunkUploadRequest chunkUploadRequest = new ChunkUploadRequest(preUploadBean, chunkParams, new RandomAccessFile(filePath, "r"));
-                                        chunkUploadRequest.getPage();
-                                    } catch (Exception e) {
-                                        log.error("上传报错，等待十秒进行重试。", e);
-                                        preUploadBean.setOK(0);
-                                        try {
-                                            Thread.sleep(10000L);
-                                        } catch (InterruptedException ex) {
-                                            ex.printStackTrace();
-                                        }
-                                    }
+                                    // 同步更新
+                                    chunkSize = preUploadBean.getChunk_size();
+                                    chunkNum = (long) Math.ceil((double) fileSize / chunkSize);
+                                    LineUploadRequest uploadRequest = new LineUploadRequest(webCookie, preUploadBean);
+                                    uploadBean = uploadRequest.getPojo();
+                                    log.error("uploadBean==>{}", JSON.toJSONString(uploadBean));
                                 }
                             } while (preUploadBean.getOK() == 0);
                         }catch (Exception e){
@@ -221,10 +193,10 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                             throw new RuntimeException("并发上传失败，存在异常", e);
                         }
                         // 分段上传
-                        AtomicInteger upCount = new AtomicInteger(1);
+                        AtomicInteger upCount = new AtomicInteger(0);
                         AtomicBoolean isThrow = new AtomicBoolean(false);
                         List<Runnable> runnableList = new ArrayList<>();
-                        for (int i = 1; i < chunkNum; i++) {
+                        for (int i = 0; i < chunkNum; i++) {
                             long finalI = i;
                             LineUploadBean finalUploadBean = uploadBean;
                             PreUploadBean finalPreUploadBean = preUploadBean;

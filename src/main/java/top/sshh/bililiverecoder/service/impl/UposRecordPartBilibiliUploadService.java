@@ -323,6 +323,9 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
                                 try {
                                     completeUploadBean = completeUploadRequest.getPojo();
                                 } catch (Exception e) {
+                                    if (completeUploadBean == null) {
+                                        completeUploadBean = new CompleteUploadBean();
+                                    }
                                     log.error("partId={},文件合并失败，准备重试", part.getId(), e);
                                 }
                                 if (completeUploadBean != null && completeUploadBean.getOK() == 1) {

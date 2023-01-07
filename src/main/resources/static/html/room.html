@@ -166,6 +166,10 @@
                 <el-select placeholder="请选择" v-model="room.line">
                     <el-option :label="item" :value="item" v-for="item in lines"></el-option>
                 </el-select>
+                <el-link
+                        :underline="false"
+                        href="http://member.bilibili.com/preupload?r=ping" target="_blank" type="primary">点击测速
+                </el-link>
             </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="标题模板">
                 <el-input autocomplete="off" v-model="room.titleTemplate"></el-input>

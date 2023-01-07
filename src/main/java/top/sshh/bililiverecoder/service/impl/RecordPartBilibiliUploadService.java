@@ -176,7 +176,7 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                                         chunkNum = (long) Math.ceil((double) fileSize / chunkSize);
                                         LineUploadRequest uploadRequest = new LineUploadRequest(webCookie, preUploadBean);
                                         uploadBean = uploadRequest.getPojo();
-                                        log.error("uploadBean==>", JSON.toJSONString(uploadBean));
+                                        log.error("uploadBean==>{}", JSON.toJSONString(uploadBean));
                                         Thread.sleep(5000L);
                                         Map<String, String> chunkParams = new HashMap<>();
                                         chunkParams.put("partNumber", String.valueOf(1));

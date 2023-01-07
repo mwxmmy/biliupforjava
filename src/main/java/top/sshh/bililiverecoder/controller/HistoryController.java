@@ -200,6 +200,7 @@ public class HistoryController {
         Optional<RecordHistory> historyOptional = historyRepository.findById(id);
         if (historyOptional.isPresent()) {
             RecordHistory history = historyOptional.get();
+            history.setStartTime(history.getStartTime().plusMinutes(1L));
             history.setPublish(false);
             history.setBvId(null);
             history.setCode(-1);

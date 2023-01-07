@@ -13,8 +13,10 @@ import org.springframework.stereotype.Component;
 import top.sshh.bili.cookie.Cookie;
 import top.sshh.bili.cookie.WebCookie;
 import top.sshh.bili.upload.ChunkUploadRequest;
+import top.sshh.bili.upload.CompleteUploadRequest;
 import top.sshh.bili.upload.LineUploadRequest;
 import top.sshh.bili.upload.PreUploadRequest;
+import top.sshh.bili.upload.pojo.CompleteUploadBean;
 import top.sshh.bili.upload.pojo.LineUploadBean;
 import top.sshh.bili.upload.pojo.PreUploadBean;
 import top.sshh.bililiverecoder.entity.BiliBiliUser;
@@ -315,33 +317,55 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                             }
                             throw new RuntimeException("partId={}===并发上传失败，存在异常");
                         }
+                        //通知服务器上传完成
+                        Map<String, String> completeParams = new HashMap<>();
+                        completeParams.put("profile", "ugcupos/bup");
+                        completeParams.put("name", uploadFile.getName());
+                        completeParams.put("uploadId", uploadBean.getUpload_id());
+                        completeParams.put("biz_id", String.valueOf(preUploadBean.getBiz_id()));
+                        Map<String, Object> bodyMap = new LinkedHashMap<>(1);
+                        List<Map<String, String>> chunkMaps = new ArrayList<>((int) chunkNum);
+                        for (int i = 1; i <= chunkNum; i++) {
+                            Map<String, String> partMap = new LinkedHashMap<>(2);
+                            partMap.put("partNumber", String.valueOf(i));
+                            partMap.put("eTag", "etag");
+                            chunkMaps.add(partMap);
+                        }
+                        bodyMap.put("parts", chunkMaps);
+                        CompleteUploadRequest completeUploadRequest = new CompleteUploadRequest(preUploadBean, completeParams, JSON.toJSONString(bodyMap));
 
                         try {
-                            part.setUpload(true);
-                            part.setFileName(uploadBean.getFileName());
-                            part.setUpdateTime(LocalDateTime.now());
-                            part = partRepository.save(part);
-                            //如果配置上传完成删除，则删除文件
-                            if (room.getDeleteType()==1) {
-                                boolean delete = uploadFile.delete();
-                                if (delete) {
-                                    log.error("{}=>文件删除成功！！！", filePath);
-                                } else {
-                                    log.error("{}=>文件删除失败！！！", filePath);
+                            CompleteUploadBean pojo = completeUploadRequest.getPojo();
+                            if (pojo.getOK() == 1) {
+                                part.setUpload(true);
+                                part.setFileName(uploadBean.getFileName());
+                                part.setUpdateTime(LocalDateTime.now());
+                                part = partRepository.save(part);
+                                //如果配置上传完成删除，则删除文件
+                                if (room.getDeleteType() == 1) {
+                                    boolean delete = uploadFile.delete();
+                                    if (delete) {
+                                        log.error("{}=>文件删除成功！！！", filePath);
+                                    } else {
+                                        log.error("{}=>文件删除失败！！！", filePath);
+                                    }
                                 }
-                            }
-                            TaskUtil.partUploadTask.remove(part.getId());
-                            log.info("partId={},文件上传成功==>{}", part.getId(), filePath);
+                                TaskUtil.partUploadTask.remove(part.getId());
+                                log.info("partId={},文件上传成功==>{}", part.getId(), filePath);
 
-                            if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("分P上传")){
-                                message.setAppToken(wxToken);
-                                message.setContentType(Message.CONTENT_TYPE_TEXT);
-                                message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), "结束", room.getTitle(),
-                                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                        part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, ((float) part.getFileSize() / 1024 / 1024 / 1024), "上传成功", "服务器文件名称\n" + part.getFileName()));
-                                message.setUid(wxuid);
-                                WxPusher.send(message);
+                                if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("分P上传")) {
+                                    message.setAppToken(wxToken);
+                                    message.setContentType(Message.CONTENT_TYPE_TEXT);
+                                    message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), "结束", room.getTitle(),
+                                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
+                                            part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, ((float) part.getFileSize() / 1024 / 1024 / 1024), "上传成功", "服务器文件名称\n" + part.getFileName()));
+                                    message.setUid(wxuid);
+                                    WxPusher.send(message);
+                                }
+                            } else {
+                                throw new RuntimeException("合并上传文件失败：" + JSON.toJSONString(pojo));
                             }
+
                         } catch (Exception e) {
                             //存在异常
                             TaskUtil.partUploadTask.remove(part.getId());

@@ -318,8 +318,19 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
                         CompleteUploadRequest completeUploadRequest = new CompleteUploadRequest(preUploadBean, completeParams, JSON.toJSONString(bodyMap));
 
                         try {
-                            CompleteUploadBean pojo = completeUploadRequest.getPojo();
-                            if (pojo.getOK() == 1) {
+                            CompleteUploadBean completeUploadBean = null;
+                            for (int i = 0; i < 5; i++) {
+                                try {
+                                    completeUploadBean = completeUploadRequest.getPojo();
+                                } catch (Exception e) {
+                                    log.error("partId={},文件合并失败，准备重试", part.getId(), e);
+                                }
+                                if (completeUploadBean != null && completeUploadBean.getOK() == 1) {
+                                    break;
+                                }
+                            }
+
+                            if (completeUploadBean.getOK() == 1) {
                                 part.setUpload(true);
                                 part.setFileName(uploadBean.getFileName());
                                 part.setUpdateTime(LocalDateTime.now());
@@ -334,7 +345,7 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
                                     }
                                 }
                                 TaskUtil.partUploadTask.remove(part.getId());
-                                log.info("partId={},文件上传成功==>{},complete==>{}", part.getId(), filePath, JSON.toJSONString(pojo));
+                                log.info("partId={},文件上传成功==>{},complete==>{}", part.getId(), filePath, JSON.toJSONString(completeUploadBean));
 
                                 if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("分P上传")) {
                                     message.setAppToken(wxToken);
@@ -346,7 +357,7 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
                                     WxPusher.send(message);
                                 }
                             } else {
-                                throw new RuntimeException("合并上传文件失败：" + JSON.toJSONString(pojo));
+                                throw new RuntimeException("合并上传文件失败：" + JSON.toJSONString(completeUploadBean));
                             }
 
                         } catch (Exception e) {

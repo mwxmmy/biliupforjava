@@ -240,7 +240,6 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                                             Map<String, String> chunkParams = new HashMap<>();
                                             chunkParams.put("partNumber", String.valueOf(finalI + 1));
                                             chunkParams.put("uploadId", finalUploadBean.getUpload_id());
-                                            chunkParams.put("name", uploadFile.getName());
                                             chunkParams.put("chunk", String.valueOf(finalI));
                                             chunkParams.put("chunks", String.valueOf(finalChunkNum));
                                             chunkParams.put("size", String.valueOf(finalChunkSize));
@@ -351,7 +350,7 @@ public class RecordPartBilibiliUploadService implements RecordPartUploadService 
                                     }
                                 }
                                 TaskUtil.partUploadTask.remove(part.getId());
-                                log.info("partId={},文件上传成功==>{}", part.getId(), filePath);
+                                log.info("partId={},文件上传成功==>{},complete==>{}", part.getId(), filePath, JSON.toJSONString(pojo));
 
                                 if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("分P上传")) {
                                     message.setAppToken(wxToken);

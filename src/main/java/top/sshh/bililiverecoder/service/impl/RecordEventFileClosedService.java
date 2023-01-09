@@ -39,6 +39,9 @@ public class RecordEventFileClosedService implements RecordEventService {
     @Autowired
     private UploadServiceFactory uploadServiceFactory;
 
+    @Autowired
+    private LiveMsgService liveMsgService;
+
 
     @Override
     public void processing(RecordEventDTO event) {
@@ -89,6 +92,8 @@ public class RecordEventFileClosedService implements RecordEventService {
             // 小于设定文件大小和时长不上传
             if (fileSize > 1024 * 1024 * room.getFileSizeLimit() && part.getDuration() > room.getDurationLimit()) {
                 uploadServiceFactory.getUploadService(room.getLine()).asyncUpload(part);
+                //解析弹幕入库
+                liveMsgService.processing(part);
             } else {
                 log.error("文件大小小于设置的忽略大小或时长，删除。");
                 historyPartRepository.delete(part);

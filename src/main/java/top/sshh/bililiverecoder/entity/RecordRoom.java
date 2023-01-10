@@ -70,6 +70,8 @@ public class RecordRoom {
 
     private String sessionId;
 
+    private Boolean sendDm = false;
+
     private boolean recording;
 
     private boolean streaming;

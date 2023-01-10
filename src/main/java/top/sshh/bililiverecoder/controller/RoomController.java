@@ -57,6 +57,7 @@ public class RoomController {
             dbRoom.setFileSizeLimit(room.getFileSizeLimit());
             dbRoom.setDurationLimit(room.getDurationLimit());
             dbRoom.setDeleteType(room.getDeleteType());
+            dbRoom.setSendDm(room.getSendDm());
             roomRepository.save(dbRoom);
             return true;
         }

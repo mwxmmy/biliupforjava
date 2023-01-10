@@ -5,7 +5,8 @@ public enum UploadEnums {
     CS_BDA2("CS_BDA2", "upos", "cs", "bda2", "ugcupos/bup"), SZ_QN("SZ_QN", "upos", "sz", "qn", "ugcupos/bup"),
     CS_QN("CS_QN", "upos", "cs", "qn", "ugcupos/bup"), CS_QNHK("CS_QNHK", "upos", "cs", "qnhk", "ugcupos/bup"),
     CS_BLDSA("CS_BLDSA", "upos", "cs", "bldsa", "ugcupos/bup"),
-    SZ_WS("SZ_WS", "upos", "sz", "ws", "ugcupos/bup");
+    SZ_WS("SZ_WS", "upos", "sz", "ws", "ugcupos/bup"),
+    KODO("KODO", "kodo", "", "", "ugcupos/bupfetch");
 
     private final String line;
     private final String os;

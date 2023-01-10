@@ -273,13 +273,17 @@ public class LiveMsgSendSync {
                 msgRepository.save(msg);
             }
             msgAllList = msgAllList.stream().filter(liveMsg -> liveMsg.getPool() == 0).sorted((m1, m2) -> (int) (m1.getSendTime() - m2.getSendTime())).collect(Collectors.toList());
-            List<Long> partIds = msgAllList.stream().map(LiveMsg::getPartId).collect(Collectors.toList());
+            List<Long> partIds = msgAllList.stream().map(LiveMsg::getPartId).distinct().collect(Collectors.toList());
             if (partIds.size() > 0) {
                 List<RecordHistoryPart> parts = partRepository.findByIdIn(partIds);
                 List<RecordRoom> roomList = roomRepository.findBySendDmIsTrue();
                 List<String> roomIds = roomList.stream().map(RecordRoom::getRoomId).toList();
                 List<Long> sendPartIds = parts.stream().filter(part -> roomIds.contains(part.getRoomId())).map(RecordHistoryPart::getId).toList();
                 msgAllList = msgAllList.stream().filter(liveMsg -> sendPartIds.contains(liveMsg.getPartId())).sorted((m1, m2) -> (int) (m1.getSendTime() - m2.getSendTime())).collect(Collectors.toList());
+            }
+            if (msgAllList.size() == 0) {
+                log.info("剩余待发送弹幕0条,退出弹幕发送定时任务。");
+                return;
             }
             BlockingQueue<LiveMsg> msgQueue = new ArrayBlockingQueue<>(msgAllList.size());
             msgQueue.addAll(msgAllList);

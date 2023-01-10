@@ -15,6 +15,8 @@ public interface RecordHistoryPartRepository extends CrudRepository<RecordHistor
 
     List<RecordHistoryPart> findByHistoryIdOrderByStartTimeAsc(Long historyId);
 
+    List<RecordHistoryPart> findByIdIn(List<Long> ids);
+
     List<RecordHistoryPart> findByHistoryIdAndCidIsNotNullOrderByPageAsc(Long historyId);
 
     int countByHistoryIdAndRecordingIsTrue(Long historyId);

@@ -13,7 +13,7 @@
                         <span>{{ props.row.line }}</span>
                     </el-form-item>
                     <el-form-item label="投稿封面类型">
-                        <span v-if="props.row.coverType==='default'">系统默认(非app上传无封面)</span>
+                        <span v-if="props.row.coverType==='default'">系统默认</span>
                         <span v-if="props.row.coverType==='live'">直播封面</span>
                         <span v-if="props.row.coverType==='diy'">自定义上传</span>
                     </el-form-item>
@@ -92,6 +92,15 @@
             <template slot-scope="scope">
                 <el-button circle class="el-icon-check" type="success" v-if="scope.row.upload"></el-button>
                 <el-button circle class="el-icon-close" type="danger" v-if="!scope.row.upload"></el-button>
+            </template>
+        </el-table-column>
+        <el-table-column
+                label="是否发送弹幕"
+                prop="sendDm"
+                width="120">
+            <template slot-scope="scope">
+                <el-button circle class="el-icon-check" type="success" v-if="scope.row.sendDm"></el-button>
+                <el-button circle class="el-icon-close" type="danger" v-if="!scope.row.sendDm"></el-button>
             </template>
         </el-table-column>
         <el-table-column
@@ -207,6 +216,12 @@
                 <el-select placeholder="请选择" v-model="room.upload">
                     <el-option label="是" :value="true"></el-option>
                     <el-option label="否" :value="false"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item :label-width="formLabelWidth" label="是否发送弹幕">
+                <el-select placeholder="请选择" v-model="room.sendDm">
+                    <el-option :value="true" label="是"></el-option>
+                    <el-option :value="false" label="否"></el-option>
                 </el-select>
             </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="上传用户">

@@ -12,17 +12,18 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import top.sshh.bili.cookie.Cookie;
 import top.sshh.bili.cookie.WebCookie;
-import top.sshh.bili.upload.ChunkUploadRequest;
-import top.sshh.bili.upload.CompleteUploadRequest;
-import top.sshh.bili.upload.LineUploadRequest;
+import top.sshh.bili.upload.KodoChunkUploadRequest;
+import top.sshh.bili.upload.KodoCompleteUploadRequest;
+import top.sshh.bili.upload.KodoFetchUploadRequest;
 import top.sshh.bili.upload.PreUploadRequest;
+import top.sshh.bili.upload.pojo.ChunkUploadBean;
 import top.sshh.bili.upload.pojo.CompleteUploadBean;
-import top.sshh.bili.upload.pojo.LineUploadBean;
 import top.sshh.bili.upload.pojo.PreUploadBean;
 import top.sshh.bililiverecoder.entity.BiliBiliUser;
 import top.sshh.bililiverecoder.entity.RecordHistory;
 import top.sshh.bililiverecoder.entity.RecordHistoryPart;
 import top.sshh.bililiverecoder.entity.RecordRoom;
+import top.sshh.bililiverecoder.entity.data.KodoPart;
 import top.sshh.bililiverecoder.repo.BiliUserRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryPartRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
@@ -37,17 +38,16 @@ import java.io.RandomAccessFile;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @Slf4j
-@Service("uposRecordPartBilibiliUploadService")
-public class UposRecordPartBilibiliUploadService implements RecordPartUploadService {
+@Service("kodoRecordPartBilibiliUploadService")
+public class KodoRecordPartBilibiliUploadService implements RecordPartUploadService {
 
-    public static final String OS = "upos";
-
-    @Value("${record.wx-push-token}")
-    private String wxToken;
+    public static final String OS = "kodo";
     private static final String WX_MSG_FORMAT = """
             收到主播%s分P上传%s事件
             房间名: %s
@@ -59,6 +59,8 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
             上传结果: %s
             原因: %s
             """;
+    @Value("${record.wx-push-token}")
+    private String wxToken;
     @Autowired
     private BiliUserRepository biliUserRepository;
     @Autowired
@@ -135,7 +137,7 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
                             biliBiliUser.setLogin(false);
                             biliBiliUser = biliUserRepository.save(biliBiliUser);
                             TaskUtil.partUploadTask.remove(part.getId());
-                            if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("分P上传")){
+                            if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("分P上传")) {
                                 Message message = new Message();
                                 message.setAppToken(wxToken);
                                 message.setContentType(Message.CONTENT_TYPE_TEXT);
@@ -156,12 +158,10 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
                         preParams.put("name", uploadFile.getName());
                         preParams.put("size", String.valueOf(uploadFile.length()));
                         long fileSize = uploadFile.length();
-                        long chunkSize = 1024 * 1024 * 5;
+                        long chunkSize = 1024 * 1024 * 4;
                         long chunkNum = (long) Math.ceil((double) fileSize / chunkSize);
                         PreUploadRequest preuploadRequest = new PreUploadRequest(webCookie, preParams);
-                        preuploadRequest.setLineQuery(uploadEnums.getLineQuery());
                         PreUploadBean preUploadBean;
-                        LineUploadBean uploadBean = null;
                         try {
                             do {
                                 preUploadBean = preuploadRequest.getPojo();
@@ -172,28 +172,12 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
                                     } catch (InterruptedException e) {
                                         e.printStackTrace();
                                     }
-                                } else {
-                                    // 同步更新
-//                                    chunkSize = preUploadBean.getChunk_size();
-//                                    chunkNum = (long) Math.ceil((double) fileSize / chunkSize);
-                                    // 如果返回的线路不是指定的线路，则从备用线路选择
-                                    if (!preUploadBean.getEndpoint().contains(("upcdn" + uploadEnums.getCdn()))) {
-                                        String[] endpoints = preUploadBean.getEndpoints();
-                                        for (String endpoint : endpoints) {
-                                            if (endpoint.contains("upcdn" + uploadEnums.getCdn())) {
-                                                preUploadBean.setEndpoint(endpoint);
-                                            }
-                                        }
-                                    }
-                                    LineUploadRequest uploadRequest = new LineUploadRequest(webCookie, preUploadBean);
-                                    uploadBean = uploadRequest.getPojo();
-                                    log.error("preUploadBean==>{}\nuploadBean==>{}", JSON.toJSONString(preUploadBean), JSON.toJSONString(uploadBean));
                                 }
-                            } while (preUploadBean.getOK() == 0);
-                        }catch (Exception e){
+                            } while (Objects.requireNonNull(preUploadBean).getOK() == 0);
+                        } catch (Exception e) {
                             //存在异常
                             TaskUtil.partUploadTask.remove(part.getId());
-                            if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("分P上传")){
+                            if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("分P上传")) {
                                 Message message = new Message();
                                 message.setAppToken(wxToken);
                                 message.setContentType(Message.CONTENT_TYPE_TEXT);
@@ -205,13 +189,14 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
                             }
                             throw new RuntimeException("并发上传失败，存在异常", e);
                         }
+                        log.info("{}==>预上传请求成功：==>{}", part.getFileName(), JSON.toJSONString(preUploadBean));
                         // 分段上传
                         AtomicInteger upCount = new AtomicInteger(0);
                         AtomicBoolean isThrow = new AtomicBoolean(false);
+                        List<KodoPart> parts = new CopyOnWriteArrayList<>();
                         List<Runnable> runnableList = new ArrayList<>();
                         for (int i = 0; i < chunkNum; i++) {
-                            long finalI = i;
-                            LineUploadBean finalUploadBean = uploadBean;
+                            int finalI = i;
                             PreUploadBean finalPreUploadBean = preUploadBean;
                             Runnable runnable = () -> {
                                 try {
@@ -223,22 +208,18 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
                                             long finalChunkSize = chunkSize;
                                             Map<String, String> chunkParams = new HashMap<>();
                                             chunkParams.put("partNumber", String.valueOf(finalI + 1));
-                                            chunkParams.put("uploadId", finalUploadBean.getUpload_id());
-                                            chunkParams.put("chunk", String.valueOf(finalI));
-                                            chunkParams.put("chunks", String.valueOf(chunkNum));
                                             chunkParams.put("size", String.valueOf(finalChunkSize));
                                             chunkParams.put("start", String.valueOf(finalI * finalChunkSize));
                                             chunkParams.put("end", String.valueOf(endSize));
-                                            chunkParams.put("total", String.valueOf(fileSize));
                                             if (endSize > fileSize) {
                                                 endSize = fileSize;
-
                                                 finalChunkSize = fileSize - (finalI * finalChunkSize);
                                                 chunkParams.put("size", String.valueOf(finalChunkSize));
                                                 chunkParams.put("end", String.valueOf(endSize));
                                             }
-                                            ChunkUploadRequest chunkUploadRequest = new ChunkUploadRequest(finalPreUploadBean, chunkParams, new RandomAccessFile(filePath, "r"));
-                                            chunkUploadRequest.getPage();
+                                            KodoChunkUploadRequest chunkUploadRequest = new KodoChunkUploadRequest(finalPreUploadBean, chunkParams, new RandomAccessFile(filePath, "r"));
+                                            ChunkUploadBean chunkUploadBean = chunkUploadRequest.getPojo();
+                                            parts.add(new KodoPart(finalI, chunkUploadBean.getCtx()));
                                             int count = upCount.incrementAndGet();
                                             log.info("{}==>[{}] 上传视频part {} 进度{}/{}", Thread.currentThread().getName(), room.getTitle(),
                                                     filePath, count, chunkNum);
@@ -289,7 +270,7 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
                             }
                             //存在异常
                             TaskUtil.partUploadTask.remove(part.getId());
-                            if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("分P上传")){
+                            if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("分P上传")) {
                                 message.setAppToken(wxToken);
                                 message.setContentType(Message.CONTENT_TYPE_TEXT);
                                 message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), "开始", room.getTitle(),
@@ -302,21 +283,10 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
                         }
                         //通知服务器上传完成
                         Map<String, String> completeParams = new HashMap<>();
-                        completeParams.put("profile", uploadEnums.getProfile());
-                        completeParams.put("name", uploadFile.getName());
-                        completeParams.put("uploadId", uploadBean.getUpload_id());
-                        completeParams.put("biz_id", String.valueOf(preUploadBean.getBiz_id()));
-                        Map<String, Object> bodyMap = new LinkedHashMap<>(1);
-                        List<Map<String, String>> chunkMaps = new ArrayList<>((int) chunkNum);
-                        for (int i = 1; i <= chunkNum; i++) {
-                            Map<String, String> partMap = new LinkedHashMap<>(2);
-                            partMap.put("partNumber", String.valueOf(i));
-                            partMap.put("eTag", "etag");
-                            chunkMaps.add(partMap);
-                        }
-                        bodyMap.put("parts", chunkMaps);
-                        CompleteUploadRequest completeUploadRequest = new CompleteUploadRequest(preUploadBean, completeParams, JSON.toJSONString(bodyMap));
-
+                        completeParams.put("total", String.valueOf(fileSize));
+                        String ctxs = parts.stream().sorted(Comparator.comparingInt(KodoPart::getIndex)).map(KodoPart::getCtx).collect(Collectors.joining(","));
+                        KodoCompleteUploadRequest completeUploadRequest = new KodoCompleteUploadRequest(preUploadBean, completeParams, ctxs);
+                        KodoFetchUploadRequest checkUploadRequest = new KodoFetchUploadRequest(preUploadBean);
                         try {
                             CompleteUploadBean completeUploadBean = null;
                             for (int i = 0; i < 5; i++) {
@@ -328,14 +298,25 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
                                     }
                                     log.error("partId={},文件合并失败，准备重试", part.getId(), e);
                                 }
-                                if (completeUploadBean != null && completeUploadBean.getOK() == 1) {
-                                    break;
+                            }
+                            CompleteUploadBean checkUploadBean = null;
+                            for (int i = 0; i < 5; i++) {
+                                try {
+                                    checkUploadBean = checkUploadRequest.getPojo();
+                                    if (checkUploadBean != null && checkUploadBean.getOK() == 1) {
+                                        break;
+                                    }
+                                } catch (Exception e) {
+                                    if (checkUploadBean == null) {
+                                        checkUploadBean = new CompleteUploadBean();
+                                    }
+                                    log.error("partId={},文件合并失败，准备重试", part.getId(), e);
                                 }
                             }
 
-                            if (completeUploadBean.getOK() == 1) {
+                            if (checkUploadBean.getOK() == 1 && completeUploadBean != null) {
                                 part.setUpload(true);
-                                part.setFileName(uploadBean.getFileName());
+                                part.setFileName(preUploadBean.getBili_filename());
                                 part.setUpdateTime(LocalDateTime.now());
                                 part = partRepository.save(part);
                                 //如果配置上传完成删除，则删除文件
@@ -367,7 +348,7 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
                             //存在异常
                             TaskUtil.partUploadTask.remove(part.getId());
                             log.error("partId={},文件上传失败==>{}", part.getId(), filePath, e);
-                            if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("分P上传")){
+                            if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("分P上传")) {
                                 message.setAppToken(wxToken);
                                 message.setContentType(Message.CONTENT_TYPE_TEXT);
                                 message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), "结束", room.getTitle(),

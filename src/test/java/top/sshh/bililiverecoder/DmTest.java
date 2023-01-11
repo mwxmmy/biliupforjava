@@ -2,8 +2,6 @@ package top.sshh.bililiverecoder;
 
 import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.binary.Base64;
-import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import top.sshh.bililiverecoder.entity.BiliBiliUser;
@@ -11,22 +9,19 @@ import top.sshh.bililiverecoder.entity.LiveMsg;
 import top.sshh.bililiverecoder.entity.RecordHistoryPart;
 import top.sshh.bililiverecoder.entity.data.BiliReply;
 import top.sshh.bililiverecoder.entity.data.BiliReplyResponse;
-import top.sshh.bililiverecoder.entity.data.SingleVideoDto;
-import top.sshh.bililiverecoder.entity.data.VideoUploadDto;
 import top.sshh.bililiverecoder.repo.BiliUserRepository;
 import top.sshh.bililiverecoder.repo.LiveMsgRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryPartRepository;
 import top.sshh.bililiverecoder.service.impl.BiliBiliUserService;
+import top.sshh.bililiverecoder.service.impl.JdbcService;
 import top.sshh.bililiverecoder.service.impl.LiveMsgService;
 import top.sshh.bililiverecoder.util.BiliApi;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Slf4j
@@ -38,6 +33,9 @@ public class DmTest {
 
     @Autowired
     private LiveMsgService liveMsgService;
+
+    @Autowired
+    private JdbcService jdbcService;
 
     @Autowired
     private LiveMsgRepository msgRepository;
@@ -102,7 +100,7 @@ public class DmTest {
         }
     }
 
-    @Test
+    // @Test
     public void preUploadTest(){
         BiliBiliUser biliUser = new BiliBiliUser();
         biliUser.setCookies("bili_jct=a951dd04c28cffc2afabeb61cbec4972;DedeUserID=10043269;gourl=http%3A%2F%2Fwww.bilibili.com;Expires=15551000;DedeUserID__ckMd5=7cc21642fb0885c3;SESSDATA=d4f40ee7%2C1688531766%2Cfc874%2A11;");
@@ -113,5 +111,21 @@ public class DmTest {
         params.put("size","1213123");
         String preUpload = BiliApi.preUpload(biliUser, params);
         System.out.println(preUpload);
+    }
+    // @Test
+    public void saveDm(){
+        List<LiveMsg> liveMsgs = new ArrayList<>();
+        LiveMsg msg = new LiveMsg();
+        msg.setPartId(1L);
+        msg.setBvid("B1321");
+        msg.setCid(1L);
+        msg.setSendTime(1L);
+        msg.setFontsize(1);
+        msg.setMode(1);
+        msg.setPool(0);
+        msg.setColor(12);
+        msg.setContext("text");
+        liveMsgs.add(msg);
+        jdbcService.saveLiveMsgList(liveMsgs);
     }
 }

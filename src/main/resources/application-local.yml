@@ -17,6 +17,7 @@ spring:
           batch_size: 1000
           batch_versioned_data: true
           order_inserts: true
+    database-platform: org.hibernate.dialect.H2Dialect
   thymeleaf:
     cache: false
   task:
@@ -38,4 +39,3 @@ logging:
   logback:
     rollingpolicy:
       max-file-size: 50MB
-

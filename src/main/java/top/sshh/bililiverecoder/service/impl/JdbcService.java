@@ -16,8 +16,8 @@ public class JdbcService {
 
     public <T> void saveLiveMsgList(List<T> list) {
         // 这里注意VALUES要用实体的变量，而不是字段的Column值
-        String sql = "INSERT INTO live_msg(id, bvid, cid, code, context, is_send, part_id, send_time, color, fontsize, mode, pool) " +
-                "VALUES (null, :bvid, :cid,  :code, :context, false, :partId, :sendTime, :color, :fontsize, :mode, :pool)";
+        String sql = "INSERT INTO live_msg(bvid, cid, code, context, is_send, part_id, send_time, color, fontsize, mode, pool) " +
+                "VALUES (:bvid, :cid,  :code, :context, false, :partId, :sendTime, :color, :fontsize, :mode, :pool)";
         updateBatchCore(sql, list);
     }
 

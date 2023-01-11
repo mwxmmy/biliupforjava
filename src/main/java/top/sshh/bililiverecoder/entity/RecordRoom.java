@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 public class RecordRoom {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String roomId;
     private String uname;

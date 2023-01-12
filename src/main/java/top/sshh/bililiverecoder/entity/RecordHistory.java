@@ -64,6 +64,12 @@ public class RecordHistory {
     private int partCount;
 
     @Transient
+    private float partDuration;
+
+    @Transient
+    private int uploadPartCount;
+
+    @Transient
     private int recordPartCount;
 
     @Transient

@@ -88,6 +88,8 @@ public class HistoryController {
                 history.setRoomName(room.getUname());
             }
             history.setPartCount(partRepository.countByHistoryId(history.getId()));
+            history.setPartDuration(partRepository.sumHistoryDurationByHistoryId(history.getId()));
+            history.setUploadPartCount(partRepository.countByHistoryIdAndFileNameNotNull(history.getId()));
             history.setRecordPartCount(partRepository.countByHistoryIdAndRecordingIsTrue(history.getId()));
             if (StringUtils.isNotBlank(history.getBvId())) {
                 history.setMsgCount(msgRepository.countByBvid(history.getBvId()));

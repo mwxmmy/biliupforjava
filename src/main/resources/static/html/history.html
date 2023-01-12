@@ -84,6 +84,14 @@
             </template>
         </el-table-column>
         <el-table-column
+                label="视频总时长"
+                prop="partDuration"
+                width="120">
+            <template slot-scope="scope">
+                {{(scope.row.partDuration/60/60).toFixed(0)}}小时{{((scope.row.partDuration/60)%60).toFixed(0)}}分钟
+            </template>
+        </el-table-column>
+        <el-table-column
                 label="分p数量"
                 prop="partCount"
                 width="80">
@@ -91,6 +99,11 @@
         <el-table-column
                 label="录制中的分p数量"
                 prop="recordPartCount"
+                width="80">
+        </el-table-column>
+        <el-table-column
+                label="已上传的分p数量"
+                prop="uploadPartCount"
                 width="80">
         </el-table-column>
         <el-table-column

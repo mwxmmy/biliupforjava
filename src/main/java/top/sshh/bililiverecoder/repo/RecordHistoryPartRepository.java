@@ -1,5 +1,6 @@
 package top.sshh.bililiverecoder.repo;
 
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import top.sshh.bililiverecoder.entity.RecordHistoryPart;
@@ -22,6 +23,11 @@ public interface RecordHistoryPartRepository extends CrudRepository<RecordHistor
     int countByHistoryIdAndRecordingIsTrue(Long historyId);
 
     int countByHistoryId(Long historyId);
+
+    int countByHistoryIdAndFileNameNotNull(Long historyId);
+
+    @Query("select sum(duration) from RecordHistoryPart where historyId = ?1")
+    float sumHistoryDurationByHistoryId(Long historyId);
 
     boolean existsByFilePath(String filePath);
 }

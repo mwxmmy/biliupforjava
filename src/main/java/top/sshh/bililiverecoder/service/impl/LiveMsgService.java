@@ -231,7 +231,7 @@ public class LiveMsgService {
                     }
                     String text = element.getText().trim().replace("\n", ",").replace("\r", ",");
                     //短文字弹幕没有意义
-                    if (this.zhCharCount(text) < 3) {
+                    if (this.zhCharCount(text) < 2) {
                         continue;
                     }
                     //排除垃圾弹幕
@@ -257,7 +257,7 @@ public class LiveMsgService {
                     //白色弹幕需要调整间隔
                     if (color == 1677215) {
                         //如果显示时间超过当前时间，调整当前时间
-                        if (sendTime > time + 4000) {
+                        if (sendTime > time + 3000) {
                             time = (int) sendTime;
                         } else {
                             continue;

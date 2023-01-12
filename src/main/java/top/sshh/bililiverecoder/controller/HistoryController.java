@@ -231,6 +231,8 @@ public class HistoryController {
         Optional<RecordHistory> historyOptional = historyRepository.findById(id);
         if (historyOptional.isPresent()) {
             RecordHistory history = historyOptional.get();
+            history.setUploadRetryCount(0);
+            history = historyRepository.save(history);
             publishService.asyncPublishRecordHistory(history);
             result.put("type", "success");
             result.put("msg", "触发发布事件成功");

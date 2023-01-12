@@ -48,7 +48,7 @@ public class publishJob {
             Iterator<RecordHistory> iterator = historyRepository.findByRoomIdAndRecordingIsFalseAndUploadIsTrueAndPublishIsFalseAndUploadRetryCountLessThanAndEndTimeBetweenOrderByEndTimeAsc(room.getRoomId(), 5, now.minusDays(1L), now.minusMinutes(11L)).iterator();
             iterator.forEachRemaining(historyList::add);
         }
-        log.info("视频上传定时任务 待发布视频数量 size=={}", historyList.size());
+        log.info("视频发布定时任务 待发布视频数量 size=={}", historyList.size());
 
         for (RecordHistory history : historyList) {
             publishService.publishRecordHistory(history);

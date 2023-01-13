@@ -88,7 +88,7 @@
                 prop="partDuration"
                 width="120">
             <template slot-scope="scope">
-                {{(scope.row.partDuration/60/60).toFixed(0)}}小时{{((scope.row.partDuration/60)%60).toFixed(0)}}分钟
+                {{Math.floor(scope.row.partDuration/60/60)}}小时{{((scope.row.partDuration/60)%60).toFixed(0)}}分钟
             </template>
         </el-table-column>
         <el-table-column

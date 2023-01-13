@@ -312,9 +312,14 @@ public class LiveMsgSendSync {
                     }
                     int code = liveMsgService.sendMsg(user, msg);
                     if (code != 0 && code != 36703 && code != 36714) {
+                        try {
+                            Thread.sleep(5000L);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                         user = userRepository.findByUid(user.getUid());
                         code = liveMsgService.sendMsg(user, msg);
-                        if(code != 0 && code != 36703 && code != 36714){
+                        if (code != 0 && code != 36703 && code != 36714) {
                             log.error("{}用户，发送失败，错误代码{}，一共发送{}条弹幕。", user.getUname(), code, count.get());
                             user.setEnable(false);
                             user = userRepository.save(user);

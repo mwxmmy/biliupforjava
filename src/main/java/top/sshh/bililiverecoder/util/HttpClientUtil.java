@@ -1,12 +1,12 @@
 package top.sshh.bililiverecoder.util;
 
-import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 
 import java.io.IOException;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -97,19 +97,29 @@ public class HttpClientUtil {
     }
 
     public static String get(String url, Map<String, String> headers) {
-        try {
-            Response response = client.newCall(new Request.Builder()
-                    .url(url)
-                    .headers(Headers.of(headers))
-                    .get()
-                    .build()
-            ).execute();
-            String string = response.body().string();
-            return string;
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e.getMessage());
-        }
+        String string;
+        do {
+            try {
+                Response response = client.newCall(new Request.Builder()
+                        .url(url)
+                        .headers(Headers.of(headers))
+                        .get()
+                        .build()
+                ).execute();
+                string = response.body().string();
+                return string;
+            } catch (UnknownHostException e) {
+                try {
+                    Thread.sleep(5000L);
+                } catch (Exception ignored) {
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new RuntimeException(e.getMessage());
+            }
+        } while (true);
+
     }
 
     public static String get(String url) throws IOException {

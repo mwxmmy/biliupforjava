@@ -10,6 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import top.sshh.bili.cookie.Cookie;
+import top.sshh.bili.cookie.WebCookie;
+import top.sshh.bili.user.pojo.my.UserMyRootBean;
+import top.sshh.bili.user.userinfo.UserMy;
 import top.sshh.bililiverecoder.entity.BiliBiliUser;
 import top.sshh.bililiverecoder.entity.RecordHistory;
 import top.sshh.bililiverecoder.entity.RecordHistoryPart;
@@ -38,10 +42,10 @@ public class RecordBiliPublishService {
     private String wxToken;
 
     private static final String WX_MSG_FORMAT= """
+            投稿结果: %s
             收到主播%s投稿事件
             房间名: %s
             时间: %s
-            投稿结果: %s
             原因: %s
             """;
     @Autowired
@@ -162,9 +166,8 @@ public class RecordBiliPublishService {
                     Message message = new Message();
                     message.setAppToken(wxToken);
                     message.setContentType(Message.CONTENT_TYPE_TEXT);
-                    message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), room.getTitle(),
-                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                            "重新投稿成功", ""));
+                    message.setContent(WX_MSG_FORMAT.formatted("重新投稿成功", room.getUname(), room.getTitle(),
+                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), ""));
                     message.setUid(wxuid);
                     WxPusher.send(message);
                 }
@@ -173,9 +176,9 @@ public class RecordBiliPublishService {
                     Message message = new Message();
                     message.setAppToken(wxToken);
                     message.setContentType(Message.CONTENT_TYPE_TEXT);
-                    message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), room.getTitle(),
+                    message.setContent(WX_MSG_FORMAT.formatted("重新投稿失败", room.getUname(), room.getTitle(),
                             LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                            "重新投稿失败", JsonPath.read(republishRes, "message")));
+                            JsonPath.read(republishRes, "message")));
                     message.setUid(wxuid);
                     WxPusher.send(message);
                 }
@@ -298,9 +301,9 @@ public class RecordBiliPublishService {
                     Message message = new Message();
                     message.setAppToken(wxToken);
                     message.setContentType(Message.CONTENT_TYPE_TEXT);
-                    message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), room.getTitle(),
+                    message.setContent(WX_MSG_FORMAT.formatted("投稿失败", room.getUname(), room.getTitle(),
                             LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                            "投稿失败", "分p数量发生变动"));
+                            "分p数量发生变动"));
                     message.setUid(wxuid);
                     WxPusher.send(message);
                 }
@@ -330,19 +333,11 @@ public class RecordBiliPublishService {
                         TaskUtil.publishTask.remove(history.getId());
                         return false;
                     }
-
-                    boolean expired = false;
                     // 检查是否已经过期，调用用户信息接口
-                    try {
-                        String myInfo = BiliApi.appMyInfo(biliBiliUser);
-                        String uname = JsonPath.read(myInfo, "data.uname");
-                        if (StringUtils.isBlank(uname)) {
-                            expired = true;
-                        }
-                    } catch (Exception e) {
-                        expired = true;
-                    }
-                    if (expired) {
+                    WebCookie webCookie = Cookie.parse(biliBiliUser.getCookies());
+                    UserMy userMy = new UserMy(webCookie);
+                    UserMyRootBean myInfo = userMy.getPojo();
+                    if (myInfo.getCode() == -101) {
                         biliBiliUser.setLogin(false);
                         biliBiliUser = biliUserRepository.save(biliBiliUser);
                         TaskUtil.publishTask.remove(history.getId());
@@ -350,9 +345,9 @@ public class RecordBiliPublishService {
                             Message message = new Message();
                             message.setAppToken(wxToken);
                             message.setContentType(Message.CONTENT_TYPE_TEXT);
-                            message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), room.getTitle(),
+                            message.setContent(WX_MSG_FORMAT.formatted("投稿失败", room.getUname(), room.getTitle(),
                                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                    "投稿失败", biliBiliUser.getUname() + "登录已过期，请重新登录"));
+                                    biliBiliUser.getUname() + "登录已过期，请重新登录"));
                             message.setUid(wxuid);
                             WxPusher.send(message);
                         }
@@ -375,7 +370,7 @@ public class RecordBiliPublishService {
                         RecordHistoryPart uploadPart = uploadParts.get(i);
                         SingleVideoDto dto = new SingleVideoDto();
                         map.put("date", uploadPart.getStartTime());
-                        map.put("${index}", Integer.valueOf(i + 1));
+                        map.put("${index}", i + 1);
                         map.put("${areaName}", uploadPart.getAreaName());
                         dto.setTitle(this.template(room.getPartTitleTemplate(), map));
                         //同步标题
@@ -429,9 +424,8 @@ public class RecordBiliPublishService {
                             Message message = new Message();
                             message.setAppToken(wxToken);
                             message.setContentType(Message.CONTENT_TYPE_TEXT);
-                            message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), room.getTitle(),
-                                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                    "投稿成功", ""));
+                            message.setContent(WX_MSG_FORMAT.formatted("投稿成功", room.getUname(), room.getTitle(),
+                                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), ""));
                             message.setUid(wxuid);
                             WxPusher.send(message);
                         }
@@ -443,9 +437,8 @@ public class RecordBiliPublishService {
                             Message message = new Message();
                             message.setAppToken(wxToken);
                             message.setContentType(Message.CONTENT_TYPE_TEXT);
-                            message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), room.getTitle(),
-                                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                    "投稿失败", e.getMessage()));
+                            message.setContent(WX_MSG_FORMAT.formatted("投稿失败", room.getUname(), room.getTitle(),
+                                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), e.getMessage()));
                             message.setUid(wxuid);
                             WxPusher.send(message);
                         }
@@ -454,6 +447,8 @@ public class RecordBiliPublishService {
                     }
                 }
             }
+        } catch (Exception e) {
+            log.error("投稿发生异常：", e);
         } finally {
             TaskUtil.publishTask.remove(history.getId());
         }

@@ -38,12 +38,12 @@ public class BiliApi {
     private static String appSecret = "59b43e04ad6965f34319062b478f83dd";
 
 
-    public static String getUserInfo(Long uid) {
-        Map<String, String> additionalHeaders = new HashMap<>();
-        additionalHeaders.put("referer", "https://live.bilibili.com/");
-        additionalHeaders.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36");
-        return HttpClientUtil.get("https://api.bilibili.com/x/space/acc/info?mid=" + uid, additionalHeaders);
-    }
+//    public static String getUserInfo(Long uid) {
+//        Map<String, String> additionalHeaders = new HashMap<>();
+//        additionalHeaders.put("referer", "https://live.bilibili.com/");
+//        additionalHeaders.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36");
+//        return HttpClientUtil.get("https://api.bilibili.com/x/space/acc/info?mid=" + uid, additionalHeaders);
+//    }
 
     public static String getLoginKey() {
         String url = "https://passport.bilibili.com/api/oauth2/getKey";

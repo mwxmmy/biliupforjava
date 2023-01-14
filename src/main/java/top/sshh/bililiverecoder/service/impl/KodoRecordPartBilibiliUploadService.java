@@ -1,7 +1,6 @@
 package top.sshh.bililiverecoder.service.impl;
 
 import com.alibaba.fastjson.JSON;
-import com.jayway.jsonpath.JsonPath;
 import com.zjiecode.wxpusher.client.WxPusher;
 import com.zjiecode.wxpusher.client.bean.Message;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +18,8 @@ import top.sshh.bili.upload.PreUploadRequest;
 import top.sshh.bili.upload.pojo.ChunkUploadBean;
 import top.sshh.bili.upload.pojo.CompleteUploadBean;
 import top.sshh.bili.upload.pojo.PreUploadBean;
+import top.sshh.bili.user.pojo.my.UserMyRootBean;
+import top.sshh.bili.user.userinfo.UserMy;
 import top.sshh.bililiverecoder.entity.BiliBiliUser;
 import top.sshh.bililiverecoder.entity.RecordHistory;
 import top.sshh.bililiverecoder.entity.RecordHistoryPart;
@@ -29,7 +30,6 @@ import top.sshh.bililiverecoder.repo.RecordHistoryPartRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
 import top.sshh.bililiverecoder.repo.RecordRoomRepository;
 import top.sshh.bililiverecoder.service.RecordPartUploadService;
-import top.sshh.bililiverecoder.util.BiliApi;
 import top.sshh.bililiverecoder.util.TaskUtil;
 import top.sshh.bililiverecoder.util.UploadEnums;
 
@@ -48,6 +48,7 @@ public class KodoRecordPartBilibiliUploadService implements RecordPartUploadServ
 
     public static final String OS = "kodo";
     private static final String WX_MSG_FORMAT = """
+            上传结果: %s
             收到主播%s分P上传%s事件
             房间名: %s
             时间: %s
@@ -55,7 +56,6 @@ public class KodoRecordPartBilibiliUploadService implements RecordPartUploadServ
             文件录制开始时间: %s
             文件录制时长: %s 分钟
             文件录制大小: %.3f GB
-            上传结果: %s
             原因: %s
             """;
     @Value("${record.wx-push-token}")
@@ -127,18 +127,12 @@ public class KodoRecordPartBilibiliUploadService implements RecordPartUploadServ
                                 TaskUtil.partUploadTask.remove(part.getId());
                                 return;
                             }
-                            boolean expired = false;
                             // 检查是否已经过期，调用用户信息接口
-                            try {
-                                String myInfo = BiliApi.appMyInfo(biliBiliUser);
-                                String uname = JsonPath.read(myInfo, "data.uname");
-                                if (StringUtils.isBlank(uname)) {
-                                    expired = true;
-                                }
-                            } catch (Exception e) {
-                                expired = true;
-                            }
-                            if (expired) {
+                            // 登录验证结束
+                            WebCookie webCookie = Cookie.parse(biliBiliUser.getCookies());
+                            UserMy userMy = new UserMy(webCookie);
+                            UserMyRootBean myInfo = userMy.getPojo();
+                            if (myInfo.getCode() == -101) {
                                 biliBiliUser.setLogin(false);
                                 biliBiliUser = biliUserRepository.save(biliBiliUser);
                                 TaskUtil.partUploadTask.remove(part.getId());
@@ -146,16 +140,15 @@ public class KodoRecordPartBilibiliUploadService implements RecordPartUploadServ
                                     Message message = new Message();
                                     message.setAppToken(wxToken);
                                     message.setContentType(Message.CONTENT_TYPE_TEXT);
-                                    message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), "开始", room.getTitle(),
+                                    message.setContent(WX_MSG_FORMAT.formatted("上传失败", room.getUname(), "开始", room.getTitle(),
                                             LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                            part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, ((float) part.getFileSize() / 1024 / 1024 / 1024), "上传失败", biliBiliUser.getUname() + "登录已过期，请重新登录"));
+                                            part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, ((float) part.getFileSize() / 1024 / 1024 / 1024), biliBiliUser.getUname() + "登录已过期，请重新登录"));
                                     message.setUid(wxuid);
                                     WxPusher.send(message);
                                 }
                                 throw new RuntimeException("{}登录已过期，请重新登录! " + biliBiliUser.getUname());
                             }
                             // 登录验证结束
-                            WebCookie webCookie = Cookie.parse(biliBiliUser.getCookies());
                             Map<String, String> preParams = new HashMap<>();
                             preParams.put("r", uploadEnums.getOs());
                             preParams.put("profile", uploadEnums.getProfile());
@@ -185,9 +178,9 @@ public class KodoRecordPartBilibiliUploadService implements RecordPartUploadServ
                                     Message message = new Message();
                                     message.setAppToken(wxToken);
                                     message.setContentType(Message.CONTENT_TYPE_TEXT);
-                                    message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), "开始", room.getTitle(),
+                                    message.setContent(WX_MSG_FORMAT.formatted("上传失败", room.getUname(), "开始", room.getTitle(),
                                             LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                            part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, ((float) part.getFileSize() / 1024 / 1024 / 1024), "上传失败", biliBiliUser.getUname() + "并发上传失败，存在异常"));
+                                            part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, ((float) part.getFileSize() / 1024 / 1024 / 1024), biliBiliUser.getUname() + "并发上传失败，存在异常"));
                                     message.setUid(wxuid);
                                     WxPusher.send(message);
                                 }
@@ -253,9 +246,9 @@ public class KodoRecordPartBilibiliUploadService implements RecordPartUploadServ
                             Message message = new Message();
                             message.setAppToken(wxToken);
                             message.setContentType(Message.CONTENT_TYPE_TEXT);
-                            message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), "开始", room.getTitle(),
+                            message.setContent(WX_MSG_FORMAT.formatted("开始上传", room.getUname(), "开始", room.getTitle(),
                                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                    part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, ((float) part.getFileSize() / 1024 / 1024 / 1024), "开始上传", biliBiliUser.getUname()));
+                                    part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, ((float) part.getFileSize() / 1024 / 1024 / 1024), biliBiliUser.getUname()));
                             message.setUid(wxuid);
                             WxPusher.send(message);
 
@@ -274,9 +267,9 @@ public class KodoRecordPartBilibiliUploadService implements RecordPartUploadServ
                                 if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("分P上传")) {
                                     message.setAppToken(wxToken);
                                     message.setContentType(Message.CONTENT_TYPE_TEXT);
-                                    message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), "开始", room.getTitle(),
+                                    message.setContent(WX_MSG_FORMAT.formatted("上传失败", room.getUname(), "开始", room.getTitle(),
                                             LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                            part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, ((float) part.getFileSize() / 1024 / 1024 / 1024), "上传失败", biliBiliUser.getUname() + "并发上传失败，存在异常"));
+                                            part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, ((float) part.getFileSize() / 1024 / 1024 / 1024), biliBiliUser.getUname() + "并发上传失败，存在异常"));
                                     message.setUid(wxuid);
                                     WxPusher.send(message);
                                 }
@@ -335,9 +328,9 @@ public class KodoRecordPartBilibiliUploadService implements RecordPartUploadServ
                                     if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("分P上传")) {
                                         message.setAppToken(wxToken);
                                         message.setContentType(Message.CONTENT_TYPE_TEXT);
-                                        message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), "结束", room.getTitle(),
+                                        message.setContent(WX_MSG_FORMAT.formatted("上传成功", room.getUname(), "结束", room.getTitle(),
                                                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                                part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, ((float) part.getFileSize() / 1024 / 1024 / 1024), "上传成功", "服务器文件名称\n" + part.getFileName()));
+                                                part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, ((float) part.getFileSize() / 1024 / 1024 / 1024), "服务器文件名称\n" + part.getFileName()));
                                         message.setUid(wxuid);
                                         WxPusher.send(message);
                                     }
@@ -352,9 +345,9 @@ public class KodoRecordPartBilibiliUploadService implements RecordPartUploadServ
                                 if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("分P上传")) {
                                     message.setAppToken(wxToken);
                                     message.setContentType(Message.CONTENT_TYPE_TEXT);
-                                    message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), "结束", room.getTitle(),
+                                    message.setContent(WX_MSG_FORMAT.formatted("上传失败", room.getUname(), "结束", room.getTitle(),
                                             LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                            part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, ((float) part.getFileSize() / 1024 / 1024 / 1024), "上传失败", e.getMessage()));
+                                            part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int) part.getDuration() / 60, ((float) part.getFileSize() / 1024 / 1024 / 1024), e.getMessage()));
                                     message.setUid(wxuid);
                                     WxPusher.send(message);
                                 }
@@ -368,6 +361,8 @@ public class KodoRecordPartBilibiliUploadService implements RecordPartUploadServ
                 }
 
             }
+        } catch (Exception e) {
+            log.error("kodo上传发送错误", e);
         } finally {
             TaskUtil.partUploadTask.remove(part.getId());
         }

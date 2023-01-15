@@ -280,7 +280,7 @@
             <el-form-item :label-width="formLabelWidth" label="弹幕重复过滤">
                 <el-select placeholder="请选择" v-model="room.dmDistinct">
                     <el-option :value="false" label="不过滤"></el-option>
-                    <el-option :value="true" label="过滤(只过滤没有佩戴粉丝勋章的)"></el-option>
+                    <el-option :value="true" label="过滤"></el-option>
                 </el-select>
             </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="粉丝勋章屏蔽">
@@ -290,7 +290,7 @@
                     <el-option :value="2" label="佩戴主播粉丝勋章"></el-option>
                 </el-select>
             </el-form-item>
-            <el-form-item :label-width="formLabelWidth" label="用户ul等级(低于该等级)">
+            <el-form-item :label-width="formLabelWidth" label="用户ul等级(佩戴勋章的弹幕无效)">
                 <el-input autocomplete="off" type="number" v-model="room.dmUlLevel"></el-input>
             </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="关键词屏蔽(一行一个)">

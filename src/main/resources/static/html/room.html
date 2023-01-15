@@ -277,26 +277,30 @@
     </el-dialog>
     <el-dialog :visible.sync="editLiveMsgSettingVisible" title="弹幕过滤">
         <el-form :model="room">
-            <el-form-item :label-width="formLabelWidth" label="弹幕重复过滤">
+            <el-form-item label="弹幕重复过滤" label-width="300">
                 <el-select placeholder="请选择" v-model="room.dmDistinct">
                     <el-option :value="false" label="不过滤"></el-option>
                     <el-option :value="true" label="过滤"></el-option>
                 </el-select>
             </el-form-item>
-            <el-form-item :label-width="formLabelWidth" label="粉丝勋章屏蔽">
+            <el-form-item label="粉丝勋章屏蔽(需录制原始数据生效)" label-width="300">
                 <el-select placeholder="请选择" v-model="room.dmFanMedal">
                     <el-option :value="0" label="不过滤"></el-option>
                     <el-option :value="1" label="佩戴粉丝勋章"></el-option>
                     <el-option :value="2" label="佩戴主播粉丝勋章"></el-option>
                 </el-select>
             </el-form-item>
-            <el-form-item :label-width="formLabelWidth" label="用户ul等级(佩戴勋章的弹幕无效)">
-                <el-input autocomplete="off" type="number" v-model="room.dmUlLevel"></el-input>
+            <el-form-item label="用户ul等级(佩戴勋章的弹幕无效)" label-width="300">
+                <el-col :span="8">
+                    <el-input autocomplete="off" type="number" v-model="room.dmUlLevel"></el-input>
+                </el-col>
             </el-form-item>
-            <el-form-item :label-width="formLabelWidth" label="关键词屏蔽(一行一个)">
-                <el-input :rows="2" autocomplete="off"
-                          autosize
-                          type="textarea" v-model="room.dmKeywordBlacklist"></el-input>
+            <el-form-item label="关键词屏蔽(一行一个)" label-width="300">
+                <el-col :span="8">
+                    <el-input :rows="2" autocomplete="off"
+                              autosize
+                              type="textarea" v-model="room.dmKeywordBlacklist"></el-input>
+                </el-col>
             </el-form-item>
         </el-form>
         <div class="dialog-footer" slot="footer">
@@ -1819,6 +1823,24 @@
                     }
                 });
             },
+            addRoomF: function () {
+                let _this = this;
+                $.ajax({
+                    url: '/room/add',
+                    contentType: 'application/json;charset=utf-8',
+                    type: 'post',
+                    data: JSON.stringify(_this.addRoom),
+                    dataType: 'json',
+                    success: function (data) {
+                        _this.$message({
+                            message: data.msg,
+                            type: data.type
+                        });
+                        _this.addRoomDialog = false;
+                        _this.initTable();
+                    }
+                });
+            },
             editLiveMsgSetting: function () {
                 let _this = this;
                 $.ajax({
@@ -1897,12 +1919,12 @@
                     type: 'post',
                     dataType: 'json',
                     success: function (data) {
-                        data.forEach(room =>{
-                            if(room.coverUrl === 'live'){
+                        data.forEach(room => {
+                            if (room.coverUrl === 'live') {
                                 room.coverType = 'live';
-                            }else if(typeof(room.coverUrl)=='string' && room.coverUrl.startsWith("http")){
+                            } else if (typeof (room.coverUrl) == 'string' && room.coverUrl.startsWith("http")) {
                                 room.coverType = 'diy';
-                            }else {
+                            } else {
                                 room.coverType = 'default';
                             }
                         })
@@ -1957,9 +1979,11 @@
         position: relative;
         overflow: hidden;
     }
+
     .avatar-uploader .el-upload:hover {
         border-color: #409EFF;
     }
+
     .avatar-uploader-icon {
         font-size: 28px;
         color: #8c939d;
@@ -1968,6 +1992,7 @@
         line-height: 178px;
         text-align: center;
     }
+
     .avatar {
         width: 178px;
         height: 178px;

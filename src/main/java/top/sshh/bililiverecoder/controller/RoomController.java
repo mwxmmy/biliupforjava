@@ -64,6 +64,21 @@ public class RoomController {
         return false;
     }
 
+    @PostMapping("/editLiveMsgSetting")
+    public boolean editLiveMsgSetting(@RequestBody RecordRoom room) {
+        Optional<RecordRoom> roomOptional = roomRepository.findById(room.getId());
+        if (roomOptional.isPresent()) {
+            RecordRoom dbRoom = roomOptional.get();
+            dbRoom.setDmDistinct(room.getDmDistinct());
+            dbRoom.setDmFanMedal(room.getDmFanMedal());
+            dbRoom.setDmUlLevel(room.getDmUlLevel());
+            dbRoom.setDmKeywordBlacklist(room.getDmKeywordBlacklist());
+            roomRepository.save(dbRoom);
+            return true;
+        }
+        return false;
+    }
+
     @PostMapping("/add")
     public Map<String, String> add(@RequestBody RecordRoom add) {
         Map<String, String> result = new HashMap<>();

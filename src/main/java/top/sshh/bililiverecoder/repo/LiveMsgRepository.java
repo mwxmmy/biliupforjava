@@ -28,4 +28,6 @@ public interface LiveMsgRepository extends CrudRepository<LiveMsg, Long> {
     void deleteByPartId(Long partId);
 
     List<LiveMsg> queryByBvid(String bvid);
+
+    List<LiveMsg> queryByCid(Long cid);
 }

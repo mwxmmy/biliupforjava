@@ -124,17 +124,21 @@
             </template>
         </el-table-column>
         <el-table-column label="操作"
-                         width="180">
+                         width="250">
             <template slot-scope="scope">
                 <el-button
                         @click="handleEdit(scope.$index, scope.row)" size="mini"
                         type="primary">编辑
                 </el-button>
+                <el-button
+                        @click="handleEeditLiveMsg(scope.$index, scope.row)" size="mini"
+                        type="primary">弹幕规则
+                </el-button>
                 <el-popconfirm
                         @confirm="deleteRoom(scope.row.id)"
                         title="确定删除吗？">
                     <el-button slot="reference" size="mini"
-                            type="danger">删除
+                               type="danger">删除
                     </el-button>
                 </el-popconfirm>
             </template>
@@ -271,10 +275,40 @@
             <el-button @click="addRoomF()" type="primary">确 定</el-button>
         </div>
     </el-dialog>
+    <el-dialog :visible.sync="editLiveMsgSettingVisible" title="弹幕过滤">
+        <el-form :model="room">
+            <el-form-item :label-width="formLabelWidth" label="弹幕重复过滤">
+                <el-select placeholder="请选择" v-model="room.dmDistinct">
+                    <el-option :value="false" label="不过滤"></el-option>
+                    <el-option :value="true" label="过滤"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item :label-width="formLabelWidth" label="粉丝勋章屏蔽">
+                <el-select placeholder="请选择" v-model="room.dmFanMedal">
+                    <el-option :value="0" label="不过滤(开启后等级过滤无效)"></el-option>
+                    <el-option :value="1" label="佩戴粉丝勋章"></el-option>
+                    <el-option :value="2" label="佩戴主播粉丝勋章"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item :label-width="formLabelWidth" label="用户ul等级(低于该等级)">
+                <el-input autocomplete="off" type="number" v-model="room.dmUlLevel"></el-input>
+            </el-form-item>
+            <el-form-item :label-width="formLabelWidth" label="关键词屏蔽(一行一个)">
+                <el-input :rows="2" autocomplete="off"
+                          autosize
+                          type="textarea" v-model="room.dmKeywordBlacklist"></el-input>
+            </el-form-item>
+        </el-form>
+        <div class="dialog-footer" slot="footer">
+            <el-button @click="editLiveMsgSettingVisible = false">取 消</el-button>
+            <el-button @click="editLiveMsgSetting()" type="primary">确 定</el-button>
+        </div>
+    </el-dialog>
 
     <el-dialog :visible.sync="wxDialogVisible" title="微信关注扫码获取uid">
         <el-image
-                src="https://wxpusher.zjiecode.com/api/qrcode/gg2nIKVGMMp1paStVFVtFWrdoQFWHCymwGVXXTStk5c4k8Dp4DSQFNRJAKwtLZ7G.jpg" fit="fill"
+                src="https://wxpusher.zjiecode.com/api/qrcode/gg2nIKVGMMp1paStVFVtFWrdoQFWHCymwGVXXTStk5c4k8Dp4DSQFNRJAKwtLZ7G.jpg"
+                fit="fill"
                 justify="center"
                 style="width: 250px; height: 250px"></el-image>
         <div class="dialog-footer" slot="footer">
@@ -1755,6 +1789,7 @@
             dialogFormVisible: false,
             wxDialogVisible: false,
             addRoomDialog: false,
+            editLiveMsgSettingVisible: false,
             room: {},
             addRoom: {},
             tableData: [],
@@ -1765,6 +1800,10 @@
             handleEdit: function (index, row) {
                 this.room = row;
                 this.dialogFormVisible = true;
+            },
+            handleEeditLiveMsg: function (index, row) {
+                this.room = row;
+                this.editLiveMsgSettingVisible = true;
             },
             updateRoom: function () {
                 let _this = this;
@@ -1780,20 +1819,20 @@
                     }
                 });
             },
-            addRoomF: function () {
+            editLiveMsgSetting: function () {
                 let _this = this;
                 $.ajax({
-                    url: '/room/add',
+                    url: '/room/editLiveMsgSetting',
                     contentType: 'application/json;charset=utf-8',
                     type: 'post',
-                    data: JSON.stringify(_this.addRoom),
+                    data: JSON.stringify(_this.room),
                     dataType: 'json',
                     success: function (data) {
                         _this.$message({
                             message: data.msg,
                             type: data.type
                         });
-                        _this.addRoomDialog = false;
+                        _this.editLiveMsgSettingVisible = false;
                         _this.initTable();
                     }
                 });

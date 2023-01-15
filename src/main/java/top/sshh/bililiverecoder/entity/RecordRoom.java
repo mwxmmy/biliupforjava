@@ -72,6 +72,21 @@ public class RecordRoom {
 
     private Boolean sendDm = false;
 
+    /**
+     * 弹幕去除重复
+     */
+    private Boolean dmDistinct = false;
+
+    /**
+     * 弹幕用户ul等级过滤
+     */
+    private int dmUlLevel;
+
+    /**
+     * 弹幕粉丝勋章过滤
+     */
+    private int dmFanMedal;
+
     private boolean recording;
 
     private boolean streaming;
@@ -80,5 +95,49 @@ public class RecordRoom {
 
     private LocalDateTime updateTime;
 
+
+    /**
+     * 弹幕关键词过滤
+     */
+    private String dmKeywordBlacklist = """
+            天选之人
+            老板大气
+            红包
+            关注
+            傻逼
+            妈
+            草
+            垃圾
+            狗
+            蛆
+            脑浆
+            退役
+            好卡
+            死
+            艹
+            举报
+            弹幕
+            画质
+            傻子
+            卡卡
+            好卡
+            不卡
+            卡了
+            nm
+            NM
+            nM
+            Nm
+            难看
+            没意思
+            尼
+            玛
+            哈哈哈
+            恶心
+            屎
+            sb
+            sB
+            SB
+            Sb
+            """;
 
 }

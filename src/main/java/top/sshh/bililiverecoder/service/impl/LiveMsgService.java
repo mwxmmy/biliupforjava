@@ -1,5 +1,7 @@
 package top.sshh.bililiverecoder.service.impl;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
 import lombok.extern.slf4j.Slf4j;
@@ -13,13 +15,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import top.sshh.bililiverecoder.entity.BiliBiliUser;
-import top.sshh.bililiverecoder.entity.LiveMsg;
-import top.sshh.bililiverecoder.entity.RecordHistory;
-import top.sshh.bililiverecoder.entity.RecordHistoryPart;
+import top.sshh.bililiverecoder.entity.*;
 import top.sshh.bililiverecoder.entity.data.BiliDmResponse;
 import top.sshh.bililiverecoder.repo.LiveMsgRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
+import top.sshh.bililiverecoder.repo.RecordRoomRepository;
 import top.sshh.bililiverecoder.util.BiliApi;
 
 import java.io.File;
@@ -36,51 +36,6 @@ import java.util.Optional;
 public class LiveMsgService {
 
 
-    private static final String ZH_CHAR_REGX = "^[\u4e00-\u9fa5]{1}$";
-
-    private static final List<String> EXCLUSION_DM = new ArrayList<>();
-
-    static {
-        EXCLUSION_DM.add("天选之人");
-        EXCLUSION_DM.add("老板大气");
-        EXCLUSION_DM.add("红包");
-        EXCLUSION_DM.add("关注");
-        EXCLUSION_DM.add("傻逼");
-        EXCLUSION_DM.add("妈");
-        EXCLUSION_DM.add("草");
-        EXCLUSION_DM.add("垃圾");
-        EXCLUSION_DM.add("狗");
-        EXCLUSION_DM.add("蛆");
-        EXCLUSION_DM.add("脑浆");
-        EXCLUSION_DM.add("退役");
-        EXCLUSION_DM.add("好卡");
-        EXCLUSION_DM.add("死");
-        EXCLUSION_DM.add("艹");
-        EXCLUSION_DM.add("举报");
-        EXCLUSION_DM.add("弹幕");
-        EXCLUSION_DM.add("画质");
-        EXCLUSION_DM.add("傻子");
-        EXCLUSION_DM.add("卡卡");
-        EXCLUSION_DM.add("好卡");
-        EXCLUSION_DM.add("不卡");
-        EXCLUSION_DM.add("卡了");
-        EXCLUSION_DM.add("nm");
-        EXCLUSION_DM.add("NM");
-        EXCLUSION_DM.add("nM");
-        EXCLUSION_DM.add("Nm");
-        EXCLUSION_DM.add("难看");
-        EXCLUSION_DM.add("没意思");
-        EXCLUSION_DM.add("尼");
-        EXCLUSION_DM.add("玛");
-        EXCLUSION_DM.add("哈哈哈");
-        EXCLUSION_DM.add("恶心");
-        EXCLUSION_DM.add("屎");
-        EXCLUSION_DM.add("sb");
-        EXCLUSION_DM.add("sB");
-        EXCLUSION_DM.add("SB");
-        EXCLUSION_DM.add("Sb");
-    }
-
     @Autowired
     private JdbcService jdbcService;
 
@@ -88,16 +43,18 @@ public class LiveMsgService {
     private LiveMsgRepository liveMsgRepository;
     @Autowired
     private RecordHistoryRepository recordHistoryRepository;
+    @Autowired
+    private RecordRoomRepository roomRepository;
 
     public int sendMsg(BiliBiliUser user, LiveMsg liveMsg) {
         BiliDmResponse response = BiliApi.sendVideoDm(user, liveMsg);
         int code = response.getCode();
         if (code != 0) {
-            log.error("{}发送弹幕错误，code==>{}",user.getUname(), code);
-            if(code == 36701 || code == 36702 || code == 36714){
+            log.error("{}发送弹幕错误，code==>{}", user.getUname(), code);
+            if (code == 36701 || code == 36702 || code == 36714) {
                 liveMsgRepository.delete(liveMsg);
             }
-        }else {
+        } else {
             liveMsg.setCode(code);
             liveMsgRepository.save(liveMsg);
         }
@@ -115,12 +72,13 @@ public class LiveMsgService {
         if (StringUtils.isBlank(bvid) || part.getCid() == null || part.getCid() < 1) {
             return;
         }
-        int partCount = liveMsgRepository.countByPartId(part.getId());
-        //弹幕多就不重新加载了
-        if (partCount > 100) {
-            return;
+        RecordRoom room = roomRepository.findByRoomId(part.getRoomId());
+        String dmKeywordBlacklist = room.getDmKeywordBlacklist();
+        String[] EXCLUSION_DM;
+        if (StringUtils.isNotBlank(dmKeywordBlacklist)) {
+            EXCLUSION_DM = dmKeywordBlacklist.split("\n");
         } else {
-            liveMsgRepository.deleteByPartId(part.getId());
+            EXCLUSION_DM = new String[0];
         }
         String filePath = part.getFilePath();
         filePath = filePath.replaceAll(".flv", ".xml");
@@ -219,21 +177,11 @@ public class LiveMsgService {
 
                 // 普通弹幕处理
                 List<Node> nodes = rootElement.selectNodes("/i/d");
-                //限制每两秒钟最多一条弹幕
-                long time = 0;
                 BloomFilter<CharSequence> bloomFilter = BloomFilter.create(Funnels.stringFunnel(StandardCharsets.UTF_8), 1000000, 0.01);
                 for (Node node : nodes) {
                     DefaultElement element = (DefaultElement) node;
-                    String userName = element.attribute("user").getValue();
-                    //排除低级用户
-                    if (userName.startsWith("bili") || userName.endsWith("bili")) {
-                        continue;
-                    }
+
                     String text = element.getText().trim().replace("\n", ",").replace("\r", ",");
-                    //短文字弹幕没有意义
-                    if (this.zhCharCount(text) < 2) {
-                        continue;
-                    }
                     //排除垃圾弹幕
                     boolean isContinue = false;
                     for (String s : EXCLUSION_DM) {
@@ -245,6 +193,32 @@ public class LiveMsgService {
                     if (isContinue) {
                         continue;
                     }
+                    if (element.attribute("raw") != null) {
+                        String raw = element.attribute("raw").getValue();
+                        JSONArray array = JSON.parseArray(raw);
+
+                        JSONArray dmFanMedalObjects = (JSONArray) array.get(3);
+                        // 0-不做处理，1-必须佩戴粉丝勋章。2-必须佩戴主播的粉丝勋章
+                        if (room.getDmFanMedal() == 0) {
+                            Integer ulLive = (Integer) ((JSONArray) array.get(4)).get(0);
+                            //排除低级用户
+                            if (ulLive < room.getDmUlLevel()) {
+                                continue;
+                            }
+                        } else if (room.getDmFanMedal() == 1) {
+                            if (dmFanMedalObjects.size() == 0) {
+                                continue;
+                            }
+                        } else if (room.getDmFanMedal() == 2) {
+                            if (dmFanMedalObjects.size() == 0) {
+                                continue;
+                            }
+                            String roomId = dmFanMedalObjects.get(3).toString();
+                            if (!part.getRoomId().equals(roomId)) {
+                                continue;
+                            }
+                        }
+                    }
 
                     String value = element.attribute("p").getValue();
                     String[] values = value.split(",");
@@ -254,32 +228,27 @@ public class LiveMsgService {
                     }
                     int fontsize = Integer.parseInt(values[2]);
                     int color = Integer.parseInt(values[3]);
-                    //白色弹幕需要调整间隔
-                    if (color == 1677215) {
-                        //如果显示时间超过当前时间，调整当前时间
-                        if (sendTime > time + 3000) {
-                            time = (int) sendTime;
-                        } else {
+                    //弹幕重复过滤
+                    if (room.getDmDistinct() != null && room.getDmDistinct()) {
+                        if (!bloomFilter.put(text)) {
                             continue;
                         }
                     }
-                    if (bloomFilter.put(text)) {
-                        LiveMsg msg = new LiveMsg();
-                        msg.setPartId(part.getId());
-                        msg.setBvid(bvid);
-                        msg.setCid(part.getCid());
-                        msg.setSendTime(sendTime);
-                        msg.setFontsize(fontsize);
-                        msg.setMode(1);
-                        msg.setPool(0);
-                        msg.setColor(color);
-                        msg.setContext(text);
-                        liveMsgs.add(msg);
-                        if (liveMsgs.size() > 500) {
-                            jdbcService.saveLiveMsgList(liveMsgs);
-                            log.info("{} 弹幕解析入库成功，一共入库{}条。", filePath, liveMsgs.size());
-                            liveMsgs.clear();
-                        }
+                    LiveMsg msg = new LiveMsg();
+                    msg.setPartId(part.getId());
+                    msg.setBvid(bvid);
+                    msg.setCid(part.getCid());
+                    msg.setSendTime(sendTime);
+                    msg.setFontsize(fontsize);
+                    msg.setMode(1);
+                    msg.setPool(0);
+                    msg.setColor(color);
+                    msg.setContext(text);
+                    liveMsgs.add(msg);
+                    if (liveMsgs.size() > 500) {
+                        jdbcService.saveLiveMsgList(liveMsgs);
+                        log.info("{} 弹幕解析入库成功，一共入库{}条。", filePath, liveMsgs.size());
+                        liveMsgs.clear();
                     }
                 }
                 jdbcService.saveLiveMsgList(liveMsgs);
@@ -295,16 +264,5 @@ public class LiveMsgService {
                 }
             }
         }
-    }
-
-    private int zhCharCount(String s) {
-        int count = 0;
-        char[] chars = s.toCharArray();
-        for (char c : chars) {
-            if (String.valueOf(c).matches(ZH_CHAR_REGX)) {
-                count++;
-            }
-        }
-        return count;
     }
 }

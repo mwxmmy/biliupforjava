@@ -17,8 +17,10 @@ import top.sshh.bililiverecoder.repo.LiveMsgRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryPartRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
 import top.sshh.bililiverecoder.repo.RecordRoomRepository;
+import top.sshh.bililiverecoder.service.impl.LiveMsgService;
 import top.sshh.bililiverecoder.service.impl.RecordBiliPublishService;
 
+import java.io.File;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -37,6 +39,8 @@ public class HistoryController {
     private RecordBiliPublishService publishService;
     @Autowired
     private LiveMsgRepository msgRepository;
+    @Autowired
+    private LiveMsgService msgService;
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -157,6 +161,42 @@ public class HistoryController {
             msgRepository.deleteAll(liveMsgs);
             result.put("type", "success");
             result.put("msg", "弹幕删除成功");
+            return result;
+        } else {
+            result.put("type", "warning");
+            result.put("msg", "录制历史不存在");
+            return result;
+        }
+    }
+
+    @GetMapping("/reloadMsg/{id}")
+    public Map<String, String> reloadMsg(@PathVariable("id") Long id) {
+        Map<String, String> result = new HashMap<>();
+        if (id == null) {
+            result.put("type", "info");
+            result.put("msg", "请输入id");
+            return result;
+        }
+        Optional<RecordHistory> historyOptional = historyRepository.findById(id);
+        if (historyOptional.isPresent()) {
+            RecordHistory history = historyOptional.get();
+            List<RecordHistoryPart> parts = partRepository.findByHistoryIdOrderByStartTimeAsc(history.getId());
+            for (RecordHistoryPart part : parts) {
+                String filePath = part.getFilePath();
+                filePath = filePath.replaceAll(".flv", ".xml");
+                File file = new File(filePath);
+                if (!file.exists()) {
+                    result.put("type", "warning");
+                    result.put("msg", filePath + "\n弹幕文件不存在");
+                    return result;
+                } else {
+                    List<LiveMsg> liveMsgs = msgRepository.queryByCid(part.getCid());
+                    msgRepository.deleteAll(liveMsgs);
+                    msgService.processing(part);
+                }
+            }
+            result.put("type", "success");
+            result.put("msg", "弹幕重新加载成功");
             return result;
         } else {
             result.put("type", "warning");

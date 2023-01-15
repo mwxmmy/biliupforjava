@@ -61,6 +61,16 @@ public class LiveMsgService {
         return code;
     }
 
+    public static boolean checkUtf8Size(String testStr) {
+        for (int i = 0; i < testStr.length(); i++) {
+            int c = testStr.codePointAt(i);
+            if (c < 0x0000 || c > 0xffff) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Async
     public void processing(RecordHistoryPart part) {
         Optional<RecordHistory> historyOptional = recordHistoryRepository.findById(part.getHistoryId());
@@ -182,6 +192,10 @@ public class LiveMsgService {
                     DefaultElement element = (DefaultElement) node;
 
                     String text = element.getText().trim().replace("\n", ",").replace("\r", ",");
+                    //过滤utf8字符大小为4的
+                    if (checkUtf8Size(text)) {
+                        continue;
+                    }
                     //排除垃圾弹幕
                     boolean isContinue = false;
                     for (String s : EXCLUSION_DM) {
@@ -199,13 +213,7 @@ public class LiveMsgService {
 
                         JSONArray dmFanMedalObjects = (JSONArray) array.get(3);
                         // 0-不做处理，1-必须佩戴粉丝勋章。2-必须佩戴主播的粉丝勋章
-                        if (room.getDmFanMedal() == 0) {
-                            Integer ulLive = (Integer) ((JSONArray) array.get(4)).get(0);
-                            //排除低级用户
-                            if (ulLive < room.getDmUlLevel()) {
-                                continue;
-                            }
-                        } else if (room.getDmFanMedal() == 1) {
+                        if (room.getDmFanMedal() == 1) {
                             if (dmFanMedalObjects.size() == 0) {
                                 continue;
                             }
@@ -215,6 +223,13 @@ public class LiveMsgService {
                             }
                             String roomId = dmFanMedalObjects.get(3).toString();
                             if (!part.getRoomId().equals(roomId)) {
+                                continue;
+                            }
+                        }
+                        Integer ulLive = (Integer) ((JSONArray) array.get(4)).get(0);
+                        //排除低级用户
+                        if (ulLive < room.getDmUlLevel()) {
+                            if (dmFanMedalObjects.size() == 0) {
                                 continue;
                             }
                         }

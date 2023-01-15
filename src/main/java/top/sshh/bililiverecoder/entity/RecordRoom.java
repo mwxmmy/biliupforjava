@@ -1,9 +1,6 @@
 package top.sshh.bililiverecoder.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -80,12 +77,14 @@ public class RecordRoom {
     /**
      * 弹幕用户ul等级过滤
      */
-    private int dmUlLevel;
+    @Column(name = "dm_ul_level", columnDefinition = "int default 0")
+    private int dmUlLevel = 0;
 
     /**
      * 弹幕粉丝勋章过滤
      */
-    private int dmFanMedal;
+    @Column(name = "dm_fan_medal", columnDefinition = "int default 0")
+    private int dmFanMedal = 0;
 
     private boolean recording;
 

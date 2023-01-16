@@ -411,8 +411,10 @@ public class RecordBiliPublishService {
                     videoUploadDto.setDynamic(this.template(room.getDescTemplate(), map));
                     videoUploadDto.setVideos(dtos);
                     videoUploadDto.setTag(room.getTags());
+                    String uploadRes = null;
                     try {
-                        String uploadRes = BiliApi.publish(biliBiliUser.getAccessToken(), videoUploadDto);
+                        uploadRes = BiliApi.publish(biliBiliUser.getAccessToken(), videoUploadDto);
+                        log.info("uploadRes==>{}", uploadRes);
                         String bvid = JSON.parseObject(uploadRes).getJSONObject("data").getString("bvid");
                         String aid = JSON.parseObject(uploadRes).getJSONObject("data").getString("aid");
                         history.setBvId(bvid);
@@ -438,7 +440,7 @@ public class RecordBiliPublishService {
                             message.setAppToken(wxToken);
                             message.setContentType(Message.CONTENT_TYPE_TEXT);
                             message.setContent(WX_MSG_FORMAT.formatted("投稿失败", room.getUname(), room.getTitle(),
-                                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), e.getMessage()));
+                                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), uploadRes != null ? uploadRes : e.getMessage()));
                             message.setUid(wxuid);
                             WxPusher.send(message);
                         }

@@ -410,7 +410,7 @@ public class RecordBiliPublishService {
                     videoUploadDto.setDesc(this.template(room.getDescTemplate(), map));
                     videoUploadDto.setDynamic(this.template(room.getDescTemplate(), map));
                     videoUploadDto.setVideos(dtos);
-                    videoUploadDto.setTag(room.getTags());
+                    videoUploadDto.setTag(this.template(room.getTags(), map));
                     String uploadRes = null;
                     try {
                         uploadRes = BiliApi.publish(biliBiliUser.getAccessToken(), videoUploadDto);

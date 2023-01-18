@@ -26,7 +26,7 @@ public interface RecordHistoryPartRepository extends CrudRepository<RecordHistor
 
     int countByHistoryIdAndFileNameNotNull(Long historyId);
 
-    @Query("select sum(duration) from RecordHistoryPart where historyId = ?1")
+    @Query("select ifnull(sum(duration),0) from RecordHistoryPart where historyId = ?1")
     float sumHistoryDurationByHistoryId(Long historyId);
 
     boolean existsByFilePath(String filePath);

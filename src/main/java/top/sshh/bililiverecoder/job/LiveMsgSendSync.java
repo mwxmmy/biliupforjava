@@ -130,8 +130,11 @@ public class LiveMsgSendSync {
                     replies.add(reply);
                 }
                 try {
+                    String replId = null;
                     for (int i = 0; i < replies.size(); i++) {
                         BiliReply reply = replies.get(i);
+                        reply.setRoot(replId);
+                        reply.setParent(replId);
                         BiliReplyResponse replyResponse = BiliApi.sendVideoReply(user,reply);
                         if(replyResponse.getCode() == 0){
                             log.info("av{}发送评论成功：{}",reply.getOid(),reply.getMessage());
@@ -139,6 +142,7 @@ public class LiveMsgSendSync {
                             history = historyRepository.save(history);
                             //第一个评论进行置顶操作
                             if(i == 0){
+                                replId = replyResponse.getData().getRpid();
                                 //等待一段时间，否则无法置顶
                                 Thread.sleep(2000L);
                                 reply.setRpid(replyResponse.getData().getRpid());

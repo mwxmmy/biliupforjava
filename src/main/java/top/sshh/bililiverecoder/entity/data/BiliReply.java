@@ -23,6 +23,19 @@ public class BiliReply {
      * 评论rpid
      */
     String rpid;
+
+    /**
+     * 根评论rpid
+     * 二级评论以上使用
+     */
+    String root;
+
+    /**
+     * 父评论rpid
+     * 二级评论同根评论id
+     * 大于二级评论为要回复的评论id
+     */
+    String parent;
     /**
      * 操作代码
      * 默认为0

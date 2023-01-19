@@ -416,6 +416,10 @@ public class BiliApi {
         params.put("type", reply.getType());
         params.put("message", reply.getMessage());
         params.put("oid", reply.getOid());
+        if(StringUtils.isNotBlank(reply.getParent())){
+            params.put("root", reply.getRoot());
+            params.put("parent", reply.getParent());
+        }
         params.put("plat", "2");
         Map<String, String> headers = new HashMap<>();
         long currentSecond = Instant.now().getEpochSecond();

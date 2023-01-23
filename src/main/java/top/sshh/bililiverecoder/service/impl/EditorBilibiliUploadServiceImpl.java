@@ -249,8 +249,14 @@ public class EditorBilibiliUploadServiceImpl implements RecordPartUploadService 
                         completeParams.put("etags", String.join(",", etagArray));
                         EdtiorCompleteUploadRequest completeUploadRequest = new EdtiorCompleteUploadRequest(webCookie, preUploadBean, completeParams);
                         CompleteUploadBean completeUploadBean = completeUploadRequest.getPojo();
+                        log.info("{}，云剪辑上传完成，==>{}",part.getFileName(),JSON.toJSONString(completeUploadBean));
+                        try {
+                            //等待五秒在开始转码
+                            Thread.sleep(5000L);
+                        }catch (Exception ignored){}
                         EdtiorTranscodeRequest transcodeRequest = new EdtiorTranscodeRequest(webCookie, preUploadBean);
                         String page = transcodeRequest.getPage();
+                        log.info("{}，云剪辑转码请求完成，==>{}",part.getFileName(),page);
                         if (completeUploadBean.getCode() == 0) {
                             if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("云剪辑")) {
                                 message.setAppToken(wxToken);

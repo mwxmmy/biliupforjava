@@ -11,8 +11,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import top.sshh.bili.cookie.Cookie;
 import top.sshh.bili.cookie.WebCookie;
-import top.sshh.bili.upload.*;
-import top.sshh.bili.upload.pojo.*;
+import top.sshh.bili.upload.EditorChunkUploadRequest;
+import top.sshh.bili.upload.EditorPreUploadRequest;
+import top.sshh.bili.upload.EdtiorCompleteUploadRequest;
+import top.sshh.bili.upload.EdtiorTranscodeRequest;
+import top.sshh.bili.upload.pojo.CompleteUploadBean;
+import top.sshh.bili.upload.pojo.EditorPreUploadBean;
 import top.sshh.bili.user.pojo.my.UserMyRootBean;
 import top.sshh.bili.user.userinfo.UserMy;
 import top.sshh.bililiverecoder.entity.BiliBiliUser;
@@ -33,7 +37,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service("editorBilibiliUploadService")
@@ -157,8 +160,7 @@ public class EditorBilibiliUploadServiceImpl implements RecordPartUploadService 
                         String[] etagArray = new String[chunkNum];
                         List<Runnable> runnableList = new ArrayList<>();
                         for (int i = 0; i < chunkNum; i++) {
-                            long finalI = i;
-                            EditorPreUploadBean finalPreUploadBean = preUploadBean;
+                            int finalI = i;
                             Runnable runnable = () -> {
                                 try {
                                     while (tryCount.get() < 200) {
@@ -177,8 +179,9 @@ public class EditorBilibiliUploadServiceImpl implements RecordPartUploadService 
                                                 chunkParams.put("size", String.valueOf(finalChunkSize));
                                                 chunkParams.put("end", String.valueOf(endSize));
                                             }
-                                            EditorChunkUploadRequest chunkUploadRequest = new EditorChunkUploadRequest(finalPreUploadBean, chunkParams, new RandomAccessFile(filePath, "r"));
-                                            chunkUploadRequest.getPage();
+                                            EditorChunkUploadRequest chunkUploadRequest = new EditorChunkUploadRequest(preUploadBean, chunkParams, new RandomAccessFile(filePath, "r"));
+                                            String etag = chunkUploadRequest.getPage();
+                                            etagArray[finalI]=etag;
                                             int count = upCount.incrementAndGet();
                                             log.info("{}==>[{}] 上传视频part {} 进度{}/{}", Thread.currentThread().getName(), room.getTitle(),
                                                     filePath, count, chunkNum);
@@ -243,7 +246,7 @@ public class EditorBilibiliUploadServiceImpl implements RecordPartUploadService 
                         biliBiliUser = userOptional.get();
                         webCookie = Cookie.parse(biliBiliUser.getCookies());
                         Map<String, String> completeParams = new HashMap<>();
-                        completeParams.put("etags", Arrays.stream(etagArray).collect(Collectors.joining(",")));
+                        completeParams.put("etags", String.join(",", etagArray));
                         EdtiorCompleteUploadRequest completeUploadRequest = new EdtiorCompleteUploadRequest(webCookie, preUploadBean, completeParams);
                         CompleteUploadBean completeUploadBean = completeUploadRequest.getPojo();
                         EdtiorTranscodeRequest transcodeRequest = new EdtiorTranscodeRequest(webCookie, preUploadBean);

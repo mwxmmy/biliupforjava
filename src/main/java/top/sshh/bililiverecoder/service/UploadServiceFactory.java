@@ -14,13 +14,13 @@ public class UploadServiceFactory {
 
 
     @Resource(name = "appRecordPartBilibiliUploadService")
-    RecordPartUploadService appRecordPartBilibiliUploadService;
+    private RecordPartUploadService appRecordPartBilibiliUploadService;
 
     @Resource(name = "uposRecordPartBilibiliUploadService")
-    RecordPartUploadService uposRecordPartBilibiliUploadService;
+    private RecordPartUploadService uposRecordPartBilibiliUploadService;
 
     @Resource(name = "kodoRecordPartBilibiliUploadService")
-    RecordPartUploadService kodoRecordPartBilibiliUploadService;
+    private RecordPartUploadService kodoRecordPartBilibiliUploadService;
 
 
     public RecordPartUploadService getUploadService(String line) {

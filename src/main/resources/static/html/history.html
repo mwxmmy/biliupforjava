@@ -298,7 +298,7 @@
         </el-select>
         <div class="dialog-footer" slot="footer">
             <el-button @click="uploadEditDialogFormVisible = false">取 消</el-button>
-            <el-button @click="uploadEditPart()" type="primary">确 定</el-button>
+            <el-button @click="uploadEditPart();uploadEditDialogFormVisible = false" type="primary">确 定</el-button>
         </div>
     </el-dialog>
 </div>

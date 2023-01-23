@@ -14,19 +14,19 @@ import top.sshh.bililiverecoder.service.impl.*;
 public class RecordEventFactory {
 
     @Autowired
-    RecordEventRecordStartedService recordEventRecordStartedService;
+    private RecordEventRecordStartedService recordEventRecordStartedService;
     @Autowired
-    RecordEventRecordEndService recordEventRecordEndService;
+    private RecordEventRecordEndService recordEventRecordEndService;
     @Autowired
-    RecordEventStreamStartService recordEventStreamStartService;
+    private RecordEventStreamStartService recordEventStreamStartService;
     @Autowired
-    RecordEventStreamEndService recordEventStreamEndService;
+    private RecordEventStreamEndService recordEventStreamEndService;
     @Autowired
-    RecordEventFileOpenService recordEventFileOpenService;
+    private RecordEventFileOpenService recordEventFileOpenService;
     @Autowired
-    RecordEventFileClosedService recordEventFileClosedService;
+    private RecordEventFileClosedService recordEventFileClosedService;
     @Autowired
-    RecordEventEmptyService recordEventEmptyService;
+    private RecordEventEmptyService recordEventEmptyService;
 
 
     public RecordEventService getEventService(String eventType){

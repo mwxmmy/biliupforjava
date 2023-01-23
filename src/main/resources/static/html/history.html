@@ -58,12 +58,12 @@
         <el-table-column
                 label="id"
                 prop="id"
-                width="80">
+                width="60">
         </el-table-column>
         <el-table-column
-                label="房间名称"
+                label="主播名"
                 prop="roomName"
-                width="120">
+                width="80">
         </el-table-column>
         <el-table-column
                 label="bv号"
@@ -78,7 +78,7 @@
         <el-table-column
                 label="文件大小"
                 prop="fileSize"
-                width="120">
+                width="100">
             <template slot-scope="scope">
                 {{(scope.row.fileSize/1024/1024/1024).toFixed(2)}}(GB)
             </template>
@@ -163,11 +163,15 @@
                 width="170">
         </el-table-column>
         <el-table-column label="操作"
-                         width="200">
+                         width="250">
             <template slot-scope="scope">
                 <el-button
                         @click="handleEdit(scope.$index, scope.row)" size="mini"
                         type="primary">编辑
+                </el-button>
+                <el-button
+                        @click="uploadEdit(scope.$index, scope.row)" size="mini"
+                        type="primary">云剪辑
                 </el-button>
                 <el-popover
                         placement="right"
@@ -282,6 +286,21 @@
             <el-button @click="updateHistory()" type="primary">确 定</el-button>
         </div>
     </el-dialog>
+
+    <el-dialog :visible.sync="uploadEditDialogFormVisible" title="上传到云剪辑">
+        <el-select v-model="uploadEditPartId" placeholder="请选择">
+            <el-option
+                    v-for="item in partData"
+                    :key="item.id"
+                    :label="item.title"
+                    :value="item.id">
+            </el-option>
+        </el-select>
+        <div class="dialog-footer" slot="footer">
+            <el-button @click="uploadEditDialogFormVisible = false">取 消</el-button>
+            <el-button @click="uploadEditPart()" type="primary">确 定</el-button>
+        </div>
+    </el-dialog>
 </div>
 <script>
     new Vue({
@@ -289,14 +308,33 @@
         data: {
             formLabelWidth: '150px',
             tableData: [],
+            partData: [],
             editDialogFormVisible: false,
+            uploadEditDialogFormVisible: false,
             form: {},
-            history: {}
+            history: {},
+            uploadEditPartId:null
         },
         methods: {
             handleEdit: function (index, row) {
                 this.history = row;
                 this.editDialogFormVisible = true;
+            },
+            uploadEdit: function (index, row) {
+                this.uploadEditPartId = null;
+                let _this = this;
+                this.history = row;
+                this.uploadEditDialogFormVisible = true;
+                $.ajax({
+                    url: '/part/list/'+row.id,
+                    contentType: 'application/json;charset=utf-8',
+                    type: 'post',
+                    dataType: 'json',
+                    success: function (data) {
+                        console.log(data)
+                        _this.partData = data;
+                    }
+                });
             },
             initTable: function () {
                 let _this = this;
@@ -307,19 +345,16 @@
                     data: JSON.stringify(_this.form),
                     dataType: 'json',
                     success: function (data) {
-                        console.info(data)
                         _this.tableData = data;
                     }
                 });
             },
-            updateHistory: function () {
+            uploadEditPart: function () {
                 let _this = this;
                 $.ajax({
-                    url: '/history/update',
+                    url: '/part/uploadEditor/'+this.uploadEditPartId,
                     contentType: 'application/json;charset=utf-8',
-                    type: 'post',
-                    data: JSON.stringify(_this.history),
-                    dataType: 'json',
+                    type: 'get',
                     success: function (data) {
                         _this.$message({
                             message: data.msg,

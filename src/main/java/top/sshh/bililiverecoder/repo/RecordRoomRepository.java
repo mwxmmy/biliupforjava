@@ -14,4 +14,6 @@ public interface RecordRoomRepository extends CrudRepository<RecordRoom, Long> {
     List<RecordRoom> findByUpload(boolean upload);
 
     List<RecordRoom> findBySendDmIsTrue();
+
+    List<RecordRoom> findByDeleteType(int type);
 }

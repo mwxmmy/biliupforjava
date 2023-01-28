@@ -5,6 +5,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import top.sshh.bililiverecoder.entity.RecordHistoryPart;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -17,6 +18,8 @@ public interface RecordHistoryPartRepository extends CrudRepository<RecordHistor
     List<RecordHistoryPart> findByHistoryIdOrderByStartTimeAsc(Long historyId);
 
     List<RecordHistoryPart> findByIdIn(List<Long> ids);
+
+    List<RecordHistoryPart> findByRoomIdAndFileDeleteIsFalseAndEndTimeIsBefore(String roomId, LocalDateTime deleteTime);
 
     List<RecordHistoryPart> findByHistoryIdAndCidIsNotNullOrderByPageAsc(Long historyId);
 

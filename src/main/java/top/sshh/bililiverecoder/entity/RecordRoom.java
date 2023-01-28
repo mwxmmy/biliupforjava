@@ -27,7 +27,7 @@ public class RecordRoom {
 
     private int durationLimit = 60;
 
-    private String tags = "直播回放";
+    private String tags = "直播回放,${uname},${areaName}";
 
     // 发布到哪个分区
     private Integer tid = 171;
@@ -62,8 +62,12 @@ public class RecordRoom {
      * 0-不删除
      * 1-上传完成删除
      * 2-发布成功删除
+     * 3-多少天后删除
      */
     private int deleteType = 0;
+
+    @Column(name = "delete_day", columnDefinition = "int default 5")
+    private int deleteDay= 5;
 
     private String sessionId;
 

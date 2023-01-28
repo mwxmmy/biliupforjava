@@ -24,7 +24,7 @@ public class DeletePartFileJob {
     @Autowired
     RecordHistoryPartRepository partRepository;
 
-    @Scheduled(fixedDelay = 5000, initialDelay = 0)
+    @Scheduled(fixedDelay = 3600000, initialDelay = 60000)
     public void sndMsgProcess() {
         List<RecordRoom> roomList = roomRepository.findByDeleteType(3);
         for (RecordRoom room : roomList) {

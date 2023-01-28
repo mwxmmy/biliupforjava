@@ -148,7 +148,11 @@
     <el-dialog :visible.sync="dialogFormVisible" title="房间信息">
         <el-form :model="room">
             <el-form-item :label-width="formLabelWidth" label="投稿分区id">
-                <el-input autocomplete="off" type="number" v-model="room.tid"></el-input>
+                <el-row>
+                    <el-col :span="7">
+                        <el-input autocomplete="off" type="number" v-model="room.tid"></el-input>
+                    </el-col>
+                </el-row>
                 <el-cascader
                         :options="typeList"
                         :props="{label:'name',value:'id',emitPath:false}"
@@ -165,10 +169,14 @@
                 </el-cascader>
             </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="文件忽略大小(MB)">
-                <el-input autocomplete="off" type="number" v-model="room.fileSizeLimit"></el-input>
+                <el-col :span="7">
+                    <el-input autocomplete="off" type="number" v-model="room.fileSizeLimit"></el-input>
+                </el-col>
             </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="文件忽略时长(秒)">
-                <el-input autocomplete="off" type="number" v-model="room.durationLimit"></el-input>
+                <el-col :span="7">
+                    <el-input autocomplete="off" type="number" v-model="room.durationLimit"></el-input>
+                </el-col>
             </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="是否自制">
                 <el-select :disabled="room.copyrightDisabled" placeholder="请选择" v-model="room.copyright">
@@ -217,50 +225,56 @@
                     <el-option label="发布成功后删除" :value="2"></el-option>
                     <el-option label="录制结束几天后删除" :value="3"></el-option>
                 </el-select>
-                <el-input v-if="room.deleteType==3" autocomplete="off" type="number" min="1" max="365" v-model="room.deleteDay"></el-input>
             </el-form-item>
-            <el-form-item :label-width="formLabelWidth" label="是否上传">
-                <el-select placeholder="请选择" v-model="room.upload">
-                    <el-option label="是" :value="true"></el-option>
-                    <el-option label="否" :value="false"></el-option>
-                </el-select>
-            </el-form-item>
-            <el-form-item :label-width="formLabelWidth" label="是否发送弹幕">
-                <el-select placeholder="请选择" v-model="room.sendDm">
-                    <el-option :value="true" label="是"></el-option>
-                    <el-option :value="false" label="否"></el-option>
-                </el-select>
-            </el-form-item>
-            <el-form-item :label-width="formLabelWidth" label="上传用户">
-                <el-select v-model="room.uploadUserId">
-                    <el-option
-                            :key="item.id"
-                            :label="item.uname"
-                            :value="item.id"
-                            v-for="item in users">
-                    </el-option>
-                </el-select>
-            </el-form-item>
-            <el-form-item :label-width="formLabelWidth" label="投稿封面类型">
-                <el-select @change="coverTypeChange" v-model="room.coverType">
-                    <el-option label="系统默认" value="default"></el-option>
-                    <el-option label="直播封面(需录播姬开启保存封面功能)" value="live"></el-option>
-                    <el-option label="自定义" value="diy"></el-option>
-                </el-select>
-            </el-form-item>
-            <el-form-item v-if="room.coverType == 'diy'" :label-width="formLabelWidth" label="投稿封面上传">
-                <el-upload
-                        class="avatar-uploader"
-                        action="/room/uploadCover"
-                        accept=".jpg, .jpeg, .png"
-                        :data="room"
-                        :show-file-list="false"
-                        :on-success="handleCoverSuccess"
-                        :before-upload="beforeCoverUpload">
-                    <img id="coverImg" v-if="room.coverUrl" :src="room.coverUrl" class="avatar">
-                    <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-                </el-upload>
-            </el-form-item>
+            <el-from-item>
+                <el-form-item v-if="room.deleteType==3" :label-width="formLabelWidth" label="几天后删除">
+                    <el-col :span="7">
+                        <el-input autocomplete="off" type="number" min="1" max="365"
+                                  v-model="room.deleteDay"></el-input>
+                    </el-col>
+                </el-form-item>
+                <el-form-item :label-width="formLabelWidth" label="是否上传">
+                    <el-select placeholder="请选择" v-model="room.upload">
+                        <el-option label="是" :value="true"></el-option>
+                        <el-option label="否" :value="false"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item :label-width="formLabelWidth" label="是否发送弹幕">
+                    <el-select placeholder="请选择" v-model="room.sendDm">
+                        <el-option :value="true" label="是"></el-option>
+                        <el-option :value="false" label="否"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item :label-width="formLabelWidth" label="上传用户">
+                    <el-select v-model="room.uploadUserId">
+                        <el-option
+                                :key="item.id"
+                                :label="item.uname"
+                                :value="item.id"
+                                v-for="item in users">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item :label-width="formLabelWidth" label="投稿封面类型">
+                    <el-select @change="coverTypeChange" v-model="room.coverType">
+                        <el-option label="系统默认" value="default"></el-option>
+                        <el-option label="直播封面(需录播姬开启保存封面功能)" value="live"></el-option>
+                        <el-option label="自定义" value="diy"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item v-if="room.coverType == 'diy'" :label-width="formLabelWidth" label="投稿封面上传">
+                    <el-upload
+                            class="avatar-uploader"
+                            action="/room/uploadCover"
+                            accept=".jpg, .jpeg, .png"
+                            :data="room"
+                            :show-file-list="false"
+                            :on-success="handleCoverSuccess"
+                            :before-upload="beforeCoverUpload">
+                        <img id="coverImg" v-if="room.coverUrl" :src="room.coverUrl" class="avatar">
+                        <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                    </el-upload>
+                </el-form-item>
         </el-form>
         <div class="dialog-footer" slot="footer">
             <el-button @click="dialogFormVisible = false">取 消</el-button>

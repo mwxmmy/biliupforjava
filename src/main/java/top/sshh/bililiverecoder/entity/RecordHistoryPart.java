@@ -47,7 +47,7 @@ public class RecordHistoryPart {
 
     private boolean upload;
 
-    @Column(name = "file_delete", columnDefinition = "bit(1) default b'0'")
+    @Column(name = "file_delete", columnDefinition = "bit default 0")
     private boolean fileDelete;
 
     private int uploadRetryCount;

@@ -215,9 +215,9 @@
                     <el-option label="不删除" :value="0"></el-option>
                     <el-option label="上传完成后删除" :value="1"></el-option>
                     <el-option label="发布成功后删除" :value="2"></el-option>
-                    <el-option label="录制结束几天后删除" :value="2"></el-option>
+                    <el-option label="录制结束几天后删除" :value="3"></el-option>
                 </el-select>
-                <el-input autocomplete="off" type="number" min="1" max="365" v-model="room.deleteDay"></el-input>
+                <el-input v-if="room.deleteType==3" autocomplete="off" type="number" min="1" max="365" v-model="room.deleteDay"></el-input>
             </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="是否上传">
                 <el-select placeholder="请选择" v-model="room.upload">

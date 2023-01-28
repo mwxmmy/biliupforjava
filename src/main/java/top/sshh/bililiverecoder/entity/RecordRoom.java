@@ -1,9 +1,6 @@
 package top.sshh.bililiverecoder.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -30,7 +27,7 @@ public class RecordRoom {
 
     private int durationLimit = 60;
 
-    private String tags = "直播回放";
+    private String tags = "直播回放,${uname},${areaName}";
 
     // 发布到哪个分区
     private Integer tid = 171;
@@ -65,8 +62,12 @@ public class RecordRoom {
      * 0-不删除
      * 1-上传完成删除
      * 2-发布成功删除
+     * 3-多少天后删除
      */
     private int deleteType = 0;
+
+    @Column(name = "delete_day", columnDefinition = "int default 5")
+    private int deleteDay= 5;
 
     private String sessionId;
 
@@ -80,12 +81,14 @@ public class RecordRoom {
     /**
      * 弹幕用户ul等级过滤
      */
-    private int dmUlLevel;
+    @Column(name = "dm_ul_level", columnDefinition = "int default 0")
+    private int dmUlLevel = 0;
 
     /**
      * 弹幕粉丝勋章过滤
      */
-    private int dmFanMedal;
+    @Column(name = "dm_fan_medal", columnDefinition = "int default 0")
+    private int dmFanMedal = 0;
 
     private boolean recording;
 

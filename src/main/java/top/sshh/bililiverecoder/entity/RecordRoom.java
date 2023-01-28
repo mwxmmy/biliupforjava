@@ -66,6 +66,7 @@ public class RecordRoom {
      */
     private int deleteType = 0;
 
+    @Column(name = "delete_day", columnDefinition = "int default 5")
     private int deleteDay= 5;
 
     private String sessionId;
@@ -80,11 +81,13 @@ public class RecordRoom {
     /**
      * 弹幕用户ul等级过滤
      */
+    @Column(name = "dm_ul_level", columnDefinition = "int default 0")
     private int dmUlLevel = 0;
 
     /**
      * 弹幕粉丝勋章过滤
      */
+    @Column(name = "dm_fan_medal", columnDefinition = "int default 0")
     private int dmFanMedal = 0;
 
     private boolean recording;

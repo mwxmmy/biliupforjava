@@ -214,7 +214,7 @@ public class EditorBilibiliUploadServiceImpl implements RecordPartUploadService 
                         message.setContentType(Message.CONTENT_TYPE_TEXT);
                         message.setContent(WX_MSG_FORMAT.formatted("开始上传", room.getUname(), "开始", room.getTitle(),
                                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int)part.getDuration() / 60, ((float)part.getFileSize() / 1024 / 1024 / 1024), biliBiliUser.getUname() + "\n线路：" + uploadEnums.getLine()));
+                                part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int)part.getDuration() / 60, ((float)part.getFileSize() / 1024 / 1024 / 1024), biliBiliUser.getUname() + "\n线路：无"));
                         message.setUid(wxuid);
                         WxPusher.send(message);
 
@@ -257,7 +257,7 @@ public class EditorBilibiliUploadServiceImpl implements RecordPartUploadService 
                         EdtiorTranscodeRequest transcodeRequest = new EdtiorTranscodeRequest(webCookie, preUploadBean);
                         String page = transcodeRequest.getPage();
                         log.info("{}，云剪辑转码请求完成，==>{}",part.getTitle(),page);
-                        if (completeUploadBean.getCode() == 0) {
+                        if (Integer.valueOf(0).equals(completeUploadBean.getCode())) {
                             if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("云剪辑")) {
                                 message.setAppToken(wxToken);
                                 message.setContentType(Message.CONTENT_TYPE_TEXT);

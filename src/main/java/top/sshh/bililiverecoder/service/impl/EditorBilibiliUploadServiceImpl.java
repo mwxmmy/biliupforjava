@@ -208,15 +208,16 @@ public class EditorBilibiliUploadServiceImpl implements RecordPartUploadService 
                         }
 
                         //并发上传
-
                         Message message = new Message();
-                        message.setAppToken(wxToken);
-                        message.setContentType(Message.CONTENT_TYPE_TEXT);
-                        message.setContent(WX_MSG_FORMAT.formatted("开始上传", room.getUname(), "开始", room.getTitle(),
-                                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int)part.getDuration() / 60, ((float)part.getFileSize() / 1024 / 1024 / 1024), biliBiliUser.getUname() + "\n线路：无"));
-                        message.setUid(wxuid);
-                        WxPusher.send(message);
+                        if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("云剪辑")) {
+                            message.setAppToken(wxToken);
+                            message.setContentType(Message.CONTENT_TYPE_TEXT);
+                            message.setContent(WX_MSG_FORMAT.formatted("开始上传", room.getUname(), "开始", room.getTitle(),
+                                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
+                                    part.getFilePath(), part.getStartTime().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), (int)part.getDuration() / 60, ((float)part.getFileSize() / 1024 / 1024 / 1024), biliBiliUser.getUname() + "\n线路：无"));
+                            message.setUid(wxuid);
+                            WxPusher.send(message);
+                        }
 
                         runnableList.stream().parallel().forEach(Runnable::run);
                         if (tryCount.get() >= 200) {

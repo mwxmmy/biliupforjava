@@ -65,6 +65,7 @@ public class RecordRoom {
      * 3-多少天后删除
      * 4-上传结束后移动到指定目录
      * 5-投稿结束后移动到指定目录
+     * 6-录制结束后移动到指定目录
      */
     private int deleteType = 0;
 

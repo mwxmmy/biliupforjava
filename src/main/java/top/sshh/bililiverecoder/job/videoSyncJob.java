@@ -2,7 +2,9 @@ package top.sshh.bililiverecoder.job;
 
 import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import top.sshh.bililiverecoder.entity.RecordHistory;
@@ -22,6 +24,9 @@ import java.util.List;
 @Slf4j
 @Component
 public class videoSyncJob {
+
+    @Value("${record.work-path}")
+    private String workPath;
 
     @Autowired
     RecordBiliPublishService publishService;
@@ -66,13 +71,34 @@ public class videoSyncJob {
                         part = partRepository.save(part);
 
                         //如果配置成发布完成后删除则删除文件
+                        String filePath = part.getFilePath();
                         if(recordRoom != null && recordRoom.getDeleteType() == 2){
-                            File file = new File(part.getFilePath());
+                            File file = new File(filePath);
                             boolean delete = file.delete();
                             if(delete){
-                                log.error("{}=>文件删除成功！！！", part.getFilePath());
+                                log.error("{}=>文件删除成功！！！", filePath);
                             }else {
-                                log.error("{}=>文件删除失败！！！", part.getFilePath());
+                                log.error("{}=>文件删除失败！！！", filePath);
+                            }
+                        }else if(recordRoom != null && StringUtils.isNotBlank(recordRoom.getMoveDir()) && recordRoom.getDeleteType() == 5){
+                            String fileName = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.lastIndexOf("."));
+                            String startDirPath = filePath.substring(0,filePath.lastIndexOf('/')+1);
+                            String toDirPath = recordRoom.getMoveDir() + filePath.substring(0,filePath.lastIndexOf('/')+1).replace(workPath, "");
+                            File toDir = new File(toDirPath);
+                            if(!toDir.exists()){
+                                toDir.mkdirs();
+                            }
+                            File startDir = new File(startDirPath);
+                            File[] files = startDir.listFiles((file, s) -> s.startsWith(fileName));
+                            if(files != null && files.length >0){
+                                for (File file : files) {
+                                    boolean rename = file.renameTo(new File(toDirPath + file.getName()));
+                                    if(rename){
+                                        log.error("{}=>文件移动成功！！！", filePath);
+                                    }else {
+                                        log.error("{}=>文件移动失败！！！", filePath);
+                                    }
+                                }
                             }
                         }
                         //解析弹幕入库

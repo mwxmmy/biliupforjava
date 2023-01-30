@@ -63,11 +63,15 @@ public class RecordRoom {
      * 1-上传完成删除
      * 2-发布成功删除
      * 3-多少天后删除
+     * 4-上传结束后移动到指定目录
+     * 5-投稿结束后移动到指定目录
      */
     private int deleteType = 0;
 
     @Column(name = "delete_day", columnDefinition = "int default 5")
     private int deleteDay= 5;
+
+    private String moveDir;
 
     private String sessionId;
 

@@ -343,6 +343,8 @@ public class KodoRecordPartBilibiliUploadService implements RecordPartUploadServ
                                                 try {
                                                     Files.move(Paths.get(file.getPath()), Paths.get(toDirPath + file.getName()),
                                                             StandardCopyOption.REPLACE_EXISTING);
+                                                    part.setFilePath(toDirPath + file.getName());
+                                                    part = partRepository.save(part);
                                                     log.error("{}=>文件移动成功！！！", filePath);
                                                 }catch (Exception e){
                                                     log.error("{}=>文件移动失败！！！", filePath);

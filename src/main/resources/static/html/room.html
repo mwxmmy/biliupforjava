@@ -112,6 +112,8 @@
                 <span v-if="scope.row.deleteType == 1">上传完成后删除</span>
                 <span v-if="scope.row.deleteType == 2">发布成功后删除</span>
                 <span v-if="scope.row.deleteType == 3">{{scope.row.deleteDay}}天后删除删除</span>
+                <span v-if="scope.row.deleteType == 4">上传完成后移动到{{scope.row.deleteDay}}</span>
+                <span v-if="scope.row.deleteType == 5">发布成功后移动到{{scope.row.deleteDay}}</span>
             </template>
         </el-table-column>
         <el-table-column

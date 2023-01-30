@@ -45,6 +45,9 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
 
     public static final String OS = "upos";
 
+    @Value("${record.work-path}")
+    private String workPath;
+
     @Value("${record.wx-push-token}")
     private String wxToken;
     private static final String WX_MSG_FORMAT = """
@@ -339,6 +342,26 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
                                             log.error("{}=>文件删除成功！！！", filePath);
                                         } else {
                                             log.error("{}=>文件删除失败！！！", filePath);
+                                        }
+                                    }else if(StringUtils.isNotBlank(room.getMoveDir()) && room.getDeleteType() == 4){
+                                        String fileName = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.lastIndexOf("."));
+                                        String startDirPath = filePath.substring(0,filePath.lastIndexOf('/')+1);
+                                        String toDirPath = room.getMoveDir() + filePath.substring(0,filePath.lastIndexOf('/')+1).replace(workPath, "");
+                                        File toDir = new File(toDirPath);
+                                        if(!toDir.exists()){
+                                            toDir.mkdirs();
+                                        }
+                                        File startDir = new File(startDirPath);
+                                        File[] files = startDir.listFiles((file, s) -> s.startsWith(fileName));
+                                        if(files != null && files.length >0){
+                                            for (File file : files) {
+                                                boolean rename = file.renameTo(new File(toDirPath + file.getName()));
+                                                if(rename){
+                                                    log.error("{}=>文件移动成功！！！", filePath);
+                                                }else {
+                                                    log.error("{}=>文件移动失败！！！", filePath);
+                                                }
+                                            }
                                         }
                                     }
                                     TaskUtil.partUploadTask.remove(part.getId());

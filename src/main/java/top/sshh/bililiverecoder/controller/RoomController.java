@@ -58,6 +58,7 @@ public class RoomController {
             dbRoom.setDurationLimit(room.getDurationLimit());
             dbRoom.setDeleteType(room.getDeleteType());
             dbRoom.setDeleteDay(room.getDeleteDay());
+            dbRoom.setMoveDir(room.getMoveDir());
             dbRoom.setSendDm(room.getSendDm());
             roomRepository.save(dbRoom);
             return true;

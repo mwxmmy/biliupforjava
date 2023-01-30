@@ -104,7 +104,7 @@
             </template>
         </el-table-column>
         <el-table-column
-                label="删除文件"
+                label="文件后处理"
                 prop="deleteFile"
                 width="120">
             <template slot-scope="scope">
@@ -114,6 +114,7 @@
                 <span v-if="scope.row.deleteType == 3">{{scope.row.deleteDay}}天后删除删除</span>
                 <span v-if="scope.row.deleteType == 4">上传完成后移动到{{scope.row.moveDir}}</span>
                 <span v-if="scope.row.deleteType == 5">发布成功后移动到{{scope.row.moveDir}}</span>
+                <span v-if="scope.row.deleteType == 6">录制结束后移动到{{scope.row.moveDir}}</span>
             </template>
         </el-table-column>
         <el-table-column
@@ -220,7 +221,7 @@
             <el-form-item :label-width="formLabelWidth" label="微信消息类型">
                 <el-input autocomplete="off" v-model="room.pushMsgTags"></el-input>
             </el-form-item>
-            <el-form-item :label-width="formLabelWidth" label="删除文件">
+            <el-form-item :label-width="formLabelWidth" label="文件后处理">
                 <el-select placeholder="请选择" v-model="room.deleteType">
                     <el-option label="不删除" :value="0"></el-option>
                     <el-option label="上传完成后删除" :value="1"></el-option>
@@ -228,6 +229,7 @@
                     <el-option label="录制结束几天后删除" :value="3"></el-option>
                     <el-option label="上传完成后移动" :value="4"></el-option>
                     <el-option label="发布成功后移动" :value="5"></el-option>
+                    <el-option :value="6" label="录制结束后移动(无法上传)"></el-option>
                 </el-select>
             </el-form-item>
             <el-form-item v-if="room.deleteType==3" :label-width="formLabelWidth" label="几天后删除">

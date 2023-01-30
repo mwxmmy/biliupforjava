@@ -238,7 +238,8 @@
                               v-model="room.deleteDay"></el-input>
                 </el-col>
             </el-form-item>
-            <el-form-item v-if="room.deleteType==4||room.deleteType==5" :label-width="formLabelWidth" label="移动目录">
+            <el-form-item :label-width="formLabelWidth" label="移动目录"
+                          v-if="room.deleteType==4||room.deleteType==5||room.deleteType==6">
                 <el-col :span="12">
                     <el-input autocomplete="off" placeholder="如 /complete 容器环境需要映射该目录到主机内"
                               v-model="room.moveDir"></el-input>

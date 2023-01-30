@@ -30,6 +30,9 @@ import top.sshh.bililiverecoder.util.bili.user.UserMyRootBean;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -266,10 +269,11 @@ public class AppRecordPartBilibiliUploadService implements RecordPartUploadServi
                                     File[] files = startDir.listFiles((file, s) -> s.startsWith(fileName));
                                     if(files != null && files.length >0){
                                         for (File file : files) {
-                                            boolean rename = file.renameTo(new File(toDirPath + file.getName()));
-                                            if(rename){
+                                            try {
+                                                Files.move(Paths.get(file.getPath()), Paths.get(toDirPath + file.getName()),
+                                                        StandardCopyOption.REPLACE_EXISTING);
                                                 log.error("{}=>文件移动成功！！！", filePath);
-                                            }else {
+                                            }catch (Exception e){
                                                 log.error("{}=>文件移动失败！！！", filePath);
                                             }
                                         }

@@ -118,8 +118,6 @@ public class RecordEventFileClosedService implements RecordEventService {
                             try {
                                 Files.copy(Paths.get(file.getPath()), Paths.get(toDirPath + file.getName()),
                                         StandardCopyOption.REPLACE_EXISTING);
-                                part.setFilePath(toDirPath + file.getName());
-                                part = historyPartRepository.save(part);
                                 log.error("{}=>文件复制成功！！！", file.getName());
                             } catch (Exception e) {
                                 log.error("{}=>文件复制失败！！！", file.getName());

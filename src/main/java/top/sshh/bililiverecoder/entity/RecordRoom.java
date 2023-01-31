@@ -66,6 +66,7 @@ public class RecordRoom {
      * 4-上传结束后移动到指定目录
      * 5-投稿结束后移动到指定目录
      * 6-录制结束后移动到指定目录
+     * 7-录制结束后复制
      */
     private int deleteType = 0;
 

@@ -92,7 +92,7 @@ public class RecordEventFileClosedService implements RecordEventService {
             history.setEndTime(LocalDateTime.now());
             history = historyRepository.save(history);
 
-            if (StringUtils.isNotBlank(room.getMoveDir()) && room.getDeleteType() == 6) {
+            if (StringUtils.isNotBlank(room.getMoveDir()) && (room.getDeleteType() == 6 || room.getDeleteType() == 7)) {
                 String fileName = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.lastIndexOf("."));
                 String startDirPath = filePath.substring(0, filePath.lastIndexOf('/') + 1);
                 String toDirPath = room.getMoveDir() + filePath.substring(0, filePath.lastIndexOf('/') + 1).replace(workPath, "");
@@ -104,15 +104,28 @@ public class RecordEventFileClosedService implements RecordEventService {
                 File[] files = startDir.listFiles((file, s) -> s.startsWith(fileName));
                 if (files != null && files.length > 0) {
                     for (File file : files) {
-                        try {
-                            Files.move(Paths.get(file.getPath()), Paths.get(toDirPath + file.getName()),
-                                    StandardCopyOption.REPLACE_EXISTING);
-                            part.setFilePath(toDirPath + file.getName());
-                            part = historyPartRepository.save(part);
-                            log.error("{}=>文件移动成功！！！", filePath);
-                        } catch (Exception e) {
-                            log.error("{}=>文件移动失败！！！", filePath);
+                        if(room.getDeleteType() == 6){
+                            try {
+                                Files.move(Paths.get(file.getPath()), Paths.get(toDirPath + file.getName()),
+                                        StandardCopyOption.REPLACE_EXISTING);
+                                part.setFilePath(toDirPath + file.getName());
+                                part = historyPartRepository.save(part);
+                                log.error("{}=>文件移动成功！！！", file.getName());
+                            } catch (Exception e) {
+                                log.error("{}=>文件移动失败！！！", file.getName());
+                            }
+                        }else if(room.getDeleteType() == 7){
+                            try {
+                                Files.copy(Paths.get(file.getPath()), Paths.get(toDirPath + file.getName()),
+                                        StandardCopyOption.REPLACE_EXISTING);
+                                part.setFilePath(toDirPath + file.getName());
+                                part = historyPartRepository.save(part);
+                                log.error("{}=>文件复制成功！！！", file.getName());
+                            } catch (Exception e) {
+                                log.error("{}=>文件复制失败！！！", file.getName());
+                            }
                         }
+
                     }
                 }
             }

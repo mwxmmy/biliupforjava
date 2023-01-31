@@ -111,11 +111,12 @@
                 <span v-if="scope.row.deleteType == 0">不删除</span>
                 <span v-if="scope.row.deleteType == 1">上传完成后删除</span>
                 <span v-if="scope.row.deleteType == 2">发布成功后删除</span>
-                <span v-if="scope.row.deleteType == 3">{{scope.row.deleteDay}}天后删除删除</span>
+                <span v-if="scope.row.deleteType == 3">{{scope.row.deleteDay}}天后删除</span>
                 <span v-if="scope.row.deleteType == 4">上传完成后移动到{{scope.row.moveDir}}</span>
                 <span v-if="scope.row.deleteType == 5">发布成功后移动到{{scope.row.moveDir}}</span>
                 <span v-if="scope.row.deleteType == 6">录制结束后移动到{{scope.row.moveDir}}</span>
                 <span v-if="scope.row.deleteType == 7">录制结束后复制到{{scope.row.moveDir}}</span>
+                <span v-if="scope.row.deleteType == 8">{{scope.row.deleteDay}}天后移动到{{scope.row.moveDir}}</span>
             </template>
         </el-table-column>
         <el-table-column
@@ -228,20 +229,21 @@
                     <el-option label="上传完成后删除" :value="1"></el-option>
                     <el-option label="发布成功后删除" :value="2"></el-option>
                     <el-option label="录制结束几天后删除" :value="3"></el-option>
+                    <el-option label="录制结束几天后移动" :value="8"></el-option>
                     <el-option label="上传完成后移动" :value="4"></el-option>
                     <el-option label="发布成功后移动" :value="5"></el-option>
                     <el-option :value="6" label="录制结束后移动(无法上传)"></el-option>
                     <el-option :value="7" label="录制结束后复制"></el-option>
                 </el-select>
             </el-form-item>
-            <el-form-item v-if="room.deleteType==3" :label-width="formLabelWidth" label="几天后删除">
+            <el-form-item v-if="room.deleteType==3||room.deleteType==8 " :label-width="formLabelWidth" label="几天后">
                 <el-col :span="7">
                     <el-input autocomplete="off" type="number" min="1" max="365"
                               v-model="room.deleteDay"></el-input>
                 </el-col>
             </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="移动目录"
-                          v-if="room.deleteType==4||room.deleteType==5||room.deleteType==6||room.deleteType==7">
+                          v-if="room.deleteType==4||room.deleteType==5||room.deleteType==6||room.deleteType==7||room.deleteType==8 ">
                 <el-col :span="12">
                     <el-input autocomplete="off" placeholder="如 /complete 容器环境需要映射该目录到主机内"
                               v-model="room.moveDir"></el-input>

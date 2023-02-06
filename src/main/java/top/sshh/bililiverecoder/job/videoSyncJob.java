@@ -104,15 +104,15 @@ public class videoSyncJob {
                                     try {
                                         Files.move(Paths.get(file.getPath()), Paths.get(toDirPath + file.getName()),
                                                 StandardCopyOption.REPLACE_EXISTING);
-                                        part.setFilePath(toDirPath + file.getName());
-                                        part.setFileDelete(true);
-                                        part = partRepository.save(part);
                                         log.error("{}=>文件移动成功！！！", file.getName());
                                     }catch (Exception e){
                                         log.error("{}=>文件移动失败！！！", file.getName());
                                     }
                                 }
                             }
+                            part.setFilePath(toDirPath + filePath.replace(workPath,""));
+                            part.setFileDelete(true);
+                            part = partRepository.save(part);
                         }
                         //解析弹幕入库
                         liveMsgService.processing(part);

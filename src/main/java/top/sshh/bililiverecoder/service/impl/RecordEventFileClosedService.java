@@ -113,9 +113,6 @@ public class RecordEventFileClosedService implements RecordEventService {
                             try {
                                 Files.move(Paths.get(file.getPath()), Paths.get(toDirPath + file.getName()),
                                         StandardCopyOption.REPLACE_EXISTING);
-                                part.setFilePath(toDirPath + file.getName());
-                                part.setFileDelete(true);
-                                part = historyPartRepository.save(part);
                                 log.error("{}=>文件移动成功！！！", file.getName());
                             } catch (Exception e) {
                                 log.error("{}=>文件移动失败！！！", file.getName());
@@ -132,6 +129,10 @@ public class RecordEventFileClosedService implements RecordEventService {
 
                     }
                 }
+
+                part.setFilePath(toDirPath + filePath.replace(workPath,""));
+                part.setFileDelete(true);
+                part = historyPartRepository.save(part);
             }
             // 文件上传操作
             //开始上传该视频分片，异步上传任务。

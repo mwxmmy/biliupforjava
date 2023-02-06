@@ -340,6 +340,11 @@ public class KodoRecordPartBilibiliUploadService implements RecordPartUploadServ
                                         File[] files = startDir.listFiles((file, s) -> s.startsWith(fileName));
                                         if(files != null && files.length >0){
                                             for (File file : files) {
+                                                if(! filePath.startsWith(workPath)){
+                                                    part.setFileDelete(true);
+                                                    part = partRepository.save(part);
+                                                    continue;
+                                                }
                                                 try {
                                                     Files.move(Paths.get(file.getPath()), Paths.get(toDirPath + file.getName()),
                                                             StandardCopyOption.REPLACE_EXISTING);

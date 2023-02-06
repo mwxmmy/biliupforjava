@@ -84,6 +84,7 @@ public class videoSyncJob {
                                 log.error("{}=>文件删除失败！！！", filePath);
                             }
                         }else if(recordRoom != null && StringUtils.isNotBlank(recordRoom.getMoveDir()) && recordRoom.getDeleteType() == 5){
+
                             String fileName = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.lastIndexOf("."));
                             String startDirPath = filePath.substring(0,filePath.lastIndexOf('/')+1);
                             String toDirPath = recordRoom.getMoveDir() + filePath.substring(0,filePath.lastIndexOf('/')+1).replace(workPath, "");
@@ -95,6 +96,11 @@ public class videoSyncJob {
                             File[] files = startDir.listFiles((file, s) -> s.startsWith(fileName));
                             if(files != null && files.length >0){
                                 for (File file : files) {
+                                    if(! filePath.startsWith(workPath)){
+                                        part.setFileDelete(true);
+                                        part = partRepository.save(part);
+                                        continue;
+                                    }
                                     try {
                                         Files.move(Paths.get(file.getPath()), Paths.get(toDirPath + file.getName()),
                                                 StandardCopyOption.REPLACE_EXISTING);

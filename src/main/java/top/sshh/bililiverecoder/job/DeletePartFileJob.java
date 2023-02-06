@@ -80,6 +80,7 @@ public class DeletePartFileJob {
                                 Files.move(Paths.get(file.getPath()), Paths.get(toDirPath + file.getName()),
                                         StandardCopyOption.REPLACE_EXISTING);
                                 part.setFilePath(toDirPath + file.getName());
+                                part.setFileDelete(true);
                                 part = partRepository.save(part);
                                 log.error("{}=>文件移动成功！！！", file.getName());
                             } catch (Exception e) {

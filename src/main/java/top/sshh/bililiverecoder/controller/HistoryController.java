@@ -11,6 +11,7 @@ import jakarta.persistence.criteria.Root;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import top.sshh.bililiverecoder.entity.*;
 import top.sshh.bililiverecoder.repo.LiveMsgRepository;
@@ -29,6 +30,9 @@ import java.util.*;
 @RequestMapping("/history")
 public class HistoryController {
 
+
+    @Value("${record.work-path}")
+    private String workPath;
     @Autowired
     private RecordHistoryRepository historyRepository;
     @Autowired
@@ -134,6 +138,25 @@ public class HistoryController {
             List<LiveMsg> liveMsgs = msgRepository.queryByBvid(history.getBvId());
             msgRepository.deleteAll(liveMsgs);
             List<RecordHistoryPart> partList = partRepository.findByHistoryIdOrderByStartTimeAsc(history.getId());
+            for (RecordHistoryPart part : partList) {
+                String filePath = part.getFilePath();
+                if(! filePath.startsWith(workPath)){
+                    part.setFileDelete(true);
+                    part = partRepository.save(part);
+                    continue;
+                }
+                String startDirPath = filePath.substring(0, filePath.lastIndexOf('/') + 1);
+                String fileName = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.lastIndexOf("."));
+                File startDir = new File(startDirPath);
+                File[] files = startDir.listFiles((file, s) -> s.startsWith(fileName));
+                if (files != null && files.length > 0) {
+                    for (File file : files) {
+                        file.deleteOnExit();
+                    }
+                }
+                part.setFileDelete(true);
+                partRepository.save(part);
+            }
             partRepository.deleteAll(partList);
             historyRepository.delete(history);
             result.put("type", "success");

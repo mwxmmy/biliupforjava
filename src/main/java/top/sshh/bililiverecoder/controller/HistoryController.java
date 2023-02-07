@@ -208,11 +208,7 @@ public class HistoryController {
                 String filePath = part.getFilePath();
                 filePath = filePath.replaceAll(".flv", ".xml");
                 File file = new File(filePath);
-                if (!file.exists()) {
-                    result.put("type", "warning");
-                    result.put("msg", filePath + "\n弹幕文件不存在");
-                    return result;
-                } else {
+                if (file.exists()) {
                     List<LiveMsg> liveMsgs = msgRepository.queryByCid(part.getCid());
                     msgRepository.deleteAll(liveMsgs);
                     msgService.processing(part);

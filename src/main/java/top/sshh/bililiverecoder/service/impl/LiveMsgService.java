@@ -12,7 +12,6 @@ import org.dom4j.Node;
 import org.dom4j.io.SAXReader;
 import org.dom4j.tree.DefaultElement;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import top.sshh.bililiverecoder.entity.*;
@@ -71,7 +70,6 @@ public class LiveMsgService {
         return false;
     }
 
-    @Async
     public void processing(RecordHistoryPart part) {
         Optional<RecordHistory> historyOptional = recordHistoryRepository.findById(part.getHistoryId());
         String bvid = "";

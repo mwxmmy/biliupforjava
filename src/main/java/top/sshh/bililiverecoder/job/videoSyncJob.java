@@ -72,7 +72,9 @@ public class videoSyncJob {
                         part.setPage(page.getPage());
                         part.setDuration(page.getDuration());
                         part = partRepository.save(part);
-
+                        //解析弹幕入库
+                        liveMsgService.processing(part);
+                        log.info("同步视频分p 成功==>{}", JSON.toJSONString(part));
                         //如果配置成发布完成后删除则删除文件
                         String filePath = part.getFilePath();
                         if(recordRoom != null && recordRoom.getDeleteType() == 2){
@@ -114,9 +116,6 @@ public class videoSyncJob {
                             part.setFileDelete(true);
                             part = partRepository.save(part);
                         }
-                        //解析弹幕入库
-                        liveMsgService.processing(part);
-                        log.info("同步视频分p 成功==>{}", JSON.toJSONString(part));
                     }
                 }
 

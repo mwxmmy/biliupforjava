@@ -354,7 +354,8 @@ public class KodoRecordPartBilibiliUploadService implements RecordPartUploadServ
                                                 }
                                             }
                                         }
-                                        part.setFilePath(toDirPath + filePath.replace(workPath,""));
+                                        
+                part.setFilePath(toDirPath + filePath.substring(filePath.lastIndexOf("/") + 1));
                                         part.setFileDelete(true);
                                         part = partRepository.save(part);
                                     }

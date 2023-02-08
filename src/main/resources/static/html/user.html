@@ -1,6 +1,7 @@
 <div class="container" id="userTable">
     <el-button @click="getLoginImage();dialogLoginVisible = true" type="primary">登录</el-button>
     <el-table
+            v-loading="loading"
             :data="tableData"
             style="width: 100%">
         <el-table-column
@@ -102,17 +103,23 @@
             dialogLoginVisible: false,
             tableData: [],
             user: {},
-            image: ''
+            image: '',
+            loading:false
         },
         methods: {
             initTable: function () {
                 let _this = this;
+                _this.loading = true;
                 $.ajax({
                     url: '/biliUser/list',
                     type: 'get',
                     dataType: 'json',
                     success: function (data) {
                         _this.tableData = data;
+                        _this.loading = false;
+                    },
+                    error:function () {
+                        _this.loading = false;
                     }
                 });
             },

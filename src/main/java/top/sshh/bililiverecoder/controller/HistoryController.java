@@ -49,7 +49,7 @@ public class HistoryController {
     private EntityManager entityManager;
 
     @PostMapping("/list")
-    public List<RecordHistory> list(@RequestBody RecordHistoryDTO request) {
+    public Map<String,Object> list(@RequestBody RecordHistoryDTO request) {
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
         // 指定结果视图
         CriteriaQuery<RecordHistory> criteriaQuery = criteriaBuilder.createQuery(RecordHistory.class);
@@ -88,23 +88,41 @@ public class HistoryController {
         }
         criteriaQuery.orderBy(criteriaBuilder.desc(root.get("endTime")));
         TypedQuery<RecordHistory> typedQuery = entityManager.createQuery(criteriaQuery);
+        int total = typedQuery.getResultList().size();
+        typedQuery.setFirstResult((request.getCurrent()-1)*request.getPageSize());
+        typedQuery.setMaxResults(request.getPageSize());
         List<RecordHistory> list = typedQuery.getResultList();
-
+        Map<String,String> roomCache = new HashMap<>();
+        List<Runnable> runnables = new ArrayList<>();
+        Iterable<RecordRoom> iterable = roomRepository.findAll();
+        for (RecordRoom recordRoom : iterable) {
+            roomCache.put(recordRoom.getRoomId(),recordRoom.getUname());
+        }
         for (RecordHistory history : list) {
-            RecordRoom room = roomRepository.findByRoomId(history.getRoomId());
-            if (room != null) {
-                history.setRoomName(room.getUname());
-            }
-            history.setPartCount(partRepository.countByHistoryId(history.getId()));
-            history.setPartDuration(partRepository.sumHistoryDurationByHistoryId(history.getId()));
-            history.setUploadPartCount(partRepository.countByHistoryIdAndFileNameNotNull(history.getId()));
-            history.setRecordPartCount(partRepository.countByHistoryIdAndRecordingIsTrue(history.getId()));
+            history.setRoomName(roomCache.get(history.getRoomId()));
+            Runnable run;
+            run = () -> history.setPartCount(partRepository.countByHistoryId(history.getId()));
+            runnables.add(run);
+            run = () -> history.setPartDuration(partRepository.sumHistoryDurationByHistoryId(history.getId()));
+            runnables.add(run);
+            run = () -> history.setUploadPartCount(partRepository.countByHistoryIdAndFileNameNotNull(history.getId()));
+            runnables.add(run);
+            run = () -> history.setRecordPartCount(partRepository.countByHistoryIdAndRecordingIsTrue(history.getId()));
+            runnables.add(run);
+            run = () -> history.setPartCount(partRepository.countByHistoryId(history.getId()));
+            runnables.add(run);
             if (StringUtils.isNotBlank(history.getBvId())) {
-                history.setMsgCount(msgRepository.countByBvid(history.getBvId()));
-                history.setSuccessMsgCount(msgRepository.countByBvidAndCode(history.getBvId(), 0));
+                run = () -> history.setMsgCount(msgRepository.countByBvid(history.getBvId()));
+                runnables.add(run);
+                run = () -> history.setSuccessMsgCount(msgRepository.countByBvidAndCode(history.getBvId(), 0));
+                runnables.add(run);
             }
         }
-        return list;
+        runnables.stream().parallel().forEach(Runnable::run);
+        Map<String,Object> result = new HashMap<>();
+        result.put("data",list);
+        result.put("total",total);
+        return result;
     }
 
 

@@ -53,6 +53,7 @@
         </el-form-item>
     </el-form>
     <el-table
+            v-loading="loading"
             :data="tableData"
             style="width: 100%">
         <el-table-column
@@ -265,7 +266,18 @@
             </template>
         </el-table-column>
     </el-table>
-
+    <template>
+        <div class="block">
+            <el-pagination
+                    @size-change="handleSizeChange"
+                    @current-change="handleCurrentChange"
+                    :page-sizes="[5, 10, 25, 50, 100]"
+                    :page-size=5
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total=total>
+            </el-pagination>
+        </div>
+    </template>
     <el-dialog :visible.sync="editDialogFormVisible" title="用户信息">
         <el-form :model="history">
             <el-form-item label="是否上传" label-width="80px">
@@ -308,12 +320,14 @@
         data: {
             formLabelWidth: '150px',
             tableData: [],
+            total: 0,
             partData: [],
             editDialogFormVisible: false,
             uploadEditDialogFormVisible: false,
             form: {},
-            history: {},
-            uploadEditPartId:null
+            history:{},
+            uploadEditPartId:null,
+            loading: false
         },
         methods: {
             handleEdit: function (index, row) {
@@ -336,7 +350,16 @@
                     }
                 });
             },
+            handleSizeChange(val) {
+                this.form.pageSize=val;
+                this.initTable();
+            },
+            handleCurrentChange(val) {
+                this.form.current=val;
+                this.initTable();
+            },
             initTable: function () {
+                this.loading = true;
                 let _this = this;
                 $.ajax({
                     url: '/history/list',
@@ -345,7 +368,12 @@
                     data: JSON.stringify(_this.form),
                     dataType: 'json',
                     success: function (data) {
-                        _this.tableData = data;
+                        _this.tableData = data.data;
+                        _this.total = data.total;
+                        _this.loading = false;
+                    },
+                    error:function () {
+                        _this.loading = false;
                     }
                 });
             },

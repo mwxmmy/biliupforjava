@@ -56,4 +56,8 @@ public class RecordHistoryDTO {
     private LocalDateTime from;
 
     private LocalDateTime to;
+
+    private int current = 1;
+    private int pageSize = 5;
+    private int total;
 }

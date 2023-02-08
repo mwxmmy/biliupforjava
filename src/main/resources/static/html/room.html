@@ -1,6 +1,7 @@
 <div class="container" id="roomTable">
     <el-button @click="addRoomDialog=true" type="primary">添加直播间</el-button>
     <el-table
+            v-loading="loading"
             :data="tableData"
             style="width: 100%">
         <el-table-column type="expand">
@@ -357,6 +358,7 @@
     new Vue({
         el: '#roomTable',
         data: {
+            loading: false,
             typeList: [
                 {
                     "id": 160,
@@ -1947,6 +1949,7 @@
             },
             initTable: function () {
                 let _this = this;
+                _this.loading = true;
                 $.ajax({
                     url: '/room',
                     type: 'post',
@@ -1962,6 +1965,10 @@
                             }
                         })
                         _this.tableData = data;
+                        _this.loading = false;
+                    },
+                    error:function () {
+                        _this.loading = false;
                     }
                 });
             }

@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -28,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -36,7 +37,7 @@ public class LiveMsgSendSync {
 
     @Value("${record.wx-push-token}")
     private String wxToken;
-    private static final String WX_MSG_FORMAT= """
+    private static final String WX_MSG_FORMAT = """
             收到弹幕评论发送事件
             主播名: %s
             房间名: %s
@@ -74,14 +75,17 @@ public class LiveMsgSendSync {
         if (CollectionUtils.isEmpty(historyList)) {
             return;
         }
-
+        List<BiliBiliUser> allUser = userRepository.findByLoginIsTrueAndEnableIsTrue();
+        if (CollectionUtils.isEmpty(allUser)) {
+            return;
+        }
         DateFormat format = new SimpleDateFormat("HH:mm:ss");
         format.setTimeZone(TimeZone.getTimeZone("UTC"));
         List<RecordHistoryPart> partList = new ArrayList<>();
         for (RecordHistory history : historyList) {
             List<RecordHistoryPart> parts = partRepository.findByHistoryIdAndCidIsNotNullOrderByPageAsc(history.getId());
             //如果没有发送评论
-            if(!history.isSendReply()) {
+            if (!history.isSendReply()) {
                 RecordRoom room = roomRepository.findByRoomId(history.getRoomId());
                 String wxuid = null;
                 String pushMsgTags = null;
@@ -107,7 +111,7 @@ public class LiveMsgSendSync {
                         StringBuilder builder = new StringBuilder();
                         builder.append(part.getPage()).append('#').append(format.format(new Date(liveMsg.getSendTime()))).append("  ").append(liveMsg.getContext()).append('\n');
                         //发送限制为1000
-                        if(context.length()+builder.length()>1000){
+                        if (context.length() + builder.length() > 1000) {
                             BiliReply reply = new BiliReply();
                             reply.setType("1");
                             reply.setOid(history.getAvId());
@@ -121,7 +125,7 @@ public class LiveMsgSendSync {
                         context.append(builder);
                     }
                 }
-                if(context.length()>20){
+                if (context.length() > 20) {
                     BiliReply reply = new BiliReply();
                     reply.setType("1");
                     reply.setOid(history.getAvId());
@@ -135,23 +139,23 @@ public class LiveMsgSendSync {
                         BiliReply reply = replies.get(i);
                         reply.setRoot(replId);
                         reply.setParent(replId);
-                        BiliReplyResponse replyResponse = BiliApi.sendVideoReply(user,reply);
-                        if(replyResponse.getCode() == 0){
-                            log.info("av{}发送评论成功：{}",reply.getOid(),reply.getMessage());
+                        BiliReplyResponse replyResponse = BiliApi.sendVideoReply(user, reply);
+                        if (replyResponse.getCode() == 0) {
+                            log.info("av{}发送评论成功：{}", reply.getOid(), reply.getMessage());
                             history.setSendReply(true);
                             history = historyRepository.save(history);
                             //第一个评论进行置顶操作
-                            if(i == 0){
+                            if (i == 0) {
                                 replId = replyResponse.getData().getRpid();
                                 //等待一段时间，否则无法置顶
                                 Thread.sleep(2000L);
                                 reply.setRpid(replyResponse.getData().getRpid());
                                 reply.setAction("1");
                                 BiliReplyResponse response = BiliApi.topVideoReply(user, reply);
-                                if(response.getCode() != 0){
-                                    log.error("av{}评论置顶失败：{}",reply.getOid(),JSON.toJSONString(response));
+                                if (response.getCode() != 0) {
+                                    log.error("av{}评论置顶失败：{}", reply.getOid(), JSON.toJSONString(response));
                                 }
-                                if(response.getCode() == 404){
+                                if (response.getCode() == 404) {
                                     //等待一段时间，否则无法置顶
                                     Thread.sleep(2000L);
                                     BiliApi.topVideoReply(user, reply);
@@ -159,37 +163,37 @@ public class LiveMsgSendSync {
                             }
 
                             try {
-                                if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("视频评论")){
+                                if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("视频评论")) {
                                     Message message = new Message();
                                     message.setAppToken(wxToken);
                                     message.setContentType(Message.CONTENT_TYPE_TEXT);
-                                    message.setContent(WX_MSG_FORMAT.formatted(room.getUname(),history.getTitle(),history.getBvId(),
+                                    message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), history.getTitle(), history.getBvId(),
                                             LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                            reply.getMessage(),"发送成功",user.getUname()+""));
+                                            reply.getMessage(), "发送成功", user.getUname() + ""));
                                     message.setUid(wxuid);
                                     WxPusher.send(message);
                                 }
-                            }catch (Exception ignored){
+                            } catch (Exception ignored) {
 
                             }
                         }
                         //等待一段时间在发送
                         Thread.sleep(5000L);
                     }
-                }catch (Exception e){
-                    log.error("发送sc评论失败：{}", JSON.toJSONString(replies),e);
+                } catch (Exception e) {
+                    log.error("发送sc评论失败：{}", JSON.toJSONString(replies), e);
                     try {
-                        if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("视频评论")){
+                        if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("视频评论")) {
                             Message message = new Message();
                             message.setAppToken(wxToken);
                             message.setContentType(Message.CONTENT_TYPE_TEXT);
-                            message.setContent(WX_MSG_FORMAT.formatted(room.getUname(),history.getTitle(),history.getBvId(),
+                            message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), history.getTitle(), history.getBvId(),
                                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                    JSON.toJSONString(replies),"发送失败",e.getMessage()));
+                                    JSON.toJSONString(replies), "发送失败", e.getMessage()));
                             message.setUid(wxuid);
                             WxPusher.send(message);
                         }
-                    }catch (Exception ignored){
+                    } catch (Exception ignored) {
 
                     }
                 }
@@ -199,23 +203,27 @@ public class LiveMsgSendSync {
         if (CollectionUtils.isEmpty(partList)) {
             return;
         }
+        //普通弹幕
         List<LiveMsg> msgAllList = new ArrayList<>();
-        for (RecordHistoryPart part : partList) {
-            List<LiveMsg> msgList = msgRepository.findByPartIdAndCode(part.getId(), -1);
-            if (CollectionUtils.isEmpty(msgList)) {
-                continue;
-            }
-            msgAllList.addAll(msgList);
+        List<RecordRoom> roomList = roomRepository.findBySendDmIsTrue();
+        List<String> roomIds = roomList.stream().map(RecordRoom::getRoomId).toList();
+        List<Long> partIds = partList.stream().map(RecordHistoryPart::getId).toList();
+        // 高级弹幕
+        List<LiveMsg> allHighLevelMsg = msgRepository.findByPoolAndCodeAndPartIdInOrderBySendTimeAsc(1, -1, partIds);
 
+        // 房间设置是否发送弹幕
+        partIds = partList.stream().filter(p -> roomIds.contains(p.getRoomId())).map(RecordHistoryPart::getId).toList();
+        //一个用户一小时发送150条弹幕
+        Pageable pageable = Pageable.ofSize(500);
+        Page<LiveMsg> msgPage = msgRepository.findByPoolAndCodeAndPartIdInOrderBySendTimeAsc(0, -1, partIds, pageable);
+        if (!msgPage.isEmpty()) {
+            msgAllList.addAll(msgPage.get().toList());
         }
-        if (msgAllList.isEmpty()) {
+        if (msgAllList.isEmpty() && allHighLevelMsg.isEmpty()) {
             return;
         }
 
-        List<BiliBiliUser> allUser = userRepository.findByLoginIsTrueAndEnableIsTrue();
-        if (CollectionUtils.isEmpty(allUser)) {
-            return;
-        }
+
         try {
             boolean tryLock = lock.tryLock();
             if (!tryLock) {
@@ -223,9 +231,8 @@ public class LiveMsgSendSync {
                 return;
             }
             //高优先级弹幕，如sc,舰长，只能由视频发布账号发送
-            List<LiveMsg> highLevelMsg = msgAllList.stream().filter(liveMsg -> liveMsg.getPool() == 1).sorted((m1, m2) -> (int)(m1.getSendTime() - m2.getSendTime())).toList();
-            log.info("即将开始高级弹幕发送操作，剩余待发送弹幕{}条。", highLevelMsg.size());
-            for (LiveMsg msg : highLevelMsg) {
+            log.info("即将开始高级弹幕发送操作，剩余待发送弹幕{}条。", allHighLevelMsg.size());
+            for (LiveMsg msg : allHighLevelMsg) {
                 Long partId = msg.getPartId();
                 Optional<RecordHistoryPart> partOptional = partRepository.findById(partId);
                 if (partOptional.isPresent()) {
@@ -246,17 +253,17 @@ public class LiveMsgSendSync {
                             if (code != 0) {
                                 log.error("{}用户，发送失败，错误代码{}，弹幕内容为。==>{}", user.getUname(), code, msg.getContext());
                                 try {
-                                    if(StringUtils.isNotBlank(wxuid)&&StringUtils.isNotBlank(pushMsgTags)&&pushMsgTags.contains("高级弹幕")){
+                                    if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("高级弹幕")) {
                                         Message message = new Message();
                                         message.setAppToken(wxToken);
                                         message.setContentType(Message.CONTENT_TYPE_TEXT);
-                                        message.setContent(WX_MSG_FORMAT.formatted(room.getUname(),part.getTitle(),msg.getBvid(),
+                                        message.setContent(WX_MSG_FORMAT.formatted(room.getUname(), part.getTitle(), msg.getBvid(),
                                                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                                msg.getContext(),"发送失败",user.getUname()+"-->code: "+code));
+                                                msg.getContext(), "发送失败", user.getUname() + "-->code: " + code));
                                         message.setUid(wxuid);
                                         WxPusher.send(message);
                                     }
-                                }catch (Exception ignored){
+                                } catch (Exception ignored) {
 
                                 }
                             }
@@ -276,15 +283,8 @@ public class LiveMsgSendSync {
                 msg.setCode(0);
                 msgRepository.save(msg);
             }
-            msgAllList = msgAllList.stream().filter(liveMsg -> liveMsg.getPool() == 0).sorted((m1, m2) -> (int) (m1.getSendTime() - m2.getSendTime())).collect(Collectors.toList());
-            List<Long> partIds = msgAllList.stream().map(LiveMsg::getPartId).distinct().collect(Collectors.toList());
-            if (partIds.size() > 0) {
-                List<RecordHistoryPart> parts = partRepository.findByIdIn(partIds);
-                List<RecordRoom> roomList = roomRepository.findBySendDmIsTrue();
-                List<String> roomIds = roomList.stream().map(RecordRoom::getRoomId).toList();
-                List<Long> sendPartIds = parts.stream().filter(part -> roomIds.contains(part.getRoomId())).map(RecordHistoryPart::getId).toList();
-                msgAllList = msgAllList.stream().filter(liveMsg -> sendPartIds.contains(liveMsg.getPartId())).sorted((m1, m2) -> (int) (m1.getSendTime() - m2.getSendTime())).collect(Collectors.toList());
-            }
+
+            //普通弹幕发送
             if (msgAllList.size() == 0) {
                 log.info("剩余待发送弹幕0条,退出弹幕发送定时任务。");
                 return;
@@ -292,7 +292,7 @@ public class LiveMsgSendSync {
             BlockingQueue<LiveMsg> msgQueue = new ArrayBlockingQueue<>(msgAllList.size());
             msgQueue.addAll(msgAllList);
             AtomicInteger count = new AtomicInteger(0);
-            log.info("即将开始普通弹幕发送操作，剩余待发送弹幕{}条。", msgQueue.size());
+            log.info("即将开始普通弹幕发送操作，本次剩余待发送弹幕{}条。", msgQueue.size());
             allUser.stream().parallel().forEach(user -> {
                 while (msgQueue.size() > 0) {
                     if (System.currentTimeMillis() - startTime > 2 * 3600 * 1000) {

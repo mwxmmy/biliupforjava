@@ -167,9 +167,9 @@ public class HistoryController {
                 String fileName = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.lastIndexOf("."));
                 File startDir = new File(startDirPath);
                 File[] files = startDir.listFiles((file, s) -> s.startsWith(fileName));
-                if (files != null && files.length > 0) {
+                if (files != null) {
                     for (File file : files) {
-                        file.deleteOnExit();
+                        file.delete();
                     }
                 }
                 part.setFileDelete(true);

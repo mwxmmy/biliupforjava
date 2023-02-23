@@ -383,7 +383,7 @@ public class RecordBiliPublishService {
                     String coverUrl = room.getCoverUrl();
                     if ("live".equals(coverUrl)) {
                         try {
-                            String filePath = uploadParts.get(0).getFilePath().replaceAll(".flv", ".cover.jpg");
+                            String filePath = uploadParts.get(uploadParts.size()-1).getFilePath().replaceAll(".flv", ".cover.jpg");
                             File cover = new File(filePath);
                             if (!cover.exists()) {
                                 cover = new File(filePath.replaceAll(".jpg", ".png"));

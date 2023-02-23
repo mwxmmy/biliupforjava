@@ -493,6 +493,7 @@ public class BiliApi {
         params.put("appkey", "4409e2ce8ffd12b8");
         params.put("access_token", user.getAccessToken());
         params.put("refresh_token", user.getRefreshToken());
+        params.put("ts", String.valueOf(System.currentTimeMillis()));
         Map<String, String> headers = new HashMap<>();
         if(StringUtils.isNotBlank(user.getCookies())){
             headers.put("cookie", user.getCookies());

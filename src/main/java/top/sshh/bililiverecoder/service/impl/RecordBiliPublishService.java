@@ -30,6 +30,9 @@ import top.sshh.bililiverecoder.util.bili.user.UserMyRootBean;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -37,6 +40,9 @@ import java.util.*;
 @Slf4j
 @Component
 public class RecordBiliPublishService {
+
+    @Value("${record.work-path}")
+    private String workPath;
 
     @Value("${record.wx-push-token}")
     private String wxToken;
@@ -431,6 +437,57 @@ public class RecordBiliPublishService {
                             message.setUid(wxuid);
                             WxPusher.send(message);
                         }
+
+                        //如果配置成投稿完成后删除则删除文件
+                        try {
+                            for (RecordHistoryPart part : uploadParts) {
+                                String filePath = part.getFilePath();
+                                if(room.getDeleteType() == 9){
+                                    File file = new File(filePath);
+                                    boolean delete = file.delete();
+                                    if(delete){
+                                        log.error("{}=>文件删除成功！！！", filePath);
+                                    }else {
+                                        log.error("{}=>文件删除失败！！！", filePath);
+                                    }
+                                }else if(StringUtils.isNotBlank(room.getMoveDir()) && room.getDeleteType() == 10){
+
+                                    String fileName = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.lastIndexOf("."));
+                                    String startDirPath = filePath.substring(0,filePath.lastIndexOf('/')+1);
+                                    String toDirPath = room.getMoveDir() + filePath.substring(0,filePath.lastIndexOf('/')+1).replace(workPath, "");
+                                    File toDir = new File(toDirPath);
+                                    if(!toDir.exists()){
+                                        toDir.mkdirs();
+                                    }
+                                    File startDir = new File(startDirPath);
+                                    File[] files = startDir.listFiles((file, s) -> s.startsWith(fileName));
+                                    if(files != null){
+                                        for (File file : files) {
+                                            if(! filePath.startsWith(workPath)){
+                                                part.setFileDelete(true);
+                                                part = partRepository.save(part);
+                                                continue;
+                                            }
+                                            try {
+                                                Files.move(Paths.get(file.getPath()), Paths.get(toDirPath + file.getName()),
+                                                        StandardCopyOption.REPLACE_EXISTING);
+                                                log.error("{}=>文件移动成功！！！", file.getName());
+                                            }catch (Exception e){
+                                                log.error("{}=>文件移动失败！！！", file.getName());
+                                            }
+                                        }
+                                    }
+
+                                    part.setFilePath(toDirPath + filePath.substring(filePath.lastIndexOf("/") + 1));
+                                    part.setFileDelete(true);
+                                    part = partRepository.save(part);
+                                }
+                            }
+                        }catch (Exception de){
+                            de.printStackTrace();
+                            log.error("投稿成功后发生处理文件删除移动发生异常：", de);
+                        }
+
                     } catch (Exception e) {
                         history.setUploadRetryCount(history.getUploadRetryCount() + 1);
                         history = historyRepository.save(history);

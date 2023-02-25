@@ -53,7 +53,7 @@ public class RecordRoom {
     private String pushMsgTags = "开始直播,录制结束,分P上传,视频投稿,高级弹幕,视频评论,云剪辑";
 
     private String descTemplate = "直播录像 \n" +
-            "${uname}直播间：https://live.bilibili.com/${roomId}";
+            "${uname}直播间：https://live.bilibili.com/${roomId}\n";
 
     private String partTitleTemplate = "P${index}-${areaName}-${MM月dd日HH点mm分}";
 
@@ -61,13 +61,15 @@ public class RecordRoom {
      * 上传完成是否删除文件
      * 0-不删除
      * 1-上传完成删除
-     * 2-发布成功删除
+     * 2-审核通过后删除
      * 3-多少天后删除
      * 4-上传结束后移动到指定目录
-     * 5-投稿结束后移动到指定目录
+     * 5-审核通过后移动到指定目录
      * 6-录制结束后移动到指定目录
      * 7-录制结束后复制到指定目录
      * 8-多少天后删除移动到指定目录
+     * 9-投稿成功后删除
+     * 10-投稿成功后移动到指定目录
      */
     private int deleteType = 0;
 

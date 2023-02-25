@@ -47,7 +47,7 @@ public class videoSyncJob {
     private LiveMsgService liveMsgService;
 
 
-    // 定时查询直播历史，每五分钟验证一下是否发布成功
+    // 定时查询录制历史，每五分钟验证一下是否发布成功
     @Scheduled(fixedDelay = 300000, initialDelay = 5000)
     public void syncVideo() {
         //查询出所有需要同步的录播记录
@@ -96,7 +96,7 @@ public class videoSyncJob {
                             }
                             File startDir = new File(startDirPath);
                             File[] files = startDir.listFiles((file, s) -> s.startsWith(fileName));
-                            if(files != null && files.length >0){
+                            if(files != null){
                                 for (File file : files) {
                                     if(! filePath.startsWith(workPath)){
                                         part.setFileDelete(true);

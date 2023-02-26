@@ -99,7 +99,7 @@ public class RecordBiliPublishService {
                     String filePath = uploadPart.getFilePath().intern();
                     File file = new File(filePath);
                     if (file.exists()) {
-                        synchronized (filePath) {
+                        synchronized (filePath.intern()) {
                             log.error("视频重新发布流程获取part上传锁成功，即将再次检查是否已上传完成");
                             //再次检查是否上传完成
                             Optional<RecordHistoryPart> partOptional = partRepository.findById(uploadPart.getId());

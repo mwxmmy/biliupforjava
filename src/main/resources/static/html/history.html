@@ -205,6 +205,8 @@
                                 </el-tooltip>
                             </el-popconfirm>
                         </el-col>
+                    </el-row>
+                    <el-row justify="space-around" type="flex">
                         <el-col :span="6">
                             <el-popconfirm
                                     @confirm="updatePublishStatus(scope.row.id)"
@@ -214,20 +216,6 @@
                                             slot="reference">
                                     <el-button size="mini"
                                                type="danger">重置为未上传发布
-                                    </el-button>
-                                </el-tooltip>
-                            </el-popconfirm>
-                        </el-col>
-                    </el-row>
-                    <el-row type="flex" justify="space-around">
-                        <el-col :span="5">
-                            <el-popconfirm
-                                    @confirm="rePublish(scope.row.id)"
-                                    title="确定更新稿件吗？">
-                                <el-tooltip slot="reference" class="item" effect="dark"
-                                            content="会重新上传稿件中被删除的分p" placement="top">
-                                    <el-button size="mini"
-                                               type="danger">更新稿件
                                     </el-button>
                                 </el-tooltip>
                             </el-popconfirm>

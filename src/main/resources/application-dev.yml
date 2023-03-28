@@ -29,7 +29,8 @@ spring:
 #      enabled: true
 
 record:
-  check-interval: 25
+  userName:
+  password:
   work-path: /bilirecord
   wx-push-token: AT_oboGsjlaGphljfVS9TtC7JfuBB0xPJrn
 

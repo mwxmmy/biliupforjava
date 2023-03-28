@@ -92,6 +92,8 @@ public class BiliUserController {
     public List<BiliBiliUser> listBillUser() {
         List<BiliBiliUser> list = new ArrayList<>();
         for (BiliBiliUser biliBiliUser : biliUserRepository.findAll()) {
+            biliBiliUser.setAccessToken(null);
+            biliBiliUser.setRefreshToken(null);
             list.add(biliBiliUser);
         }
         return list;

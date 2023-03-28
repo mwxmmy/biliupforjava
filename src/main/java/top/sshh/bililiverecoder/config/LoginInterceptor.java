@@ -15,7 +15,7 @@ public class LoginInterceptor implements HandlerInterceptor {
             Base64.Encoder encoder = Base64.getEncoder();
             this.authString = "Basic " + encoder.encodeToString((userName+":"+password).getBytes());
         }else {
-            this.authString = "Basic ";
+            this.authString = "";
         }
     }
 

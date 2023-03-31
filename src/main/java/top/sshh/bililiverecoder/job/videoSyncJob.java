@@ -77,43 +77,74 @@ public class videoSyncJob {
                         log.info("同步视频分p 成功==>{}", JSON.toJSONString(part));
                         //如果配置成发布完成后删除则删除文件
                         String filePath = part.getFilePath();
-                        if(recordRoom != null && recordRoom.getDeleteType() == 2){
+                        if (recordRoom != null && recordRoom.getDeleteType() == 2) {
                             File file = new File(filePath);
                             boolean delete = file.delete();
-                            if(delete){
+                            if (delete) {
                                 log.error("{}=>文件删除成功！！！", filePath);
-                            }else {
+                            } else {
                                 log.error("{}=>文件删除失败！！！", filePath);
                             }
-                        }else if(recordRoom != null && StringUtils.isNotBlank(recordRoom.getMoveDir()) && recordRoom.getDeleteType() == 5){
+                        } else if (recordRoom != null && StringUtils.isNotBlank(recordRoom.getMoveDir()) && recordRoom.getDeleteType() == 5) {
 
                             String fileName = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.lastIndexOf("."));
-                            String startDirPath = filePath.substring(0,filePath.lastIndexOf('/')+1);
-                            String toDirPath = recordRoom.getMoveDir() + filePath.substring(0,filePath.lastIndexOf('/')+1).replace(workPath, "");
+                            String startDirPath = filePath.substring(0, filePath.lastIndexOf('/') + 1);
+                            String toDirPath = recordRoom.getMoveDir() + filePath.substring(0, filePath.lastIndexOf('/') + 1).replace(workPath, "");
                             File toDir = new File(toDirPath);
-                            if(!toDir.exists()){
+                            if (!toDir.exists()) {
                                 toDir.mkdirs();
                             }
                             File startDir = new File(startDirPath);
                             File[] files = startDir.listFiles((file, s) -> s.startsWith(fileName));
-                            if(files != null){
+                            if (files != null) {
                                 for (File file : files) {
-                                    if(! filePath.startsWith(workPath)){
+                                    if (!filePath.startsWith(workPath)) {
                                         part.setFileDelete(true);
                                         part = partRepository.save(part);
                                         continue;
                                     }
                                     try {
                                         Files.move(Paths.get(file.getPath()), Paths.get(toDirPath + file.getName()),
-                                                StandardCopyOption.REPLACE_EXISTING);
+                                                StandardCopyOption.ATOMIC_MOVE);
                                         log.error("{}=>文件移动成功！！！", file.getName());
-                                    }catch (Exception e){
+                                    } catch (Exception e) {
                                         log.error("{}=>文件移动失败！！！", file.getName());
                                     }
                                 }
                             }
-                            
-                part.setFilePath(toDirPath + filePath.substring(filePath.lastIndexOf("/") + 1));
+
+                            part.setFilePath(toDirPath + filePath.substring(filePath.lastIndexOf("/") + 1));
+                            part.setFileDelete(true);
+                            part = partRepository.save(part);
+                        } else if (recordRoom != null && StringUtils.isNotBlank(recordRoom.getMoveDir()) && recordRoom.getDeleteType() == 11) {
+
+                            String fileName = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.lastIndexOf("."));
+                            String startDirPath = filePath.substring(0, filePath.lastIndexOf('/') + 1);
+                            String toDirPath = recordRoom.getMoveDir() + filePath.substring(0, filePath.lastIndexOf('/') + 1).replace(workPath, "");
+                            File toDir = new File(toDirPath);
+                            if (!toDir.exists()) {
+                                toDir.mkdirs();
+                            }
+                            File startDir = new File(startDirPath);
+                            File[] files = startDir.listFiles((file, s) -> s.startsWith(fileName));
+                            if (files != null) {
+                                for (File file : files) {
+                                    if (!filePath.startsWith(workPath)) {
+                                        part.setFileDelete(true);
+                                        part = partRepository.save(part);
+                                        continue;
+                                    }
+                                    try {
+                                        Files.copy(Paths.get(file.getPath()), Paths.get(toDirPath + file.getName()),
+                                                StandardCopyOption.REPLACE_EXISTING);
+                                        log.error("{}=>文件复制成功！！！", file.getName());
+                                    } catch (Exception e) {
+                                        log.error("{}=>文件复制失败！！！", file.getName());
+                                    }
+                                }
+                            }
+
+                            part.setFilePath(toDirPath + filePath.substring(filePath.lastIndexOf("/") + 1));
                             part.setFileDelete(true);
                             part = partRepository.save(part);
                         }

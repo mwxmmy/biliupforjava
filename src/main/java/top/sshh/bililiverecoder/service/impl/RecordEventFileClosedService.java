@@ -112,7 +112,7 @@ public class RecordEventFileClosedService implements RecordEventService {
                         if(room.getDeleteType() == 6){
                             try {
                                 Files.move(Paths.get(file.getPath()), Paths.get(toDirPath + file.getName()),
-                                        StandardCopyOption.REPLACE_EXISTING);
+                                        StandardCopyOption.ATOMIC_MOVE);
                                 log.error("{}=>文件移动成功！！！", file.getName());
                             } catch (Exception e) {
                                 log.error("{}=>文件移动失败！！！", file.getName());

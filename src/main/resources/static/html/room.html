@@ -120,6 +120,7 @@
                 <span v-if="scope.row.deleteType == 8">{{scope.row.deleteDay}}天后移动到{{scope.row.moveDir}}</span>
                 <span v-if="scope.row.deleteType == 9">投稿成功后删除</span>
                 <span v-if="scope.row.deleteType == 10">投稿成功后移动到{{scope.row.moveDir}}</span>
+                <span v-if="scope.row.deleteType == 11">审核通过后复制到{{scope.row.moveDir}}</span>
             </template>
         </el-table-column>
         <el-table-column
@@ -239,6 +240,7 @@
                     <el-option :value="6" label="录制结束后移动(无法上传)"></el-option>
                     <el-option :value="7" label="录制结束后复制"></el-option>
                     <el-option :value="10" label="投稿成功后移动"></el-option>
+                    <el-option :value="11" label="审核通过成功后复制"></el-option>
                 </el-select>
             </el-form-item>
             <el-form-item v-if="room.deleteType==3||room.deleteType==8 " :label-width="formLabelWidth" label="几天后">
@@ -248,7 +250,7 @@
                 </el-col>
             </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="移动目录"
-                          v-if="room.deleteType==4||room.deleteType==5||room.deleteType==6||room.deleteType==7||room.deleteType==8||room.deleteType==10 ">
+                          v-if="room.deleteType==4||room.deleteType==5||room.deleteType==6||room.deleteType==7||room.deleteType==8||room.deleteType==10||room.deleteType==11 ">
                 <el-col :span="12">
                     <el-input autocomplete="off" placeholder="如 /complete 容器环境需要映射该目录到主机内"
                               v-model="room.moveDir"></el-input>

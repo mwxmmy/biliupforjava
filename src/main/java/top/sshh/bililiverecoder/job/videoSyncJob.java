@@ -75,6 +75,11 @@ public class videoSyncJob {
                         //解析弹幕入库
                         liveMsgService.processing(part);
                         log.info("同步视频分p 成功==>{}", JSON.toJSONString(part));
+                    }
+                }
+                for (BiliVideoInfoResponse.BiliVideoInfoPart page : pages) {
+                    RecordHistoryPart part = partRepository.findByHistoryIdAndTitle(next.getId(), page.getPart());
+                    if (part != null) {
                         //如果配置成发布完成后删除则删除文件
                         String filePath = part.getFilePath();
                         if (recordRoom != null && recordRoom.getDeleteType() == 2) {

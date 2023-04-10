@@ -70,6 +70,7 @@ public class RecordRoom {
      * 8-多少天后删除移动到指定目录
      * 9-投稿成功后删除
      * 10-投稿成功后移动到指定目录
+     * 11-审核通过后复制到指定目录
      */
     private int deleteType = 0;
 

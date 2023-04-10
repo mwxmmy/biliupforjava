@@ -129,11 +129,6 @@ public class videoSyncJob {
                             File[] files = startDir.listFiles((file, s) -> s.startsWith(fileName));
                             if (files != null) {
                                 for (File file : files) {
-                                    if (!filePath.startsWith(workPath)) {
-                                        part.setFileDelete(true);
-                                        part = partRepository.save(part);
-                                        continue;
-                                    }
                                     try {
                                         Files.copy(Paths.get(file.getPath()), Paths.get(toDirPath + file.getName()),
                                                 StandardCopyOption.REPLACE_EXISTING);
@@ -143,9 +138,6 @@ public class videoSyncJob {
                                     }
                                 }
                             }
-
-                            part.setFilePath(toDirPath + filePath.substring(filePath.lastIndexOf("/") + 1));
-                            part.setFileDelete(true);
                             part = partRepository.save(part);
                         }
                     }

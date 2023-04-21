@@ -203,14 +203,15 @@
                 </el-link>
             </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="标题模板">
-                <el-input autocomplete="off" v-model="room.titleTemplate"></el-input>
+                <el-input autocomplete="off" maxlength="100" v-model="room.titleTemplate"></el-input>
             </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="分p标题模板">
-                <el-input autocomplete="off" v-model="room.partTitleTemplate"></el-input>
+                <el-input autocomplete="off" maxlength="100" v-model="room.partTitleTemplate"></el-input>
             </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="描述模板">
                 <el-input :rows="2" autocomplete="off"
                           autosize
+                          maxlength="1800"
                           type="textarea" v-model="room.descTemplate"></el-input>
             </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="上传tag">

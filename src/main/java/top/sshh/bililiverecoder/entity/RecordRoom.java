@@ -52,8 +52,12 @@ public class RecordRoom {
      */
     private String pushMsgTags = "开始直播,录制结束,分P上传,视频投稿,高级弹幕,视频评论,云剪辑";
 
-    private String descTemplate = "直播录像 \n" +
-            "${uname}直播间：https://live.bilibili.com/${roomId}\n";
+
+    @Column(length = 2100)
+    private String descTemplate = """
+            直播录像
+            ${uname}直播间：https://live.bilibili.com/${roomId}
+            """;
 
     private String partTitleTemplate = "P${index}-${areaName}-${MM月dd日HH点mm分}";
 
@@ -112,6 +116,7 @@ public class RecordRoom {
     /**
      * 弹幕关键词过滤
      */
+    @Column(length = 2000)
     private String dmKeywordBlacklist = """
             天选之人
             老板大气

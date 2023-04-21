@@ -32,5 +32,8 @@ public class BiliBiliUser {
      */
     private boolean login;
 
+    /**
+     * 是否启用弹幕
+     */
     private boolean enable;
 }

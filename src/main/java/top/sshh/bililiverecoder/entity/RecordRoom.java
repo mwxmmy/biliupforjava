@@ -142,9 +142,6 @@ public class RecordRoom {
             不卡
             卡了
             nm
-            NM
-            nM
-            Nm
             难看
             没意思
             尼
@@ -153,9 +150,8 @@ public class RecordRoom {
             恶心
             屎
             sb
-            sB
-            SB
-            Sb
+            xjp
+            jzm
             """;
 
 }

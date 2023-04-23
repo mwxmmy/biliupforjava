@@ -188,7 +188,7 @@ public class LiveMsgService {
                 for (Node node : nodes) {
                     DefaultElement element = (DefaultElement) node;
 
-                    String text = element.getText().trim().replace("\n", ",").replace("\r", ",");
+                    String text = element.getText().trim().replace("\n", ",").replace("\r", ",").toLowerCase();
                     //过滤utf8字符大小为4的
                     if (checkUtf8Size(text)) {
                         continue;
@@ -196,7 +196,7 @@ public class LiveMsgService {
                     //排除垃圾弹幕
                     boolean isContinue = false;
                     for (String s : EXCLUSION_DM) {
-                        if (text.contains(s)) {
+                        if (text.contains(s.toLowerCase())) {
                             isContinue = true;
                             break;
                         }

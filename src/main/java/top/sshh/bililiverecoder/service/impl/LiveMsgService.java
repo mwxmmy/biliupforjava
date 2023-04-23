@@ -189,6 +189,7 @@ public class LiveMsgService {
                     DefaultElement element = (DefaultElement) node;
 
                     String text = element.getText().trim().replace("\n", ",").replace("\r", ",").toLowerCase();
+                    text = StringUtils.deleteWhitespace(text);
                     //过滤utf8字符大小为4的
                     if (checkUtf8Size(text)) {
                         continue;

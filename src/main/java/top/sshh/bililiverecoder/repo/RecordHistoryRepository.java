@@ -12,6 +12,8 @@ public interface RecordHistoryRepository extends CrudRepository<RecordHistory, L
 
     RecordHistory findBySessionId(String sessionId);
 
+    RecordHistory findByBvId(String bvId);
+
     List<RecordHistory> findByRoomIdAndEndTimeBetweenOrderByEndTimeAsc(String roomId, LocalDateTime from, LocalDateTime to);
 
     List<RecordHistory> findByRoomIdAndBvIdAndRecordingAndUploadAndPublishAndEndTimeBetweenOrderByEndTimeAsc(String roomId, String bvId, Boolean record, Boolean upload, Boolean publish, LocalDateTime from, LocalDateTime to);

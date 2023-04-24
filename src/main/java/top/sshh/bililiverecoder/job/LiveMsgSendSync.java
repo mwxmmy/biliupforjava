@@ -315,7 +315,7 @@ public class LiveMsgSendSync {
                         return;
                     }
                     int code = liveMsgService.sendMsg(user, msg);
-                    if (code != 0 && code != 36703 && code != 36714) {
+                    if (code == 36703) {
                         try {
                             Thread.sleep(5000L);
                         } catch (InterruptedException e) {
@@ -323,14 +323,22 @@ public class LiveMsgSendSync {
                         }
                         user = userRepository.findByUid(user.getUid());
                         code = liveMsgService.sendMsg(user, msg);
-                        if (code != 0 && code != 36703 && code != 36714) {
-                            log.error("{}用户，发送失败，错误代码{}，一共发送{}条弹幕。", user.getUname(), code, count.get());
-                            user.setEnable(false);
-                            user = userRepository.save(user);
+                        if (code == 36703) {
+                            log.error("{}用户，发送失败，错误代码{}发送过于频繁，一共发送{}条弹幕。", user.getUname(), code, count.get());
+
                         }
+                    } else if (code == 36714) {
+                        log.error("{}用户，发送失败，错误代码{}时间不合法，一共发送{}条弹幕。", user.getUname(), code, count.get());
+                    } else if (code == 36704) {
+                        log.error("{}用户，发送失败，错误代码{}视频未审核通过，一共发送{}条弹幕，等待重新同步视频状态", user.getUname(), code, count.get());
                         return;
-                    } else if (code == 36703) {
+                    }else if(code == -101 || code == -102 || code == -111 || code == -400 || code == -404 || code == -36700){
                         log.error("{}用户，发送失败，错误代码{}，一共发送{}条弹幕。", user.getUname(), code, count.get());
+                        user.setEnable(false);
+                        user = userRepository.save(user);
+                    }else {
+                        log.error("{}用户，发送失败，错误代码{}，一共发送{}条弹幕。", user.getUname(), code, count.get());
+                        return;
                     }
                     try {
                         if (code == 36703) {

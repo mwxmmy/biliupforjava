@@ -16,7 +16,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import top.sshh.bililiverecoder.entity.*;
 import top.sshh.bililiverecoder.entity.data.BiliDmResponse;
+import top.sshh.bililiverecoder.entity.data.BiliVideoInfoResponse;
 import top.sshh.bililiverecoder.repo.LiveMsgRepository;
+import top.sshh.bililiverecoder.repo.RecordHistoryPartRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
 import top.sshh.bililiverecoder.repo.RecordRoomRepository;
 import top.sshh.bililiverecoder.util.BiliApi;
@@ -45,6 +47,9 @@ public class LiveMsgService {
     @Autowired
     private RecordRoomRepository roomRepository;
 
+    @Autowired
+    RecordHistoryPartRepository partRepository;
+
     public int sendMsg(BiliBiliUser user, LiveMsg liveMsg) {
         BiliDmResponse response = BiliApi.sendVideoDm(user, liveMsg);
         int code = response.getCode();
@@ -52,6 +57,11 @@ public class LiveMsgService {
             log.error("{}发送弹幕错误，code==>{}", user.getUname(), code);
             if (code == 36701 || code == 36702 || code == 36714) {
                 liveMsgRepository.delete(liveMsg);
+            }
+            if(code == 36704){
+                String bvid = liveMsg.getBvid();
+                this.syncVideoState(bvid);
+                return code;
             }
         }
         liveMsg.setCode(code);
@@ -276,6 +286,18 @@ public class LiveMsgService {
                     e.printStackTrace();
                 }
             }
+        }
+    }
+    
+    
+    public void syncVideoState(String bvid) {
+        RecordHistory history = recordHistoryRepository.findByBvId(bvid);
+        BiliVideoInfoResponse videoInfoResponse = BiliApi.getVideoInfo(history.getBvId());
+        int code = videoInfoResponse.getCode();
+        BiliVideoInfoResponse.BiliVideoInfo videoInfoResponseData = videoInfoResponse.getData();
+        if (code != 0 || videoInfoResponseData.getState() != 0) {
+            history.setCode(-1);
+            history = recordHistoryRepository.save(history);
         }
     }
 }

@@ -336,7 +336,7 @@ public class LiveMsgSendSync {
                         log.error("{}用户，发送失败，错误代码{}，一共发送{}条弹幕。", user.getUname(), code, count.get());
                         user.setEnable(false);
                         user = userRepository.save(user);
-                    }else {
+                    }else if(code != 0){
                         log.error("{}用户，发送失败，错误代码{}，一共发送{}条弹幕。", user.getUname(), code, count.get());
                         return;
                     }

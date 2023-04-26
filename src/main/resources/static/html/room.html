@@ -1,5 +1,19 @@
 <div class="container" id="roomTable">
     <el-button @click="addRoomDialog=true" type="primary">添加直播间</el-button>
+    <el-tooltip class="item" content="导出用户后若程序继续运行，则用户登录状态会失效"
+                effect="dark"
+                placement="top"
+                slot="reference">
+        <el-button @click="exportConfigDialog=true" type="primary">导出配置文件</el-button>
+    </el-tooltip>
+    <el-upload
+            class="item"
+            action="/room/uploadConfig"
+            accept=".json"
+            :on-success="uploadSuccess"
+            :show-file-list="false">
+        <el-button type="primary">导入配置文件</el-button>
+    </el-upload>
     <el-table
             v-loading="loading"
             :data="tableData"
@@ -314,6 +328,19 @@
         <div class="dialog-footer" slot="footer">
             <el-button @click="addRoomDialog = false">取 消</el-button>
             <el-button @click="addRoomF()" type="primary">确 定</el-button>
+        </div>
+    </el-dialog>
+    <el-dialog :visible.sync="exportConfigDialog" title="导出配置">
+        <el-form :model="exportConfig">
+            <el-form-item :label-width="formLabelWidth" label="导出选项">
+                <el-checkbox v-model="exportConfig.exportRoom">导出房间信息</el-checkbox>
+                <el-checkbox v-model="exportConfig.exportUser">导出用户信息</el-checkbox>
+                <el-checkbox v-model="exportConfig.exportHistory">导出录制历史信息</el-checkbox>
+            </el-form-item>
+        </el-form>
+        <div class="dialog-footer" slot="footer">
+            <el-button @click="exportConfigDialog = false">取 消</el-button>
+            <el-button @click="exportConfigF()" type="primary">确 定</el-button>
         </div>
     </el-dialog>
     <el-dialog :visible.sync="editLiveMsgSettingVisible" title="弹幕过滤">
@@ -1835,9 +1862,11 @@
             dialogFormVisible: false,
             wxDialogVisible: false,
             addRoomDialog: false,
+            exportConfigDialog: false,
             editLiveMsgSettingVisible: false,
             room: {},
             addRoom: {},
+            exportConfig: {},
             tableData: [],
             lines: [],
             users: []
@@ -1880,6 +1909,37 @@
                         });
                         _this.addRoomDialog = false;
                         _this.initTable();
+                    }
+                });
+            },
+            exportConfigF: function () {
+                let _this = this;
+                $.ajax({
+                    url: '/room/exportConfig',
+                    contentType: 'application/json;charset=utf-8',
+                    type: 'post',
+                    data: JSON.stringify(_this.exportConfig),
+                    dataType: 'json',
+                    success: function (data) {
+                        // get the current date and time
+                        var now = new Date();
+
+                        // format the date and time using Intl.DateTimeFormat API
+                        var dateString = new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+                        var timeString = new Intl.DateTimeFormat('zh-CN', { hour: 'numeric', minute: 'numeric' }).format(now);
+
+                        // construct the file name using the formatted date and time
+                        var fileName = 'biliupForJavaConfig_' + dateString.replace(/\//g, '年') + timeString.replace(':', '点') + '分.json';
+
+                        var blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+
+                        // create a hidden link
+                        var link = document.createElement('a');
+                        link.href = window.URL.createObjectURL(blob);
+                        link.download = fileName;
+                        link.click();
+                        window.URL.revokeObjectURL(link.href);
+                        _this.exportConfigDialog = false;
                     }
                 });
             },
@@ -1954,6 +2014,13 @@
                 }
                 return isImg && isLt2M;
             },
+            uploadSuccess: function () {
+                this.$message({
+                    message: '导入成功',
+                    type: 'success'
+                });
+                this.initTable();
+            },
             initTable: function () {
                 let _this = this;
                 _this.loading = true;
@@ -1974,7 +2041,7 @@
                         _this.tableData = data;
                         _this.loading = false;
                     },
-                    error:function () {
+                    error: function () {
                         _this.loading = false;
                     }
                 });

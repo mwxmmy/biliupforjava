@@ -7,8 +7,6 @@ import com.jayway.jsonpath.JsonPath;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import top.sshh.bililiverecoder.entity.BiliBiliUser;
 import top.sshh.bililiverecoder.entity.data.BiliSessionDto;
 import top.sshh.bililiverecoder.repo.BiliUserRepository;
@@ -56,7 +54,11 @@ public class BiliBiliUserService {
             userRepository.save(user);
             return true;
         }else {
-            log.error("{} 刷新token失败!!!", user.getUname());
+            user.setLogin(false);
+            user.setEnable(false);
+            user.setUpdateTime(LocalDateTime.now());
+            userRepository.save(user);
+            log.error("{} 刷新token失败!!!==>{}", user.getUname(),response);
             return false;
         }
 

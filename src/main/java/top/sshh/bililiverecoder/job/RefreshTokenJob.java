@@ -28,6 +28,7 @@ public class RefreshTokenJob {
                 userService.refreshToken(user);
             }catch (Exception e){
                 log.error("刷新token失败==>{}", JSON.toJSONString(user));
+                e.printStackTrace();
             }
         }
     }

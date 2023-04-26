@@ -92,34 +92,40 @@ public class RoomController {
         // 将文件内容转换为JSON字符串
         String json = new String(bytes);
 
-        // 使用Jackson库将JSON字符串转换为Map对象
+        // 将JSON字符串转换为Map对象
         Map<String,Object> configMap = JSON.parseObject(json, new TypeReference<>() {
         });
-        List<RecordRoom> roomList = JSON.parseObject(JSON.toJSONString(configMap.get("roomList")), new TypeReference<List<RecordRoom>>() {});
-
+        List<RecordRoom> roomList = JSON.parseObject(JSON.toJSONString(configMap.get("roomList")), new TypeReference<>() {});
         List<BiliBiliUser> userList = JSON.parseObject(JSON.toJSONString(configMap.get("userList")), new TypeReference<>() {});
         List<RecordHistory> historyList = JSON.parseObject(JSON.toJSONString(configMap.get("historyList")), new TypeReference<>() {});
         List<RecordHistoryPart> partList = JSON.parseObject(JSON.toJSONString(configMap.get("partList")), new TypeReference<>() {});
 
-        if(roomList != null && roomList.size()>0){
-            for (RecordRoom room : roomList) {
-                room.setId(null);
-                RecordRoom dbRoom = roomRepository.findByRoomId(room.getRoomId());
-                if(dbRoom != null){
-                    room.setId(dbRoom.getId());
-                }
-                roomRepository.save(room);
-            }
-        }
+
+        Map<Long,Long> userIdConverMap = new HashMap<>();
         if(userList != null && userList.size()>0){
             for (BiliBiliUser user : userList) {
+                Long id = user.getId();
                 user.setId(null);
                 BiliBiliUser dbUser = userRepository.findByUid(user.getUid());
                 if(dbUser != null){
                     user.setId(dbUser.getId());
                 }
                 userRepository.save(user);
+                userIdConverMap.put(id,user.getId());
             }
+            System.out.println("导入用户配置成功，一共"+userList.size()+"条");
+        }
+        if(roomList != null && roomList.size()>0){
+            for (RecordRoom room : roomList) {
+                room.setId(null);
+                room.setUploadUserId(userIdConverMap.get(room.getUploadUserId()));
+                RecordRoom dbRoom = roomRepository.findByRoomId(room.getRoomId());
+                if(dbRoom != null){
+                    room.setId(dbRoom.getId());
+                }
+                roomRepository.save(room);
+            }
+            System.out.println("导入房间配置成功，一共"+roomList.size()+"条");
         }
         Map<Long,Long> historyIdConverMap = new HashMap<>();
         if(historyList != null && historyList.size()>0){
@@ -128,25 +134,27 @@ public class RoomController {
                 history.setId(null);
                 RecordHistory dbHistory = historyRepository.findBySessionId(history.getSessionId());
                 if(dbHistory != null){
-                    dbHistory.setId(dbHistory.getId());
+                    history.setId(dbHistory.getId());
                 }
                 historyRepository.save(history);
                 historyIdConverMap.put(oldId,history.getId());
             }
+            System.out.println("导入录制历史信息成功，一共"+historyList.size()+"条");
         }
         if(partList != null && partList.size()>0){
             for (RecordHistoryPart part : partList) {
                 part.setId(null);
                 RecordHistoryPart dbPart = partRepository.findByFilePath(part.getFilePath());
                 if(dbPart != null){
-                    dbPart.setId(dbPart.getId());
+                    part.setId(dbPart.getId());
                 }
                 part.setHistoryId(historyIdConverMap.get(part.getHistoryId()));
                 partRepository.save(part);
             }
+            System.out.println("导入分P数据成功，一共"+partList.size()+"条");
         }
         // 在控制台输出转换后的Map对象
-        System.out.println("导入配置文件成功!");
+        System.out.println("导入全部配置文件成功!");
     }
 
     @PostMapping("/update")

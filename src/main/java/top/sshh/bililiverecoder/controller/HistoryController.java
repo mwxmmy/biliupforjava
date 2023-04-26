@@ -258,6 +258,7 @@ public class HistoryController {
                 part.setRecording(false);
                 partRepository.save(part);
             }
+            history.setRecording(false);
             result.put("type", "success");
             result.put("msg", "状态更新成功");
             return result;

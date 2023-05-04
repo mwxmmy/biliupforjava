@@ -83,6 +83,29 @@ public class RecordEventFileOpenService implements RecordEventService {
         } else {
             history = historyOptional.get();
         }
+        int partCount = historyPartRepository.countByHistoryId(history.getId());
+
+        if(partCount>99){
+            log.error("录制异常，该录制历史part数量已达到100，强制分次投稿");
+            //更新唯一键,更新录制状态
+            history.setEventId(history.getEventId()+1);
+            history.setSessionId(history.getSessionId()+1);
+            history.setRecording(false);
+            history.setStreaming(false);
+            history = historyRepository.save(history);
+            //创建新的录制历史
+            history = new RecordHistory();
+            history.setEventId(event.getEventId());
+            history.setRoomId(room.getRoomId());
+            history.setStartTime(LocalDateTime.now());
+            history.setEndTime(LocalDateTime.now());
+            history.setTitle(eventData.getTitle());
+            history.setSessionId(eventData.getSessionId());
+            history.setRecording(eventData.isRecording());
+            history.setStreaming(eventData.isStreaming());
+            history = historyRepository.save(history);
+        }
+
         String filePath = workPath + File.separator + eventData.getRelativePath();
         // 正常逻辑
         boolean existsPart = historyPartRepository.existsByFilePath(filePath);

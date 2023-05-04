@@ -235,6 +235,40 @@ public class RecordBiliPublishService {
                 TaskUtil.publishTask.remove(history.getId());
                 return false;
             }
+            if(uploadParts.size()>100){
+                log.error("录制异常，该录制历史part数量已超过100，强制分次投稿");
+                //更新唯一键,更新录制状态
+                String eventId = history.getEventId();
+                String sessionId = history.getSessionId();
+                history.setEventId(eventId +1);
+                history.setSessionId(sessionId +1);
+                history = historyRepository.save(history);
+
+                List<RecordHistoryPart> subList = uploadParts.subList(100, uploadParts.size());
+                if(subList.size()>0){
+                    //创建新的录制历史
+                    history.setId(null);
+                    history.setEventId(eventId +2);
+                    history.setSessionId(sessionId +2);
+                    history.setStartTime(subList.get(0).getStartTime());
+                    history = historyRepository.save(history);
+                    for (RecordHistoryPart part : subList) {
+                        part.setHistoryId(history.getId());
+                        partRepository.save(part);
+                    }
+                    if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("视频投稿")) {
+                        Message message = new Message();
+                        message.setAppToken(wxToken);
+                        message.setContentType(Message.CONTENT_TYPE_TEXT);
+                        message.setContent(WX_MSG_FORMAT.formatted("投稿失败", room.getUname(), room.getTitle(),
+                                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
+                                "分p数量超过100,将在切割后再次投稿，当前分P数量为："+uploadParts.size()));
+                        message.setUid(wxuid);
+                        WxPusher.send(message);
+                    }
+                    return false;
+                }
+            }
             LocalDateTime now = LocalDateTime.now();
             for (RecordHistoryPart uploadPart : uploadParts) {
                 Optional<RecordHistoryPart> flsuhPartOptional = partRepository.findById(uploadPart.getId());

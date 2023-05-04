@@ -45,7 +45,7 @@ public class publishJob {
 
         for (RecordRoom room : roomList) {
             // 查询不在录制,下播十分钟后的需要上传的历史
-            Iterator<RecordHistory> iterator = historyRepository.findByRoomIdAndRecordingIsFalseAndUploadIsTrueAndPublishIsFalseAndUploadRetryCountLessThanAndEndTimeBetweenOrderByEndTimeAsc(room.getRoomId(), 5, now.minusDays(1L), now.minusMinutes(11L)).iterator();
+            Iterator<RecordHistory> iterator = historyRepository.findByRoomIdAndRecordingIsFalseAndUploadIsTrueAndPublishIsFalseAndUploadRetryCountLessThanAndEndTimeBetweenOrderByEndTimeAsc(room.getRoomId(), 5, now.minusMonths(1L), now.minusMinutes(11L)).iterator();
             iterator.forEachRemaining(historyList::add);
         }
         log.info("视频发布定时任务 待发布视频数量 size=={}", historyList.size());

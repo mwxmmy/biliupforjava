@@ -59,6 +59,12 @@ public class RecordRoom {
             ${uname}直播间：https://live.bilibili.com/${roomId}
             """;
 
+    @Column(length = 2100)
+    private String dynamicTemplate = """
+            直播录像
+            ${uname}直播间：https://live.bilibili.com/${roomId}
+            """;
+
     private String partTitleTemplate = "P${index}-${areaName}-${MM月dd日HH点mm分}";
 
     /**

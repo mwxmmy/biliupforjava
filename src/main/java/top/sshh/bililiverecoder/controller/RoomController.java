@@ -169,6 +169,7 @@ public class RoomController {
             dbRoom.setTitleTemplate(room.getTitleTemplate());
             dbRoom.setPartTitleTemplate(room.getPartTitleTemplate());
             dbRoom.setDescTemplate(room.getDescTemplate());
+            dbRoom.setDynamicTemplate(room.getDynamicTemplate());
             dbRoom.setCopyright(room.getCopyright());
             dbRoom.setLine(room.getLine());
             dbRoom.setCoverUrl(room.getCoverUrl());

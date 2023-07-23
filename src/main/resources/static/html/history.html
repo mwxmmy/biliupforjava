@@ -210,12 +210,12 @@
                     <el-row justify="space-around" type="flex">
                         <el-col :span="6">
                             <el-popconfirm
-                                    @confirm="reloadHistoryMsg(scope.row.id)"
+                                    @confirm="rePublish(scope.row.id)"
                                     title="确定重新上传转码失败部分吗？">
                                 <el-tooltip class="item" content="会重新上传转码失败的分p" effect="dark"
                                             placement="top" slot="reference">
                                     <el-button
-                                            @click="rePublish(scope.row.id)" size="mini"
+                                            size="mini"
                                             type="primary">转码失败修复
                                     </el-button>
                                 </el-tooltip>

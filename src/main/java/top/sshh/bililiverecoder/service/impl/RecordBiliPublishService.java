@@ -99,8 +99,12 @@ public class RecordBiliPublishService {
             for (RecordHistoryPart uploadPart : uploadParts) {
                 // 正常分p不需要在重复上传
                 BiliVideoPartInfoResponse.Video video = videoMap.get(uploadPart.getTitle());
-                if (video == null || (video.getFailCode() == 9 && video.getXcodeState() == 3)) {
-                    errMsg.append(uploadPart.getTitle()).append("\n");
+                if (video == null || (video.getFailCode() == 9 && video.getXcodeState() == 3) || (video.getFailCode() == 0 && video.getXcodeState() == 2)) {
+                    if (video.getXcodeState() == 2) {
+                        errMsg.append(uploadPart.getTitle()).append("   转码中\n");
+                    } else {
+                        errMsg.append(uploadPart.getTitle()).append("   转码失败\n");
+                    }
                     uploadPart.setUpload(false);
                     uploadPart.setCid(null);
                     uploadPart.setFileName(null);
@@ -124,7 +128,6 @@ public class RecordBiliPublishService {
                     }
                 }
             }
-            errMsg.append("转码失败");
             uploadParts = partRepository.findByHistoryIdOrderByStartTimeAsc(history.getId());
             userOptional = biliUserRepository.findById(room.getUploadUserId());
             if (!userOptional.isPresent()) {

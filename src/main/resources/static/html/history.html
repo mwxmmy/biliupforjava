@@ -375,15 +375,32 @@
                         _this.total = data.total;
                         _this.loading = false;
                     },
-                    error:function () {
+                    error: function () {
                         _this.loading = false;
+                    }
+                });
+            },
+            updateHistory: function () {
+                let _this = this;
+                $.ajax({
+                    url: '/history/update',
+                    contentType: 'application/json;charset=utf-8',
+                    type: 'post',
+                    data: JSON.stringify(_this.history),
+                    dataType: 'json',
+                    success: function (data) {
+                        _this.$message({
+                            message: data.msg,
+                            type: data.type
+                        });
+                        _this.initTable();
                     }
                 });
             },
             uploadEditPart: function () {
                 let _this = this;
                 $.ajax({
-                    url: '/part/uploadEditor/'+this.uploadEditPartId,
+                    url: '/part/uploadEditor/' + this.uploadEditPartId,
                     contentType: 'application/json;charset=utf-8',
                     type: 'get',
                     success: function (data) {

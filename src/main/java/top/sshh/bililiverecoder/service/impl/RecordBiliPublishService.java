@@ -100,6 +100,8 @@ public class RecordBiliPublishService {
                 BiliVideoPartInfoResponse.Video video = videoMap.get(uploadPart.getTitle());
                 if (video == null || (video.getFailCode() == 9 && video.getXcodeState() == 3)) {
                     uploadPart.setUpload(false);
+                    uploadPart.setCid(null);
+                    uploadPart.setFileName(null);
                     uploadPart = partRepository.save(uploadPart);
                     String filePath = uploadPart.getFilePath().intern();
                     File file = new File(filePath);

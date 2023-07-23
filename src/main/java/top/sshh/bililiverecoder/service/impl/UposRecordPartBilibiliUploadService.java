@@ -336,6 +336,7 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
                                 if (completeUploadBean.getOK() == 1) {
                                     part.setUpload(true);
                                     part.setFileName(uploadBean.getFileName());
+                                    part.setCid(preUploadBean.getBiz_id());
                                     part.setUpdateTime(LocalDateTime.now());
                                     part = partRepository.save(part);
                                     //如果配置上传完成删除，则删除文件
@@ -356,7 +357,7 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
                                         }
                                         File startDir = new File(startDirPath);
                                         File[] files = startDir.listFiles((file, s) -> s.startsWith(fileName));
-                                        if (files != null && files.length > 0) {
+                                        if (files != null) {
                                             for (File file : files) {
                                                 if (!filePath.startsWith(workPath)) {
                                                     part.setFileDelete(true);

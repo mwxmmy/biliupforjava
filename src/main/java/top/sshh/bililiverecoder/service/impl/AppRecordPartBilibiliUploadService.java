@@ -267,7 +267,7 @@ public class AppRecordPartBilibiliUploadService implements RecordPartUploadServi
                                     }
                                     File startDir = new File(startDirPath);
                                     File[] files = startDir.listFiles((file, s) -> s.startsWith(fileName));
-                                    if (files != null && files.length > 0) {
+                                    if (files != null) {
                                         for (File file : files) {
                                             if (!filePath.startsWith(workPath)) {
                                                 part.setFileDelete(true);

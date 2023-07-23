@@ -251,14 +251,14 @@ public class BiliApi {
     }
 
     public static String editPublish(BiliBiliUser user, VideoEditUploadDto data) {
-        String url = "https://member.bilibili.com/x/vu/web/edit";
+        WebCookie cookie = Cookie.parse(user.getCookies());
+        String url = "https://member.bilibili.com/x/vu/web/edit?t=" + System.currentTimeMillis() + "&csrf=" + cookie.getCsrf();
         Map<String, String> headers = new HashMap<>();
         long currentSecond = Instant.now().getEpochSecond();
         headers.put("Display-ID", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5-" + currentSecond);
         headers.put("Buvid", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5");
         headers.put("User-Agent", "Mozilla/5.0 BiliDroid/5.37.0 (bbcallen@gmail.com)");
         headers.put("Device-ID", "aBRoDWAVeRhsA3FDewMzS3lLMwM");
-        WebCookie cookie = Cookie.parse(user.getCookies());
         data.setCsrf(cookie.getCsrf());
         headers.put("cookie", cookie.getCookie());
         String body = JSON.toJSONString(data);

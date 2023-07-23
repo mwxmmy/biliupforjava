@@ -100,7 +100,9 @@ public class RecordBiliPublishService {
                 // 正常分p不需要在重复上传
                 BiliVideoPartInfoResponse.Video video = videoMap.get(uploadPart.getTitle());
                 if (video == null || (video.getFailCode() == 9 && video.getXcodeState() == 3) || (video.getFailCode() == 0 && video.getXcodeState() == 2)) {
-                    if (video.getXcodeState() == 2) {
+                    if (video == null) {
+                        errMsg.append(uploadPart.getTitle()).append("   视频不存在\n");
+                    } else if (video.getXcodeState() == 2) {
                         errMsg.append(uploadPart.getTitle()).append("   转码中\n");
                     } else {
                         errMsg.append(uploadPart.getTitle()).append("   转码失败\n");

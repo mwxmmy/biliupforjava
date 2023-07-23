@@ -91,6 +91,7 @@ public class RecordBiliPublishService {
 
         // 发布任务入队列
         TaskUtil.publishTask.put(history.getId(), Thread.currentThread());
+        StringBuilder errMsg = new StringBuilder();
         try {
             List<RecordHistoryPart> uploadParts = partRepository.findByHistoryIdOrderByStartTimeAsc(history.getId());
             BiliVideoPartInfoResponse videoPartInfo = BiliApi.getVideoPartInfo(biliBiliUser, history.getBvId());
@@ -99,6 +100,7 @@ public class RecordBiliPublishService {
                 // 正常分p不需要在重复上传
                 BiliVideoPartInfoResponse.Video video = videoMap.get(uploadPart.getTitle());
                 if (video == null || (video.getFailCode() == 9 && video.getXcodeState() == 3)) {
+                    errMsg.append(uploadPart.getTitle()).append("\n");
                     uploadPart.setUpload(false);
                     uploadPart.setCid(null);
                     uploadPart.setFileName(null);
@@ -122,6 +124,7 @@ public class RecordBiliPublishService {
                     }
                 }
             }
+            errMsg.append("转码失败");
             uploadParts = partRepository.findByHistoryIdOrderByStartTimeAsc(history.getId());
             userOptional = biliUserRepository.findById(room.getUploadUserId());
             if (!userOptional.isPresent()) {
@@ -181,7 +184,7 @@ public class RecordBiliPublishService {
                     message.setAppToken(wxToken);
                     message.setContentType(Message.CONTENT_TYPE_TEXT);
                     message.setContent(WX_MSG_FORMAT.formatted("重新投稿成功", room.getUname(), room.getTitle(),
-                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), ""));
+                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), errMsg));
                     message.setUid(wxuid);
                     WxPusher.send(message);
                 }

@@ -122,6 +122,7 @@ public class RecordBiliPublishService {
                     }
                 }
             }
+            uploadParts = partRepository.findByHistoryIdOrderByStartTimeAsc(history.getId());
             userOptional = biliUserRepository.findById(room.getUploadUserId());
             if (!userOptional.isPresent()) {
                 log.error("视频发布事件，用户不存在，无法发布 ==>{}", JSON.toJSONString(room));

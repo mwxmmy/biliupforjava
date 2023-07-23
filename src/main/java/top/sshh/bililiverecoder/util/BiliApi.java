@@ -15,6 +15,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import top.sshh.bililiverecoder.entity.BiliBiliUser;
 import top.sshh.bililiverecoder.entity.LiveMsg;
 import top.sshh.bililiverecoder.entity.data.*;
+import top.sshh.bililiverecoder.util.bili.Cookie;
+import top.sshh.bililiverecoder.util.bili.WebCookie;
 
 import javax.crypto.Cipher;
 import java.io.IOException;
@@ -248,19 +250,17 @@ public class BiliApi {
         return HttpClientUtil.post(url, headers, body);
     }
 
-    public static String editPublish(String accessToken, VideoUploadDto data) {
-        String url = "https://member.bilibili.com/x/vu/client/edit?access_key=" + accessToken;
-        Map<String, String> query = new HashMap<>();
-        query.put("access_key", accessToken);
-        String sign = sign(query, appSecret);
-        url = url + "&sign=" + sign;
+    public static String editPublish(BiliBiliUser user, VideoEditUploadDto data) {
+        WebCookie cookie = Cookie.parse(user.getCookies());
+        String url = "https://member.bilibili.com/x/vu/web/edit?t=" + System.currentTimeMillis() + "&csrf=" + cookie.getCsrf();
         Map<String, String> headers = new HashMap<>();
         long currentSecond = Instant.now().getEpochSecond();
         headers.put("Display-ID", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5-" + currentSecond);
         headers.put("Buvid", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5");
         headers.put("User-Agent", "Mozilla/5.0 BiliDroid/5.37.0 (bbcallen@gmail.com)");
         headers.put("Device-ID", "aBRoDWAVeRhsA3FDewMzS3lLMwM");
-
+        data.setCsrf(cookie.getCsrf());
+        headers.put("cookie", cookie.getCookie());
         String body = JSON.toJSONString(data);
         return HttpClientUtil.post(url, headers, body);
     }
@@ -365,6 +365,26 @@ public class BiliApi {
         params.forEach(uriBuilder::queryParam);
         String response = HttpClientUtil.get(uriBuilder.toUriString(), headers);
         return JSON.parseObject(response, BiliVideoInfoResponse.class);
+    }
+
+    public static BiliVideoPartInfoResponse getVideoPartInfo(BiliBiliUser user, String bvid) {
+        String url = "https://member.bilibili.com/x/vupre/web/archive/view";
+        Map<String, String> params = new TreeMap<>();
+        params.put("topic_grey", "1");
+        params.put("bvid", bvid);
+        params.put("t", String.valueOf(System.currentTimeMillis()));
+        Map<String, String> headers = new HashMap<>();
+        long currentSecond = Instant.now().getEpochSecond();
+        headers.put("Display-ID", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5-" + currentSecond);
+        headers.put("Buvid", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5");
+        headers.put("User-Agent", "Mozilla/5.0 BiliDroid/5.37.0 (bbcallen@gmail.com)");
+        headers.put("Device-ID", "aBRoDWAVeRhsA3FDewMzS3lLMwM");
+        WebCookie cookie = Cookie.parse(user.getCookies());
+        headers.put("cookie", cookie.getCookie());
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(url);
+        params.forEach(uriBuilder::queryParam);
+        String response = HttpClientUtil.get(uriBuilder.toUriString(), headers);
+        return JSON.parseObject(response, BiliVideoPartInfoResponse.class);
     }
 
     public static BiliDmResponse sendVideoDm(BiliBiliUser user, LiveMsg msg) {

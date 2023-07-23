@@ -14,7 +14,9 @@ import top.sshh.bililiverecoder.entity.BiliBiliUser;
 import top.sshh.bililiverecoder.entity.RecordHistory;
 import top.sshh.bililiverecoder.entity.RecordHistoryPart;
 import top.sshh.bililiverecoder.entity.RecordRoom;
+import top.sshh.bililiverecoder.entity.data.BiliVideoPartInfoResponse;
 import top.sshh.bililiverecoder.entity.data.SingleVideoDto;
+import top.sshh.bililiverecoder.entity.data.VideoEditUploadDto;
 import top.sshh.bililiverecoder.entity.data.VideoUploadDto;
 import top.sshh.bililiverecoder.repo.BiliUserRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryPartRepository;
@@ -36,6 +38,8 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -87,14 +91,19 @@ public class RecordBiliPublishService {
 
         // 发布任务入队列
         TaskUtil.publishTask.put(history.getId(), Thread.currentThread());
+        StringBuilder errMsg = new StringBuilder();
         try {
             List<RecordHistoryPart> uploadParts = partRepository.findByHistoryIdOrderByStartTimeAsc(history.getId());
+            BiliVideoPartInfoResponse videoPartInfo = BiliApi.getVideoPartInfo(biliBiliUser, history.getBvId());
+            Map<String, BiliVideoPartInfoResponse.Video> videoMap = videoPartInfo.getData().getVideos().stream().collect(Collectors.toMap(BiliVideoPartInfoResponse.Video::getTitle, Function.identity()));
             for (RecordHistoryPart uploadPart : uploadParts) {
-                // 已经发布成功的不需要在上传
-                if (uploadPart.getCid() != null && uploadPart.getCid() > 0) {
-                    continue;
-                } else {
+                // 正常分p不需要在重复上传
+                BiliVideoPartInfoResponse.Video video = videoMap.get(uploadPart.getTitle());
+                if (video == null || (video.getFailCode() == 9 && video.getXcodeState() == 3)) {
+                    errMsg.append(uploadPart.getTitle()).append("\n");
                     uploadPart.setUpload(false);
+                    uploadPart.setCid(null);
+                    uploadPart.setFileName(null);
                     uploadPart = partRepository.save(uploadPart);
                     String filePath = uploadPart.getFilePath().intern();
                     File file = new File(filePath);
@@ -115,6 +124,8 @@ public class RecordBiliPublishService {
                     }
                 }
             }
+            errMsg.append("转码失败");
+            uploadParts = partRepository.findByHistoryIdOrderByStartTimeAsc(history.getId());
             userOptional = biliUserRepository.findById(room.getUploadUserId());
             if (!userOptional.isPresent()) {
                 log.error("视频发布事件，用户不存在，无法发布 ==>{}", JSON.toJSONString(room));
@@ -148,7 +159,7 @@ public class RecordBiliPublishService {
                 }
                 dtos.add(dto);
             }
-            VideoUploadDto videoUploadDto = new VideoUploadDto();
+            VideoEditUploadDto videoUploadDto = new VideoEditUploadDto();
 
             map.put("date", startTime);
             videoUploadDto.setTid(room.getTid());
@@ -161,7 +172,7 @@ public class RecordBiliPublishService {
             videoUploadDto.setVideos(dtos);
             videoUploadDto.setTag(room.getTags());
             videoUploadDto.setAid(Integer.valueOf(history.getAvId()));
-            String republishRes = BiliApi.editPublish(biliBiliUser.getAccessToken(), videoUploadDto);
+            String republishRes = BiliApi.editPublish(biliBiliUser, videoUploadDto);
             log.info("重新投稿={}", republishRes);
 
             // 发布任务出队列
@@ -173,7 +184,7 @@ public class RecordBiliPublishService {
                     message.setAppToken(wxToken);
                     message.setContentType(Message.CONTENT_TYPE_TEXT);
                     message.setContent(WX_MSG_FORMAT.formatted("重新投稿成功", room.getUname(), room.getTitle(),
-                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), ""));
+                            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), errMsg));
                     message.setUid(wxuid);
                     WxPusher.send(message);
                 }

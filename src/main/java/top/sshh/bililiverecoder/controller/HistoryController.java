@@ -338,7 +338,7 @@ public class HistoryController {
             RecordHistory history = historyOptional.get();
             publishService.asyncRepublishRecordHistory(history);
             result.put("type", "success");
-            result.put("msg", "触发重新发布事件成功");
+            result.put("msg", "触发转码修复事件成功");
             return result;
         } else {
             result.put("type", "warning");

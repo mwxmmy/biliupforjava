@@ -317,6 +317,7 @@ public class KodoRecordPartBilibiliUploadService implements RecordPartUploadServ
 
                                 if (checkUploadBean.getOK() == 1 && completeUploadBean != null) {
                                     part.setUpload(true);
+                                    part.setCid(preUploadBean.getBiz_id());
                                     part.setFileName(preUploadBean.getBili_filename());
                                     part.setUpdateTime(LocalDateTime.now());
                                     part = partRepository.save(part);
@@ -338,7 +339,7 @@ public class KodoRecordPartBilibiliUploadService implements RecordPartUploadServ
                                         }
                                         File startDir = new File(startDirPath);
                                         File[] files = startDir.listFiles((file, s) -> s.startsWith(fileName));
-                                        if (files != null && files.length > 0) {
+                                        if (files != null) {
                                             for (File file : files) {
                                                 if (!filePath.startsWith(workPath)) {
                                                     part.setFileDelete(true);

@@ -219,6 +219,12 @@ public class LiveMsgService {
                         String raw = element.attribute("raw").getValue();
                         JSONArray array = JSON.parseArray(raw);
 
+                        // 判断是否抽奖弹幕
+                        boolean lottery = (Integer)((JSONArray)array.get(0)).get(9) != 0;
+                        if(lottery){
+                            continue;
+                        }
+
                         JSONArray dmFanMedalObjects = (JSONArray) array.get(3);
                         // 0-不做处理，1-必须佩戴粉丝勋章。2-必须佩戴主播的粉丝勋章
                         if (room.getDmFanMedal() == 1) {

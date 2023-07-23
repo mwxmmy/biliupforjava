@@ -171,10 +171,21 @@
                         @click="handleEdit(scope.$index, scope.row)" size="mini"
                         type="primary">编辑
                 </el-button>
-                <el-button
-                        @click="uploadEdit(scope.$index, scope.row)" size="mini"
-                        type="primary">云剪辑
-                </el-button>
+                <el-popconfirm
+                        @confirm="rePublish(scope.row.id)"
+                        title="确定重新上传转码失败部分吗？">
+                    <el-tooltip class="item" content="会重新上传转码失败的分p" effect="dark"
+                                placement="top" slot="reference">
+                        <el-button
+                                size="mini"
+                                type="danger">转码失败修复
+                        </el-button>
+                    </el-tooltip>
+                </el-popconfirm>
+                <!--                <el-button-->
+                <!--                        @click="uploadEdit(scope.$index, scope.row)" size="mini"-->
+                <!--                        type="primary">云剪辑-->
+                <!--                </el-button>-->
                 <el-popover
                         placement="right"
                         width="400"
@@ -209,10 +220,13 @@
                     </el-row>
                     <el-row justify="space-around" type="flex">
                         <el-col :span="6">
+
                             <el-popconfirm
                                     @confirm="updatePublishStatus(scope.row.id)"
                                     title="确定重置为未上传发布吗？">
-                                <el-tooltip class="item" content="把状态修改为未发布,分p全部未上传状态,重置后点击触发发布事件会重新投稿" effect="dark"
+                                <el-tooltip class="item"
+                                            content="把状态修改为未发布,分p全部未上传状态,重置后点击触发发布事件会重新投稿"
+                                            effect="dark"
                                             placement="top"
                                             slot="reference">
                                     <el-button size="mini"
@@ -288,20 +302,20 @@
         </div>
     </el-dialog>
 
-    <el-dialog :visible.sync="uploadEditDialogFormVisible" title="上传到云剪辑">
-        <el-select v-model="uploadEditPartId" placeholder="请选择">
-            <el-option
-                    v-for="item in partData"
-                    :key="item.id"
-                    :label="item.title"
-                    :value="item.id">
-            </el-option>
-        </el-select>
-        <div class="dialog-footer" slot="footer">
-            <el-button @click="uploadEditDialogFormVisible = false">取 消</el-button>
-            <el-button @click="uploadEditPart();uploadEditDialogFormVisible = false" type="primary">确 定</el-button>
-        </div>
-    </el-dialog>
+    <!--    <el-dialog :visible.sync="uploadEditDialogFormVisible" title="上传到云剪辑">-->
+    <!--        <el-select v-model="uploadEditPartId" placeholder="请选择">-->
+    <!--            <el-option-->
+    <!--                    v-for="item in partData"-->
+    <!--                    :key="item.id"-->
+    <!--                    :label="item.title"-->
+    <!--                    :value="item.id">-->
+    <!--            </el-option>-->
+    <!--        </el-select>-->
+    <!--        <div class="dialog-footer" slot="footer">-->
+    <!--            <el-button @click="uploadEditDialogFormVisible = false">取 消</el-button>-->
+    <!--            <el-button @click="uploadEditPart();uploadEditDialogFormVisible = false" type="primary">确 定</el-button>-->
+    <!--        </div>-->
+    <!--    </el-dialog>-->
 </div>
 <script>
     new Vue({
@@ -361,15 +375,32 @@
                         _this.total = data.total;
                         _this.loading = false;
                     },
-                    error:function () {
+                    error: function () {
                         _this.loading = false;
+                    }
+                });
+            },
+            updateHistory: function () {
+                let _this = this;
+                $.ajax({
+                    url: '/history/update',
+                    contentType: 'application/json;charset=utf-8',
+                    type: 'post',
+                    data: JSON.stringify(_this.history),
+                    dataType: 'json',
+                    success: function (data) {
+                        _this.$message({
+                            message: data.msg,
+                            type: data.type
+                        });
+                        _this.initTable();
                     }
                 });
             },
             uploadEditPart: function () {
                 let _this = this;
                 $.ajax({
-                    url: '/part/uploadEditor/'+this.uploadEditPartId,
+                    url: '/part/uploadEditor/' + this.uploadEditPartId,
                     contentType: 'application/json;charset=utf-8',
                     type: 'get',
                     success: function (data) {

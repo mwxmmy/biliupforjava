@@ -91,7 +91,7 @@ public class RecordBiliPublishService {
 
         // 发布任务入队列
         TaskUtil.publishTask.put(history.getId(), Thread.currentThread());
-        StringBuilder errMsg = new StringBuilder();
+        StringBuilder errMsg = new StringBuilder("\n");
         try {
             List<RecordHistoryPart> uploadParts = partRepository.findByHistoryIdOrderByStartTimeAsc(history.getId());
             BiliVideoPartInfoResponse videoPartInfo = BiliApi.getVideoPartInfo(biliBiliUser, history.getBvId());
@@ -99,8 +99,14 @@ public class RecordBiliPublishService {
             for (RecordHistoryPart uploadPart : uploadParts) {
                 // 正常分p不需要在重复上传
                 BiliVideoPartInfoResponse.Video video = videoMap.get(uploadPart.getTitle());
-                if (video == null || (video.getFailCode() == 9 && video.getXcodeState() == 3)) {
-                    errMsg.append(uploadPart.getTitle()).append("\n");
+                if (video == null || (video.getFailCode() == 9 && video.getXcodeState() == 3) || (video.getFailCode() == 0 && video.getXcodeState() == 2)) {
+                    if (video == null) {
+                        errMsg.append(uploadPart.getTitle()).append("   视频不存在\n");
+                    } else if (video.getXcodeState() == 2) {
+                        errMsg.append(uploadPart.getTitle()).append("   转码中\n");
+                    } else {
+                        errMsg.append(uploadPart.getTitle()).append("   转码失败\n");
+                    }
                     uploadPart.setUpload(false);
                     uploadPart.setCid(null);
                     uploadPart.setFileName(null);
@@ -124,7 +130,6 @@ public class RecordBiliPublishService {
                     }
                 }
             }
-            errMsg.append("转码失败");
             uploadParts = partRepository.findByHistoryIdOrderByStartTimeAsc(history.getId());
             userOptional = biliUserRepository.findById(room.getUploadUserId());
             if (!userOptional.isPresent()) {

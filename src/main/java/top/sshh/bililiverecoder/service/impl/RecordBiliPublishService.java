@@ -91,7 +91,7 @@ public class RecordBiliPublishService {
 
         // 发布任务入队列
         TaskUtil.publishTask.put(history.getId(), Thread.currentThread());
-        StringBuilder errMsg = new StringBuilder();
+        StringBuilder errMsg = new StringBuilder("\n");
         try {
             List<RecordHistoryPart> uploadParts = partRepository.findByHistoryIdOrderByStartTimeAsc(history.getId());
             BiliVideoPartInfoResponse videoPartInfo = BiliApi.getVideoPartInfo(biliBiliUser, history.getBvId());

@@ -450,6 +450,8 @@ public class RecordBiliPublishService {
                             inputStream.close();
                             String uploadCoverResponse = BiliApi.uploadCover(biliBiliUser, cover.getName(), bytes);
                             coverUrl = JsonPath.read(uploadCoverResponse, "data.url");
+                            history.setCoverUrl(coverUrl);
+                            history = historyRepository.save(history);
                         } catch (Exception e) {
                             log.error("{}==>使用直播封面失败", room.getUname(), e);
                             coverUrl = "";

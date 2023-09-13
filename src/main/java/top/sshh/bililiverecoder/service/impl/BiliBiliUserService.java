@@ -54,6 +54,16 @@ public class BiliBiliUserService {
             userRepository.save(user);
             return true;
         }else {
+            try {
+                String userInfo = BiliApi.appMyInfo(user);
+                user.setUname(JsonPath.read(userInfo, "data.uname"));
+                user.setLogin(true);
+                user.setUpdateTime(LocalDateTime.now());
+                userRepository.save(user);
+                log.error("{} 刷新token失败!!!，账号仍然可用==>{}", user.getUname(), response);
+            } catch (Exception e) {
+                log.error("刷新token失败 获取用户名称失败==>{}", user.getUname());
+            }
             user.setLogin(false);
             user.setEnable(false);
             user.setUpdateTime(LocalDateTime.now());

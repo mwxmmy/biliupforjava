@@ -1,9 +1,6 @@
 package top.sshh.bililiverecoder.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -23,6 +20,7 @@ public class BiliBiliUser {
     private String accessToken;
     private String refreshToken;
 
+    @Column(length = 2100)
     private String cookies;
 
     private LocalDateTime updateTime;

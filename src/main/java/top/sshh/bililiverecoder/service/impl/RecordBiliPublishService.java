@@ -317,11 +317,17 @@ public class RecordBiliPublishService {
                             return false;
                         }
                         if (uploadPart.getFileSize() < 1024 * 1024 * room.getFileSizeLimit()) {
+                            if (!"blrec".equals(uploadPart.getSessionId())) {
+                                continue;
+                            }
                             log.error("文件大小小于设置的忽略大小，自动删除。");
                             partRepository.delete(uploadPart);
                             continue;
                         }
                         if (uploadPart.getDuration() < room.getDurationLimit()) {
+                            if (!"blrec".equals(uploadPart.getSessionId())) {
+                                continue;
+                            }
                             log.error("文件时长小于设置的忽略时间，自动删除。");
                             partRepository.delete(uploadPart);
                             continue;

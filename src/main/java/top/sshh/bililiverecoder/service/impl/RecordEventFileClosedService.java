@@ -80,7 +80,14 @@ public class RecordEventFileClosedService implements RecordEventService {
                 part.setStartTime(LocalDateTime.now());
                 part.setEndTime(LocalDateTime.now());
             }
-            long fileSize = new File(filePath).length();
+            File vidleFile = new File(filePath);
+            long fileSize = 0;
+            if (vidleFile.exists()) {
+                fileSize = vidleFile.length();
+            } else {
+                log.error("文件{}不存在，请考虑工作目录是否设置正确，或者docker 卷是否映射正确", filePath);
+                fileSize = eventData.getFileSize();
+            }
             LocalDateTime startTime = part.getStartTime();
             Duration duration = Duration.between(startTime, LocalDateTime.now());
             part.setRecording(false);
@@ -99,7 +106,9 @@ public class RecordEventFileClosedService implements RecordEventService {
             history.setUpdateTime(LocalDateTime.now());
             history.setEndTime(LocalDateTime.now());
             history = historyRepository.save(history);
-
+            if (!vidleFile.exists()) {
+                return;
+            }
             if (StringUtils.isNotBlank(room.getMoveDir()) && (room.getDeleteType() == 6 || room.getDeleteType() == 7)) {
                 String fileName = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.lastIndexOf("."));
                 String startDirPath = filePath.substring(0, filePath.lastIndexOf('/') + 1);
@@ -149,7 +158,7 @@ public class RecordEventFileClosedService implements RecordEventService {
             if (fileSize > 1024 * 1024 * room.getFileSizeLimit() && part.getDuration() > room.getDurationLimit()) {
                 uploadServiceFactory.getUploadService(room.getLine()).asyncUpload(part);
             } else {
-                log.error("文件大小小于设置的忽略大小或时长，删除。");
+                log.error("文件大小{}小于{},或时长{}小于{}，删除。", fileSize, room.getFileSizeLimit(), part.getDuration(), room.getDurationLimit());
                 historyPartRepository.delete(part);
                 return;
             }

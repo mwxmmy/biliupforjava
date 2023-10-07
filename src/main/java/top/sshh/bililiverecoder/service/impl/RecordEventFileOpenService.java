@@ -40,7 +40,8 @@ public class RecordEventFileOpenService implements RecordEventService {
     @Override
     public void processing(RecordEventDTO event) {
         RecordEventData eventData = event.getEventData();
-        log.info("分p开始录制事件==>{}", eventData.getRelativePath());
+        String relativePath = eventData.getRelativePath();
+        log.info("分p开始录制事件==>{}", relativePath);
         String sessionId = eventData.getSessionId();
         try {
             Thread.sleep(1000L);
@@ -53,8 +54,11 @@ public class RecordEventFileOpenService implements RecordEventService {
             room = new RecordRoom();
             room.setRoomId(eventData.getRoomId());
             room.setCreateTime(LocalDateTime.now());
-            room.setUname(eventData.getName());
+            if (eventData.getName() != null) {
+                room.setUname(eventData.getName());
+            }
             room.setTitle(eventData.getTitle());
+            room.setHistoryId(-999L);
             room = roomRepository.save(room);
         } else {
             room.setUname(eventData.getName());
@@ -80,6 +84,8 @@ public class RecordEventFileOpenService implements RecordEventService {
             history.setRecording(eventData.isRecording());
             history.setStreaming(eventData.isStreaming());
             history = historyRepository.save(history);
+            room.setHistoryId(history.getId());
+            room = roomRepository.save(room);
         } else {
             history = historyOptional.get();
         }
@@ -105,8 +111,10 @@ public class RecordEventFileOpenService implements RecordEventService {
             history.setStreaming(eventData.isStreaming());
             history = historyRepository.save(history);
         }
-
-        String filePath = workPath + File.separator + eventData.getRelativePath();
+        if ("blrec".equals(sessionId)) {
+            relativePath = relativePath.replace(workPath, "");
+        }
+        String filePath = workPath + File.separator + relativePath;
         // 正常逻辑
         boolean existsPart = historyPartRepository.existsByFilePath(filePath);
         if(existsPart){
@@ -127,7 +135,6 @@ public class RecordEventFileOpenService implements RecordEventService {
         part.setEndTime(LocalDateTime.now());
         part = historyPartRepository.save(part);
         log.info("分p开始录制事件,成功保存数据库==>{}", JSON.toJSONString(part));
-        String relativePath = eventData.getRelativePath();
         history.setTitle(eventData.getTitle());
         history.setSessionId(eventData.getSessionId());
         history.setRecording(eventData.isRecording());

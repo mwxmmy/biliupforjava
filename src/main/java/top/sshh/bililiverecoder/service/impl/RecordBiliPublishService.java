@@ -141,7 +141,11 @@ public class RecordBiliPublishService {
             map.put("date", startTime);
 
             String uname = room.getUname();
-            map.put("${uname}", uname);
+            if (uname == null) {
+                map.put("${uname}", "");
+            } else {
+                map.put("${uname}", uname);
+            }
             String title = StringUtils.isNotBlank(history.getTitle()) ? history.getTitle() : "直播录像";
             map.put("${title}", title);
             map.put("${roomId}", room.getRoomId());
@@ -416,7 +420,11 @@ public class RecordBiliPublishService {
                     map.put("date", startTime);
 
                     String uname = room.getUname();
-                    map.put("${uname}", uname);
+                    if (uname == null) {
+                        map.put("${uname}", "");
+                    } else {
+                        map.put("${uname}", uname);
+                    }
                     String title = StringUtils.isNotBlank(history.getTitle()) ? history.getTitle() : "直播录像";
                     map.put("${title}", title);
                     map.put("${roomId}", room.getRoomId());
@@ -442,7 +450,7 @@ public class RecordBiliPublishService {
                             String filePath = uploadParts.get(uploadParts.size()-1).getFilePath().replaceAll(".flv", ".cover.jpg");
                             File cover = new File(filePath);
                             if (!cover.exists()) {
-                                cover = new File(filePath.replaceAll(".jpg", ".png"));
+                                cover = new File(filePath.replaceAll(".cover.jpg", ".jpg"));
                             }
                             byte[] bytes = new byte[(int) cover.length()];
                             FileInputStream inputStream = new FileInputStream(cover);
@@ -580,6 +588,7 @@ public class RecordBiliPublishService {
             String format = localDateTime.format(DateTimeFormatter.ofPattern(date.substring(2, date.length() - 1)));
             template = template.replace(date, format);
         }
+        template = template.replace(",,", ",");
         return template;
     }
 }

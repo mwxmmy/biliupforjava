@@ -50,16 +50,21 @@ public class RecordEventFileClosedService implements RecordEventService {
     @Override
     public void processing(RecordEventDTO event) {
         RecordEventData eventData = event.getEventData();
-        log.info("分p录制结束事件==>{}", eventData.getRelativePath());
+        String sessionId = eventData.getSessionId();
+        String relativePath = eventData.getRelativePath();
+        log.info("分p录制结束事件==>{}", relativePath);
         RecordRoom room = roomRepository.findByRoomId(eventData.getRoomId());
         Optional<RecordHistory> historyOptional = historyRepository.findById(room.getHistoryId());
-        String filePath = workPath + File.separator + eventData.getRelativePath();
+        if ("blrec".equals(sessionId)) {
+            relativePath = relativePath.replace(workPath, "");
+        }
+        String filePath = workPath + File.separator + relativePath;
         if (historyOptional.isPresent()) {
             RecordHistory history = historyOptional.get();
             // 正常逻辑
             RecordHistoryPart part = historyPartRepository.findByFilePath(filePath);
             if (part == null) {
-                log.info("文件分片不存在==>{}", eventData.getRelativePath());
+                log.info("文件分片不存在==>{}", relativePath);
                 part = new RecordHistoryPart();
                 part.setStartTime(LocalDateTime.now().minusSeconds((long) eventData.getDuration()));
                 part.setEventId(event.getEventId());
@@ -69,7 +74,7 @@ public class RecordEventFileClosedService implements RecordEventService {
                 part.setHistoryId(history.getId());
                 part.setFilePath(filePath);
                 part.setFileSize(0L);
-                part.setSessionId(eventData.getSessionId());
+                part.setSessionId(sessionId);
                 part.setRecording(eventData.isRecording());
                 part.setStartTime(LocalDateTime.now());
                 part.setEndTime(LocalDateTime.now());
@@ -85,7 +90,7 @@ public class RecordEventFileClosedService implements RecordEventService {
 
             history.setFileSize(history.getFileSize() + part.getFileSize());
             history.setTitle(eventData.getTitle());
-            history.setSessionId(eventData.getSessionId());
+            history.setSessionId(sessionId);
             history.setRecording(eventData.isRecording());
             history.setStreaming(eventData.isStreaming());
             history.setUpdateTime(LocalDateTime.now());
@@ -102,7 +107,7 @@ public class RecordEventFileClosedService implements RecordEventService {
                 }
                 File startDir = new File(startDirPath);
                 File[] files = startDir.listFiles((file, s) -> s.startsWith(fileName));
-                if (files != null && files.length > 0) {
+                if (files != null) {
                     for (File file : files) {
                         if(! filePath.startsWith(workPath)){
                             part.setFileDelete(true);
@@ -141,8 +146,12 @@ public class RecordEventFileClosedService implements RecordEventService {
             if (fileSize > 1024 * 1024 * room.getFileSizeLimit() && part.getDuration() > room.getDurationLimit()) {
                 uploadServiceFactory.getUploadService(room.getLine()).asyncUpload(part);
             } else {
-                log.error("文件大小小于设置的忽略大小或时长，删除。");
-                historyPartRepository.delete(part);
+                if (!"blrec".equals(part.getSessionId())) {
+                    log.error("文件大小小于设置的忽略大小或时长，删除。");
+                    historyPartRepository.delete(part);
+                } else {
+                    uploadServiceFactory.getUploadService(room.getLine()).asyncUpload(part);
+                }
             }
         } else {
             log.error("分p录制结束事件，录制历史不存在。");
@@ -154,7 +163,7 @@ public class RecordEventFileClosedService implements RecordEventService {
             part.setRoomId(eventData.getRoomId());
             part.setFilePath(filePath);
             part.setFileSize(0L);
-            part.setSessionId(eventData.getSessionId());
+            part.setSessionId(sessionId);
             part.setRecording(eventData.isRecording());
             part.setStartTime(LocalDateTime.now());
             part.setEndTime(LocalDateTime.now());

@@ -38,15 +38,20 @@ public class RecordEventRecordStartedService implements RecordEventService {
     @Override
     public void processing(RecordEventDTO event) {
         RecordEventData eventData = event.getEventData();
-
+        String roomId = eventData.getRoomId();
         RecordRoom room = roomRepository.findByRoomId(eventData.getRoomId());
         LocalDateTime now = LocalDateTime.now();
-        if(room == null){
-            log.error("房间不存在，重新创建房间保存数据库");
-            room = new RecordRoom();
-            room.setRoomId(eventData.getRoomId());
-            room.setCreateTime(now);
-            room = roomRepository.save(room);
+        if(room == null) {
+            synchronized (roomId.intern()) {
+                room = roomRepository.findByRoomId(eventData.getRoomId());
+                if (room == null) {
+                    log.error("房间不存在，重新创建房间保存数据库");
+                    room = new RecordRoom();
+                    room.setRoomId(eventData.getRoomId());
+                    room.setCreateTime(now);
+                    room = roomRepository.save(room);
+                }
+            }
         }
         room.setUname(eventData.getName());
         room.setTitle(eventData.getTitle());

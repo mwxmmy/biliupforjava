@@ -48,18 +48,24 @@ public class RecordEventFileOpenService implements RecordEventService {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        String roomId = eventData.getRoomId();
         RecordRoom room = roomRepository.findByRoomId(eventData.getRoomId());
         if (room == null) {
-            log.error("录制异常，录制历史没有创建，录制房间也没有创建！！！可能webhook请求顺序错误");
-            room = new RecordRoom();
-            room.setRoomId(eventData.getRoomId());
-            room.setCreateTime(LocalDateTime.now());
-            if (eventData.getName() != null) {
-                room.setUname(eventData.getName());
+            synchronized (roomId.intern()) {
+                room = roomRepository.findByRoomId(eventData.getRoomId());
+                if (room == null) {
+                    log.error("录制异常，录制历史没有创建，录制房间也没有创建！！！可能webhook请求顺序错误");
+                    room = new RecordRoom();
+                    room.setRoomId(eventData.getRoomId());
+                    room.setCreateTime(LocalDateTime.now());
+                    if (eventData.getName() != null) {
+                        room.setUname(eventData.getName());
+                    }
+                    room.setTitle(eventData.getTitle());
+                    room.setHistoryId(-999L);
+                    room = roomRepository.save(room);
+                }
             }
-            room.setTitle(eventData.getTitle());
-            room.setHistoryId(-999L);
-            room = roomRepository.save(room);
         } else {
             room.setUname(eventData.getName());
             room.setTitle(eventData.getTitle());

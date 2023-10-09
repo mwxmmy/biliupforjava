@@ -17,6 +17,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
@@ -79,10 +80,12 @@ public class RecordEventFileClosedService implements RecordEventService {
                 part.setStartTime(LocalDateTime.now());
                 part.setEndTime(LocalDateTime.now());
             }
-            long fileSize = eventData.getFileSize();
+            long fileSize = new File(filePath).length();
+            LocalDateTime startTime = part.getStartTime();
+            Duration duration = Duration.between(startTime, LocalDateTime.now());
             part.setRecording(false);
             part.setFileSize(fileSize);
-            part.setDuration(eventData.getDuration());
+            part.setDuration(eventData.getDuration() != 0.0f ? (int)eventData.getDuration() : duration.getSeconds());
             part.setEndTime(LocalDateTime.now());
             part.setAreaName(eventData.getAreaNameChild());
             part.setUpdateTime(LocalDateTime.now());
@@ -146,12 +149,9 @@ public class RecordEventFileClosedService implements RecordEventService {
             if (fileSize > 1024 * 1024 * room.getFileSizeLimit() && part.getDuration() > room.getDurationLimit()) {
                 uploadServiceFactory.getUploadService(room.getLine()).asyncUpload(part);
             } else {
-                if (!"blrec".equals(part.getSessionId())) {
-                    log.error("文件大小小于设置的忽略大小或时长，删除。");
-                    historyPartRepository.delete(part);
-                } else {
-                    uploadServiceFactory.getUploadService(room.getLine()).asyncUpload(part);
-                }
+                log.error("文件大小小于设置的忽略大小或时长，删除。");
+                historyPartRepository.delete(part);
+                return;
             }
         } else {
             log.error("分p录制结束事件，录制历史不存在。");

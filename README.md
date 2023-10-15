@@ -7,6 +7,8 @@
 
 本上传插件特点
 
+**webui配置**
+
 **支持录制一个文件上传一个文件，减少硬盘使用空间**
 
 **支持直播封面和自定义封面**
@@ -118,6 +120,11 @@ http://192.168.0.32:12380/recordWebHook
 同理打开webui页面，首先点击用户页面进行登录
 第一次添加初始化后配置直播间内容，如是否删除文件，上传用户，是否上传等。直播间配置的是否上传只会影响后续的重新录播内容。
 ```
+
+## 关联项目
+
+- [BililiveRecorder/BililiveRecorder](https://github.com/BililiveRecorder/BililiveRecorder) mikufans录播姬
+- [acgnhiki/blrec](https://github.com/acgnhiki/blrec)
 
 ## 系统截图
 

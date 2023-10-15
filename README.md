@@ -1,4 +1,4 @@
-# 基于blrec webhook 的自动投稿工具
+# 基于mikufans录播姬，blrec webhook 的自动投稿工具
 
 用于b站录播姬，mikufans录播姬，blrec的，
 基于WebHook的全自动上传投稿工具

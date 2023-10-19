@@ -20,6 +20,8 @@ public class RecordEventFactory {
     @Autowired
     private RecordEventRecordEndService recordEventRecordEndService;
     @Autowired
+    private RecordRoomChangeService recordRoomChangeService;
+    @Autowired
     private RecordEventStreamStartService recordEventStreamStartService;
     @Autowired
     private RecordEventStreamEndService recordEventStreamEndService;
@@ -34,12 +36,13 @@ public class RecordEventFactory {
     private final Map<String, BlrecUserInfo> blrecUserInfoMap = new HashMap<>();
 
 
-    public RecordEventService getEventService(String eventType){
+    public RecordEventService getEventService(String eventType) {
         return switch (eventType) {
             case RecordEventType.SessionStarted, RecordEventType.RecordingStartedEvent ->
                     recordEventRecordStartedService;
             case RecordEventType.SessionEnded, RecordEventType.RecordingFinishedEvent, RecordEventType.RecordingCancelledEvent ->
                     recordEventRecordEndService;
+            case RecordEventType.RoomChangeEvent -> recordRoomChangeService;
             case RecordEventType.StreamStarted, RecordEventType.LiveBeganEvent -> recordEventStreamStartService;
             case RecordEventType.StreamEnded, RecordEventType.LiveEndedEvent -> recordEventStreamEndService;
             case RecordEventType.FileOpening, RecordEventType.VideoFileCreatedEvent -> recordEventFileOpenService;
@@ -49,7 +52,7 @@ public class RecordEventFactory {
     }
 
     @Async
-    public void processing(RecordEventDTO eventDTO){
+    public void processing(RecordEventDTO eventDTO) {
         if (StringUtils.isBlank(eventDTO.getEventType())) {
             if (eventDTO.getData() != null) {
                 eventDTO.setEventType(eventDTO.getType());
@@ -94,7 +97,7 @@ public class RecordEventFactory {
             }
         }
         String eventType = eventDTO.getEventType();
-        if (StringUtils.isBlank(eventType)){
+        if (StringUtils.isBlank(eventType)) {
             log.error("事件类型为空");
             return;
         }

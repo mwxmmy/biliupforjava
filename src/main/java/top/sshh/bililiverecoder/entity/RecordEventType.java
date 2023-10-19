@@ -1,7 +1,9 @@
 package top.sshh.bililiverecoder.entity;
 
-public class RecordEventType{
+public class RecordEventType {
     public static final String SessionStarted = "SessionStarted";
+
+    public static final String RoomChangeEvent = "RoomChangeEvent";
     public static final String LiveBeganEvent = "LiveBeganEvent";
     public static final String SessionEnded = "SessionEnded";
     public static final String LiveEndedEvent = "LiveEndedEvent";

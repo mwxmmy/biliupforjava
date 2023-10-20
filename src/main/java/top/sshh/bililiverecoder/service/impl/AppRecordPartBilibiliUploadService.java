@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.zjiecode.wxpusher.client.WxPusher;
 import com.zjiecode.wxpusher.client.bean.Message;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -48,6 +49,11 @@ public class AppRecordPartBilibiliUploadService implements RecordPartUploadServi
 
     @Value("${record.work-path}")
     private String workPath;
+
+    @PostConstruct
+    public void initWorkPath() {
+        workPath = workPath.replace("\\", "/");
+    }
 
     private static final String WX_MSG_FORMAT = """
             上传结果: %s

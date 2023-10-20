@@ -1,6 +1,7 @@
 package top.sshh.bililiverecoder.controller;
 
 
+import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
@@ -48,8 +49,13 @@ public class HistoryController {
     @PersistenceContext
     private EntityManager entityManager;
 
+    @PostConstruct
+    public void initWorkPath() {
+        workPath = workPath.replace("\\", "/");
+    }
+
     @PostMapping("/list")
-    public Map<String,Object> list(@RequestBody RecordHistoryDTO request) {
+    public Map<String, Object> list(@RequestBody RecordHistoryDTO request) {
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
         // 指定结果视图
         CriteriaQuery<RecordHistory> criteriaQuery = criteriaBuilder.createQuery(RecordHistory.class);

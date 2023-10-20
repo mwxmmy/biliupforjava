@@ -3,6 +3,7 @@ package top.sshh.bililiverecoder.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.zjiecode.wxpusher.client.WxPusher;
 import com.zjiecode.wxpusher.client.bean.Message;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -50,6 +51,11 @@ public class UposRecordPartBilibiliUploadService implements RecordPartUploadServ
 
     @Value("${record.work-path}")
     private String workPath;
+
+    @PostConstruct
+    public void initWorkPath() {
+        workPath = workPath.replace("\\", "/");
+    }
 
     @Value("${record.wx-push-token}")
     private String wxToken;

@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.jayway.jsonpath.JsonPath;
 import com.zjiecode.wxpusher.client.WxPusher;
 import com.zjiecode.wxpusher.client.bean.Message;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,16 +49,21 @@ public class RecordBiliPublishService {
     @Value("${record.work-path}")
     private String workPath;
 
-    @Value("${record.wx-push-token}")
-    private String wxToken;
-
-    private static final String WX_MSG_FORMAT= """
+    private static final String WX_MSG_FORMAT = """
             投稿结果: %s
             收到主播%s投稿事件
             房间名: %s
             时间: %s
             原因: %s
             """;
+
+    @Value("${record.wx-push-token}")
+    private String wxToken;
+
+    @PostConstruct
+    public void initWorkPath() {
+        workPath = workPath.replace("\\", "/");
+    }
     @Autowired
     private BiliUserRepository biliUserRepository;
     @Autowired

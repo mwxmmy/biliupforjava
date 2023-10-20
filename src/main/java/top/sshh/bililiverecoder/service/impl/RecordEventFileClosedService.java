@@ -1,5 +1,6 @@
 package top.sshh.bililiverecoder.service.impl;
 
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,11 @@ public class RecordEventFileClosedService implements RecordEventService {
 
     @Autowired
     private LiveMsgService liveMsgService;
+
+    @PostConstruct
+    public void initWorkPath() {
+        workPath = workPath.replace("\\", "/");
+    }
 
 
     @Override

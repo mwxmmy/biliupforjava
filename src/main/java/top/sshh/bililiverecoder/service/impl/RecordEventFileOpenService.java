@@ -1,6 +1,7 @@
 package top.sshh.bililiverecoder.service.impl;
 
 import com.alibaba.fastjson.JSON;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +21,11 @@ public class RecordEventFileOpenService implements RecordEventService {
 
     @Value("${record.work-path}")
     private String workPath;
+
+    @PostConstruct
+    public void initWorkPath() {
+        workPath = workPath.replace("\\", "/");
+    }
 
     @Autowired
     private BiliUserRepository biliUserRepository;

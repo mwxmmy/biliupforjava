@@ -79,7 +79,7 @@ public class RecordEventFactory {
                 }
                 if (userInfo != null) {
                     blrecUserInfoMap.put(userInfo.getUid(), userInfo);
-                } else {
+                } else if (roomInfo != null) {
                     userInfo = blrecUserInfoMap.get(roomInfo.getUid());
                 }
                 if (roomInfo != null) {

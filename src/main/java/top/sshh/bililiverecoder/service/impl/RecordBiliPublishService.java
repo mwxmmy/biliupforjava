@@ -160,7 +160,7 @@ public class RecordBiliPublishService {
             for (int i = 0; i < uploadParts.size(); i++) {
                 RecordHistoryPart uploadPart = uploadParts.get(i);
                 SingleVideoDto dto = new SingleVideoDto();
-                title = StringUtils.isNotBlank(uploadPart.getTitle()) ? uploadPart.getTitle() : "直播录像";
+                title = StringUtils.isNotBlank(uploadPart.getLiveTitle()) ? uploadPart.getLiveTitle() : "直播录像";
                 map.put("${title}", title);
                 map.put("date", uploadPart.getStartTime());
                 map.put("${index}", Integer.valueOf(i + 1));
@@ -441,6 +441,8 @@ public class RecordBiliPublishService {
                     for (int i = 0; i < uploadParts.size(); i++) {
                         RecordHistoryPart uploadPart = uploadParts.get(i);
                         SingleVideoDto dto = new SingleVideoDto();
+                        title = StringUtils.isNotBlank(uploadPart.getLiveTitle()) ? uploadPart.getLiveTitle() : "直播录像";
+                        map.put("${title}", title);
                         map.put("date", uploadPart.getStartTime());
                         map.put("${index}", i + 1);
                         map.put("${areaName}", uploadPart.getAreaName());

@@ -21,6 +21,11 @@ public class RecordHistoryPart {
      */
     private Long cid;
 
+    /**
+     * 直播标题
+     */
+    private String liveTitle;
+
     private String title;
 
     private String areaName;

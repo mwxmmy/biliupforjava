@@ -76,6 +76,7 @@ public class RecordEventFileClosedService implements RecordEventService {
                 part.setStartTime(LocalDateTime.now().minusSeconds((long) eventData.getDuration()));
                 part.setEventId(event.getEventId());
                 part.setTitle(LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM月dd日HH点mm分ss秒")));
+                part.setLiveTitle(eventData.getTitle());
                 part.setAreaName(eventData.getAreaNameChild());
                 part.setRoomId(history.getRoomId());
                 part.setHistoryId(history.getId());
@@ -174,6 +175,7 @@ public class RecordEventFileClosedService implements RecordEventService {
             part.setStartTime(LocalDateTime.now().minusSeconds((long) eventData.getDuration()));
             part.setEventId(event.getEventId());
             part.setTitle(LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM月dd日HH点mm分ss秒")));
+            part.setLiveTitle(eventData.getTitle());
             part.setAreaName(eventData.getAreaNameChild());
             part.setRoomId(eventData.getRoomId());
             part.setFilePath(filePath);

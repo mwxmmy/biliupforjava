@@ -127,6 +127,12 @@ public class LiveMsgService {
                     long sendTime = (long) (Float.parseFloat(time) * 1000);
                     String userName = element.attribute("user").getValue();
                     String price = element.attribute("price").getValue();
+
+                    //  blrec 弹幕的金额/1000
+                    if ("blrec".equals(part.getSessionId())) {
+                        price = String.valueOf(Integer.parseInt(price) / 1000);
+                    }
+
                     String text = element.getText();
                     LiveMsg msg = new LiveMsg();
                     msg.setPartId(part.getId());

@@ -40,7 +40,7 @@ public class RecordRoom {
     /**
      * 上传线路
      */
-    private String line = "SZ-BDA2";
+    private String line = "CS_BLDSA";
 
     /**
      * 微信uid

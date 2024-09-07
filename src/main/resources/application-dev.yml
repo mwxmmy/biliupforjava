@@ -14,9 +14,9 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     druid:
       # 初始化配置
-      initial-size: 3
+      initial-size: 1
       # 最小连接数
-      min-idle: 3
+      min-idle: 1
       # 最大连接数
       max-active: 15
       # 获取连接超时时间

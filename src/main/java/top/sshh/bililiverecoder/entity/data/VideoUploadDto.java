@@ -11,6 +11,7 @@ public class VideoUploadDto {
     private Integer copyright = 2;
     private String cover = "";
     private String desc = "";
+    private List<DescV2Dto> desc_v2 = null;
     private Integer no_reprint = 0;
     private Integer open_elec = 1;
     private String source = "直播间: https://live.bilibili.com/${roomId}  稿件直播源";
@@ -19,5 +20,6 @@ public class VideoUploadDto {
     private Integer tid = 27;
     private String title = "";
     private String dynamic = "";
+    private List<DescV2Dto> dynamic_v2 = null;
     private List<SingleVideoDto> videos = new ArrayList<>();
 }

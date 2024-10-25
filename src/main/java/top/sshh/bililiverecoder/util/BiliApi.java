@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.jayway.jsonpath.JsonPath;
 import lombok.Data;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -522,10 +523,45 @@ public class BiliApi {
         return HttpClientUtil.post(url, headers, params, true);
     }
 
+    public static BiliUserCardResponseDto getUserCard(long uid) {
+        String url = "https://account.bilibili.com/api/member/getCardByMid?mid=" + uid;
+        Map<String, String> additionalHeaders = new HashMap<>();
+        additionalHeaders.put("referer", "https://account.bilibili.com/api/member/getCardByMid?mid=" + uid);
+        additionalHeaders.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36");
+        String res = HttpClientUtil.get(url, additionalHeaders);
+        try {
+            return JSON.parseObject(res, new TypeReference<BiliUserCardResponseDto>() {
+            });
+        } catch (Exception e) {
+            try {
+                url = "https://workers.vrp.moe/api/bilibili/user-info/" + uid;
+                res = HttpClientUtil.get(url, additionalHeaders);
+                if (res.contains("card")) {
+                    return JSON.parseObject(res, new TypeReference<BiliUserCardResponseDto>() {
+                    });
+                }
+            } catch (Exception ignored) {
+            }
+            BiliUserCardResponseDto cardResponseDto = new BiliUserCardResponseDto();
+            cardResponseDto.setCode(-400);
+            return cardResponseDto;
+        }
+    }
+
+
     public static void main(String[] args) {
         System.out.println(generateQRUrlTV());
     }
 
+
+    @Data
+    @ToString
+    public static class BiliUserCardResponseDto {
+        // 0：成功 1：参数错误
+        private long ts;
+        private int code;
+        private BiliUserCard card;
+    }
 
     @Data
     public static class BiliResponseDto<T> {

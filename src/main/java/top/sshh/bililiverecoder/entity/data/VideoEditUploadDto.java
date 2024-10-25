@@ -11,6 +11,7 @@ public class VideoEditUploadDto {
     private Integer copyright = 2;
     private String cover = "";
     private String desc = "";
+    private List<DescV2Dto> desc_v2 = null;
     private Integer no_reprint = 0;
     private Integer recreate = -1;
     private Integer act_reserve_create = 0;
@@ -26,6 +27,7 @@ public class VideoEditUploadDto {
     private Integer tid = 27;
     private String title = "";
     private String dynamic = "";
+    private List<DescV2Dto> dynamic_v2 = null;
     private String csrf;
     private List<SingleVideoDto> videos = new ArrayList<>();
 }

@@ -5,6 +5,8 @@ import com.jayway.jsonpath.JsonPath;
 import com.zjiecode.wxpusher.client.WxPusher;
 import com.zjiecode.wxpusher.client.bean.Message;
 import jakarta.annotation.PostConstruct;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,10 +17,7 @@ import top.sshh.bililiverecoder.entity.BiliBiliUser;
 import top.sshh.bililiverecoder.entity.RecordHistory;
 import top.sshh.bililiverecoder.entity.RecordHistoryPart;
 import top.sshh.bililiverecoder.entity.RecordRoom;
-import top.sshh.bililiverecoder.entity.data.BiliVideoPartInfoResponse;
-import top.sshh.bililiverecoder.entity.data.SingleVideoDto;
-import top.sshh.bililiverecoder.entity.data.VideoEditUploadDto;
-import top.sshh.bililiverecoder.entity.data.VideoUploadDto;
+import top.sshh.bililiverecoder.entity.data.*;
 import top.sshh.bililiverecoder.repo.BiliUserRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryPartRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
@@ -40,6 +39,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -79,6 +80,34 @@ public class RecordBiliPublishService {
     @Async
     public void asyncPublishRecordHistory(RecordHistory history) {
         this.publishRecordHistory(history);
+    }
+
+    // 方法用于按"${@数字}"分割字符串
+    public static List<String> splitTemplateByUid(String template) {
+        List<String> parts = new ArrayList<>();
+        Pattern pattern = Pattern.compile("\\$\\{[@]\\d+\\}");
+        Matcher matcher = pattern.matcher(template);
+        int lastMatchEnd = 0;
+
+        while (matcher.find()) {
+            // 如果从上一个匹配结束位置到当前匹配开始之间有内容，则添加这部分内容
+            if (lastMatchEnd < matcher.start()) {
+                parts.add(template.substring(lastMatchEnd, matcher.start()));
+            }
+
+            // 添加"${@数字}"本身
+            parts.add(matcher.group());
+
+            // 更新上一个匹配结束位置
+            lastMatchEnd = matcher.end();
+        }
+
+        // 如果还有剩余的部分，添加到最后
+        if (lastMatchEnd < template.length()) {
+            parts.add(template.substring(lastMatchEnd));
+        }
+
+        return parts;
     }
 
     @Async
@@ -167,9 +196,9 @@ public class RecordBiliPublishService {
                 map.put("date", uploadPart.getStartTime());
                 map.put("${index}", Integer.valueOf(i + 1));
                 map.put("${areaName}", uploadPart.getAreaName());
-                dto.setTitle(this.template(room.getPartTitleTemplate(), map));
+                dto.setTitle(this.template(room.getPartTitleTemplate(), map).getDesc());
                 //同步标题
-                uploadPart.setTitle(this.template(room.getPartTitleTemplate(), map));
+                uploadPart.setTitle(this.template(room.getPartTitleTemplate(), map).getDesc());
                 uploadPart = partRepository.save(uploadPart);
                 dto.setDesc("");
                 dto.setFilename(uploadPart.getFileName());
@@ -184,12 +213,14 @@ public class RecordBiliPublishService {
             videoUploadDto.setTid(room.getTid());
             videoUploadDto.setCover(history.getCoverUrl());
             videoUploadDto.setCopyright(room.getCopyright());
-            videoUploadDto.setTitle(this.template(room.getTitleTemplate(), map));
-            videoUploadDto.setSource(this.template(videoUploadDto.getSource(), map));
-            videoUploadDto.setDesc(this.template(room.getDescTemplate(), map));
-            videoUploadDto.setDynamic(this.template(room.getDescTemplate(), map));
+            videoUploadDto.setTitle(this.template(room.getTitleTemplate(), map).getDesc());
+            videoUploadDto.setSource(this.template(videoUploadDto.getSource(), map).getDesc());
+            videoUploadDto.setDesc(this.template(room.getDescTemplate(), map).getDesc());
+            videoUploadDto.setDesc_v2(this.template(room.getDescTemplate(), map).getDescV2Dtos());
+            videoUploadDto.setDynamic(this.template(room.getDescTemplate(), map).getDesc());
+            videoUploadDto.setDynamic_v2(this.template(room.getDescTemplate(), map).getDescV2Dtos());
             videoUploadDto.setVideos(dtos);
-            videoUploadDto.setTag(this.template(room.getTags(), map));
+            videoUploadDto.setTag(this.template(room.getTags(), map).getDesc());
             videoUploadDto.setAid(Integer.valueOf(history.getAvId()));
             String republishRes = BiliApi.editPublish(biliBiliUser, videoUploadDto);
             log.info("重新投稿={}", republishRes);
@@ -448,9 +479,9 @@ public class RecordBiliPublishService {
                         map.put("date", uploadPart.getStartTime());
                         map.put("${index}", i + 1);
                         map.put("${areaName}", uploadPart.getAreaName());
-                        dto.setTitle(this.template(room.getPartTitleTemplate(), map));
+                        dto.setTitle(this.template(room.getPartTitleTemplate(), map).getDesc());
                         //同步标题
-                        uploadPart.setTitle(this.template(room.getPartTitleTemplate(), map));
+                        uploadPart.setTitle(this.template(room.getPartTitleTemplate(), map).getDesc());
                         uploadPart = partRepository.save(uploadPart);
                         dto.setDesc("");
                         dto.setFilename(uploadPart.getFileName());
@@ -491,14 +522,16 @@ public class RecordBiliPublishService {
                     videoUploadDto.setTid(room.getTid());
                     videoUploadDto.setCover(coverUrl);
                     videoUploadDto.setCopyright(room.getCopyright());
-                    videoUploadDto.setTitle(this.template(room.getTitleTemplate(), map));
-                    videoUploadDto.setSource(this.template(videoUploadDto.getSource(), map));
-                    videoUploadDto.setDesc(this.template(room.getDescTemplate(), map));
+                    videoUploadDto.setTitle(this.template(room.getTitleTemplate(), map).getDesc());
+                    videoUploadDto.setSource(this.template(videoUploadDto.getSource(), map).getDesc());
+                    videoUploadDto.setDesc(this.template(room.getDescTemplate(), map).getDesc());
+                    videoUploadDto.setDesc_v2(this.template(room.getDescTemplate(), map).getDescV2Dtos());
                     if(StringUtils.isNotBlank(room.getDynamicTemplate())){
-                        videoUploadDto.setDynamic(this.template(room.getDynamicTemplate(), map));
+                        videoUploadDto.setDesc(videoUploadDto.getDesc());
+                        videoUploadDto.setDesc_v2(videoUploadDto.getDesc_v2());
                     }
                     videoUploadDto.setVideos(dtos);
-                    videoUploadDto.setTag(this.template(room.getTags(), map));
+                    videoUploadDto.setTag(this.template(room.getTags(), map).getDesc());
                     String uploadRes = null;
                     try {
                         uploadRes = BiliApi.publish(biliBiliUser.getAccessToken(), videoUploadDto);
@@ -596,24 +629,61 @@ public class RecordBiliPublishService {
         return true;
     }
 
-    private String template(String template, Map<String, Object> map) {
-        template = template.replace("${uname}", map.get("${uname}") != null ? map.get("${uname}").toString() : "")
-                .replace("${title}", map.get("${title}") != null ? map.get("${title}").toString() : "")
-                .replace("${index}", map.get("${index}") != null ? map.get("${index}").toString() : "")
-                .replace("${areaName}", map.get("${areaName}") != null ? map.get("${areaName}").toString() : "")
-                .replace("${roomId}", map.get("${roomId}") != null ? map.get("${roomId}").toString() : "");
-        if (template.contains("${")) {
-            try {
-                LocalDateTime localDateTime = (LocalDateTime)map.get("date");
-                String substring = template.substring(template.indexOf("${"));
-                String date = substring.substring(0, substring.indexOf("}") + 1);
-                String format = localDateTime.format(DateTimeFormatter.ofPattern(date.substring(2, date.length() - 1)));
-                template = template.replace(date, format);
-            } catch (Exception e) {
-                log.error("时间格式模板失败：" + template);
+    public DescDto template(String template, Map<String, Object> map) {
+        List<DescV2Dto> resultList = new ArrayList<>();
+        StringBuilder desc = new StringBuilder();
+        List<String> stringList = splitTemplateByUid(template);
+        for (String s : stringList) {
+            if (s.startsWith("${@")) {
+                long uid = Long.parseLong(s.substring(3, s.length() - 1));
+                try {
+                    BiliApi.BiliUserCardResponseDto userCard = BiliApi.getUserCard(uid);
+                    if (userCard != null && userCard.getCode() == 0) {
+                        desc.append("@").append(userCard.getCard().getName());
+                        DescV2Dto descV2Dto = new DescV2Dto();
+                        descV2Dto.setBiz_id(uid);
+                        descV2Dto.setRaw_text("@" + userCard.getCard().getName());
+                        descV2Dto.setType(2);
+                        resultList.add(descV2Dto);
+                    }
+
+                } catch (Exception e) {
+                    log.error("@用户模板失败：{}", uid, e);
+                }
+            } else {
+                s = s.replace("${uname}", map.get("${uname}") != null ? map.get("${uname}").toString() : "")
+                        .replace("${title}", map.get("${title}") != null ? map.get("${title}").toString() : "")
+                        .replace("${index}", map.get("${index}") != null ? map.get("${index}").toString() : "")
+                        .replace("${areaName}", map.get("${areaName}") != null ? map.get("${areaName}").toString() : "")
+                        .replace("${roomId}", map.get("${roomId}") != null ? map.get("${roomId}").toString() : "");
+                if (s.contains("${")) {
+                    try {
+                        LocalDateTime localDateTime = (LocalDateTime)map.get("date");
+                        String substring = s.substring(s.indexOf("${"));
+                        String date = substring.substring(0, substring.indexOf("}") + 1);
+                        String format = localDateTime.format(DateTimeFormatter.ofPattern(date.substring(2, date.length() - 1)));
+                        s = s.replace(date, format);
+                    } catch (Exception e) {
+                        log.error("时间格式模板失败：{}", template);
+                    }
+                }
+                s = s.replace(",,", ",");
+
+                DescV2Dto descV2Dto = new DescV2Dto();
+                descV2Dto.setRaw_text(s);
+                descV2Dto.setType(1);
+                resultList.add(descV2Dto);
+                desc.append(s);
             }
+
         }
-        template = template.replace(",,", ",");
-        return template;
+        return new DescDto(desc.toString(), resultList);
+    }
+
+    @Data
+    @AllArgsConstructor
+    class DescDto {
+        public final String desc;
+        public final List<DescV2Dto> descV2Dtos;
     }
 }

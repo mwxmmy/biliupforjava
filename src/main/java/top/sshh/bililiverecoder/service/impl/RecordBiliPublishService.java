@@ -527,14 +527,14 @@ public class RecordBiliPublishService {
                     videoUploadDto.setDesc(this.template(room.getDescTemplate(), map).getDesc());
                     videoUploadDto.setDesc_v2(this.template(room.getDescTemplate(), map).getDescV2Dtos());
                     if(StringUtils.isNotBlank(room.getDynamicTemplate())){
-                        videoUploadDto.setDesc(videoUploadDto.getDesc());
-                        videoUploadDto.setDesc_v2(videoUploadDto.getDesc_v2());
+                        videoUploadDto.setDynamic(this.template(room.getDynamicTemplate(), map).getDesc());
+                        videoUploadDto.setDynamic_v2(this.template(room.getDynamicTemplate(), map).getDescV2Dtos());
                     }
                     videoUploadDto.setVideos(dtos);
                     videoUploadDto.setTag(this.template(room.getTags(), map).getDesc());
                     String uploadRes = null;
                     try {
-                        uploadRes = BiliApi.publish(biliBiliUser.getAccessToken(), videoUploadDto);
+                        uploadRes = BiliApi.publish(biliBiliUser, videoUploadDto);
                         log.info("uploadRes==>{}", uploadRes);
                         String bvid = JSON.parseObject(uploadRes).getJSONObject("data").getString("bvid");
                         String aid = JSON.parseObject(uploadRes).getJSONObject("data").getString("aid");
@@ -639,10 +639,11 @@ public class RecordBiliPublishService {
                 try {
                     BiliApi.BiliUserCardResponseDto userCard = BiliApi.getUserCard(uid);
                     if (userCard != null && userCard.getCode() == 0) {
-                        desc.append("@").append(userCard.getCard().getName());
+                        //必须带个空格，否则报错简介过长
+                        desc.append("@").append(userCard.getCard().getName() + " ");
                         DescV2Dto descV2Dto = new DescV2Dto();
-                        descV2Dto.setBiz_id(uid);
-                        descV2Dto.setRaw_text("@" + userCard.getCard().getName());
+                        descV2Dto.setBiz_id(String.valueOf(uid));
+                        descV2Dto.setRaw_text(userCard.getCard().getName());
                         descV2Dto.setType(2);
                         resultList.add(descV2Dto);
                     }

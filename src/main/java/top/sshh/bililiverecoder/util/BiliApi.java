@@ -234,19 +234,17 @@ public class BiliApi {
     }
 
 
-    public static String publish(String accessToken, VideoUploadDto data) {
-        String url = "https://member.bilibili.com/x/vu/client/add?access_key=" + accessToken;
-        Map<String, String> query = new HashMap<>();
-        query.put("access_key", accessToken);
-        String sign = sign(query, appSecret);
-        url = url + "&sign=" + sign;
+    public static String publish(BiliBiliUser user, VideoUploadDto data) {
+        WebCookie cookie = Cookie.parse(user.getCookies());
+        String url = "https://member.bilibili.com/x/vu/web/add/v3?t=" + System.currentTimeMillis() + "&csrf=" + cookie.getCsrf();
         Map<String, String> headers = new HashMap<>();
         long currentSecond = Instant.now().getEpochSecond();
         headers.put("Display-ID", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5-" + currentSecond);
         headers.put("Buvid", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5");
         headers.put("User-Agent", "Mozilla/5.0 BiliDroid/5.37.0 (bbcallen@gmail.com)");
         headers.put("Device-ID", "aBRoDWAVeRhsA3FDewMzS3lLMwM");
-
+        data.setCsrf(cookie.getCsrf());
+        headers.put("cookie", cookie.getCookie());
         String body = JSON.toJSONString(data);
         return HttpClientUtil.post(url, headers, body);
     }

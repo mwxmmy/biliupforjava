@@ -6,6 +6,10 @@ server:
       worker: 2
       io: 2
 spring:
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 200MB
   datasource:
     hikari:
       jdbc-url: jdbc:h2:retry:${record.work-path}/db

@@ -7,6 +7,7 @@ import java.util.List;
 
 @Data
 public class VideoUploadDto {
+    private Integer build = 1088;
     private Integer copyright = 2;
     private String cover = "";
     private String desc = "";

@@ -540,7 +540,10 @@ public class RecordBiliPublishService {
                     videoUploadDto.setTag(this.template(room.getTags(), map).getDesc());
                     String uploadRes = null;
                     try {
-                        uploadRes = BiliApi.publish(biliBiliUser, videoUploadDto);
+                        uploadRes = BiliApi.webPublish(biliBiliUser, videoUploadDto);
+                        if(uploadRes.contains("21138") && uploadRes.contains("分p视频上限")){
+                            uploadRes = BiliApi.clientPublish(biliBiliUser.getAccessToken(), videoUploadDto);
+                        }
                         log.info("uploadRes==>{}", uploadRes);
                         String bvid = JSON.parseObject(uploadRes).getJSONObject("data").getString("bvid");
                         String aid = JSON.parseObject(uploadRes).getJSONObject("data").getString("aid");

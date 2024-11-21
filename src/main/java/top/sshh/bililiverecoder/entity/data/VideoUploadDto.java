@@ -28,7 +28,7 @@ public class VideoUploadDto {
     private String source = "直播间: https://live.bilibili.com/${roomId}  稿件直播源";
     private String tag = "";
     private int desc_format_id = 39;
-    private Integer aid;
+    private String aid;
     private Integer tid = 27;
     private String title = "";
     private String dynamic = "";

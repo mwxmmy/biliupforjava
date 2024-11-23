@@ -23,8 +23,8 @@ public class VideoEditUploadDto {
     private Integer is_360 = -1;
     private String source = "直播间: https://live.bilibili.com/${roomId}  稿件直播源";
     private String tag = "";
-    private String desc_format_id = "0";
-    private String aid;
+    private int desc_format_id = 0;
+    private long aid;
     private Integer tid = 27;
     private String title = "";
     private String dynamic = "";

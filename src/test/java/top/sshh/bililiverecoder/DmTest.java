@@ -103,7 +103,7 @@ public class DmTest {
     // @Test
     public void preUploadTest(){
         BiliBiliUser biliUser = new BiliBiliUser();
-        biliUser.setCookies("bili_jct=a951dd04c28cffc2afabeb61cbec4972;DedeUserID=10043269;gourl=http%3A%2F%2Fwww.bilibili.com;Expires=15551000;DedeUserID__ckMd5=7cc21642fb0885c3;SESSDATA=d4f40ee7%2C1688531766%2Cfc874%2A11;");
+        biliUser.setCookies("");
         Map<String, String> params = new TreeMap<>();
         params.put("r","upos");
         params.put("profile","ugcupos/bup");

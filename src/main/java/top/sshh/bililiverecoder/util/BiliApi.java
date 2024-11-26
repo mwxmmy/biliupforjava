@@ -2,16 +2,12 @@ package top.sshh.bililiverecoder.util;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
-import com.jayway.jsonpath.JsonPath;
 import lombok.Data;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.RequestBody;
+import okhttp3.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 import top.sshh.bililiverecoder.entity.BiliBiliUser;
 import top.sshh.bililiverecoder.entity.LiveMsg;
@@ -23,7 +19,10 @@ import javax.crypto.Cipher;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.PublicKey;
@@ -40,13 +39,6 @@ public class BiliApi {
     private static String appKey = "4409e2ce8ffd12b8";
     private static String appSecret = "59b43e04ad6965f34319062b478f83dd";
 
-
-//    public static String getUserInfo(Long uid) {
-//        Map<String, String> additionalHeaders = new HashMap<>();
-//        additionalHeaders.put("referer", "https://live.bilibili.com/");
-//        additionalHeaders.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36");
-//        return HttpClientUtil.get("https://api.bilibili.com/x/space/acc/info?mid=" + uid, additionalHeaders);
-//    }
 
     public static String getLoginKey() {
         String url = "https://passport.bilibili.com/api/oauth2/getKey";
@@ -66,82 +58,6 @@ public class BiliApi {
         headers.put("Device-ID", "aBRoDWAVeRhsA3FDewMzS3lLMwM");
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(url);
         params.forEach(uriBuilder::queryParam);
-        return HttpClientUtil.post(url, headers, params, true);
-    }
-
-
-    public static String getKeyAndLogin(String username, String password) {
-        String loginKeyResp = getLoginKey();
-        String hash = JsonPath.read(loginKeyResp, "data.hash");
-        String key = JsonPath.read(loginKeyResp, "data.key");
-        String loginResp = login(hash, key, username, password,
-                "", "", "");
-        String codeUrl;
-        try {
-            codeUrl = JsonPath.read(loginResp, "data.url");
-        } catch (Exception e) {
-            // 正常
-            return loginResp;
-        }
-        if (StringUtils.isNotBlank(codeUrl)) {
-            // 解析url中的challenge
-            UriComponents urlComponents = UriComponentsBuilder.fromHttpUrl(codeUrl)
-                    .build();
-            String challenge = urlComponents.getQueryParams().get("challenge").get(0);
-            log.info("请在浏览器中打开 {}", codeUrl);
-            log.info("请输入validate :");
-            String validate = new Scanner(System.in).nextLine();
-            log.info("请输入challenge :");
-            challenge = new Scanner(System.in).nextLine();
-            String seccode = validate + "|jordan";
-            loginKeyResp = getLoginKey();
-            hash = JsonPath.read(loginKeyResp, "data.hash");
-            key = JsonPath.read(loginKeyResp, "data.key");
-            loginResp = login(hash, key, username, password, challenge, seccode, validate);
-            System.out.println(loginResp);
-        }
-        return loginResp;
-    }
-
-
-    public static String login(
-            String hash,
-            String key,
-            String username,
-            String password,
-            String challenge,
-            String seccode,
-            String validate) {
-
-        Map<String, String> params = new TreeMap<>();
-        params.put("appkey", appKey);
-        params.put("build", "101800");
-        params.put("channel", "html5_app_bili");
-        params.put("mobi_app", "android");
-        params.put("platform", "android");
-        params.put("ts", "" + System.currentTimeMillis() / 1000);
-
-        Map<String, String> headers = new HashMap<>();
-        long currentSecond = Instant.now().getEpochSecond();
-        headers.put("Display-ID", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5-" + currentSecond);
-        headers.put("Buvid", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5");
-        headers.put("User-Agent", "Mozilla/5.0 BiliDroid/5.37.0 (bbcallen@gmail.com)");
-        headers.put("Device-ID", "aBRoDWAVeRhsA3FDewMzS3lLMwM");
-
-        params.put("username", username);
-        params.put("password", rsa(hash + password, key));
-        if (StringUtils.isNotBlank(challenge)) {
-            params.put("challenge", challenge);
-            params.put("seccode", seccode);
-            params.put("validate", validate);
-        } else {
-            params.put("challenge", "");
-            params.put("seccode", "");
-            params.put("validate", "");
-        }
-
-        params.put("sign", sign(params, appSecret));
-        String url = "https://passport.bilibili.com/x/passport-login/oauth2/login";
         return HttpClientUtil.post(url, headers, params, true);
     }
 
@@ -207,6 +123,7 @@ public class BiliApi {
         params.forEach(uriBuilder::queryParam);
         return HttpClientUtil.get(uriBuilder.toUriString(), headers);
     }
+
     public static String preUpload(BiliBiliUser user, Map<String, String> param) {
         String url = "https://member.bilibili.com/preupload";
         Map<String, String> params = new TreeMap<>();
@@ -238,13 +155,9 @@ public class BiliApi {
         WebCookie cookie = Cookie.parse(user.getCookies());
         String url = "https://member.bilibili.com/x/vu/web/add/v3?t=" + System.currentTimeMillis() + "&csrf=" + cookie.getCsrf();
         Map<String, String> headers = new HashMap<>();
-        long currentSecond = Instant.now().getEpochSecond();
-        headers.put("Display-ID", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5-" + currentSecond);
-        headers.put("Buvid", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5");
-        headers.put("User-Agent", "Mozilla/5.0 BiliDroid/5.37.0 (bbcallen@gmail.com)");
-        headers.put("Device-ID", "aBRoDWAVeRhsA3FDewMzS3lLMwM");
         data.setCsrf(cookie.getCsrf());
-        headers.put("cookie", cookie.getCookie());
+        BiliResponseDto<BillBuvId> buvId = getBuvId();
+        headers.put("cookie", cookie.getCookie() + "buvid3=" + buvId.getData().getB3() + ";buvid4=" + buvId.getData().getB4());
         String body = JSON.toJSONString(data);
         return HttpClientUtil.post(url, headers, body);
     }
@@ -293,8 +206,8 @@ public class BiliApi {
         headers.put("cookie", user.getCookies());
         MultipartBody multipartBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
-                .addFormDataPart("access_key",user.getAccessToken())
-                .addFormDataPart("sign",sign(query, appSecret))
+                .addFormDataPart("access_key", user.getAccessToken())
+                .addFormDataPart("sign", sign(query, appSecret))
                 .addFormDataPart("file", fileName, RequestBody.create(fileBytes, MediaType.parse("image/png")))
                 .build();
         return HttpClientUtil.post(url, headers, multipartBody);
@@ -308,10 +221,10 @@ public class BiliApi {
 
         long allLength = r.length();
         long start = (nowChunk - 1) * size;
-        if(start+size>allLength){
-            size = allLength-start;
+        if (start + size > allLength) {
+            size = allLength - start;
         }
-        ShardingInputStream shardingInputStream = new ShardingInputStream(r, start,size);
+        ShardingInputStream shardingInputStream = new ShardingInputStream(r, start, size);
         String md5 = DigestUtils.md5Hex(shardingInputStream);
         shardingInputStream.reset();
         ChunkUploadRequestBody chunkUploadRequestBody = new ChunkUploadRequestBody(shardingInputStream);
@@ -453,7 +366,7 @@ public class BiliApi {
         params.put("type", reply.getType());
         params.put("message", reply.getMessage());
         params.put("oid", reply.getOid());
-        if(StringUtils.isNotBlank(reply.getParent())){
+        if (StringUtils.isNotBlank(reply.getParent())) {
             params.put("root", reply.getRoot());
             params.put("parent", reply.getParent());
         }
@@ -514,6 +427,15 @@ public class BiliApi {
         return resp;
     }
 
+    public static BiliResponseDto<GenerateQRDto> generateQRUrlWeb() {
+        Map<String, String> headers = new TreeMap<>();
+        String res = HttpClientUtil.get("https://passport.bilibili.com/x/passport-login/web/qrcode/generate", headers);
+        BiliResponseDto<GenerateQRDto> resp = JSON.parseObject(res, new TypeReference<BiliResponseDto<GenerateQRDto>>() {
+        });
+        return resp;
+    }
+
+
     public static String loginOnTV(String authCode) {
         String url = "https://passport.bilibili.com/x/passport-tv-login/qrcode/poll";
         Map<String, String> params = new TreeMap<>();
@@ -524,6 +446,54 @@ public class BiliApi {
         params.put("sign", "" + sign(params, "59b43e04ad6965f34319062b478f83dd"));
         return HttpClientUtil.post(url, new HashMap<>(), params, true);
     }
+
+    public static BiliWebLoginDto loginOnWeb(String qrcodeKey) {
+        String url = "https://passport.bilibili.com/x/passport-login/web/qrcode/poll?qrcode_key=" + qrcodeKey;
+        Map<String, String> headers = new TreeMap<>();
+        try {
+            Response response = HttpClientUtil.getClient().newCall(new Request.Builder()
+                    .url(url)
+                    .headers(Headers.of(headers))
+                    .get()
+                    .build()
+            ).execute();
+            String loginResp = response.body().string();
+            BiliWebLoginDto webLoginDto = JSON.parseObject(loginResp, BiliWebLoginDto.class);
+            if (webLoginDto.getCode() == 0 && StringUtils.isNotBlank(webLoginDto.getData().getUrl())) {
+                String url2 = webLoginDto.getData().getUrl();
+                String SESSDATA = getParameterValueFromUrl(url2, "SESSDATA");
+                String bili_jct = getParameterValueFromUrl(url2, "bili_jct");
+                String DedeUserID = getParameterValueFromUrl(url2, "DedeUserID");
+                String DedeUserID__ckMd5 = getParameterValueFromUrl(url2, "DedeUserID__ckMd5");
+                String sid = getParameterValueFromUrl(url2, "sid");
+                webLoginDto.setCookie("bili_jct=" + bili_jct + ";SESSDATA=" + SESSDATA + ";DedeUserID=" + DedeUserID + ";DedeUserID__ckMd5=" + DedeUserID__ckMd5 + ";sid+" + sid + ";");
+            }
+            return webLoginDto;
+        } catch (
+                UnknownHostException e) {
+            try {
+                Thread.sleep(5000L);
+            } catch (Exception ignored) {
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e.getMessage());
+        }
+        return null;
+    }
+
+    public static BiliResponseDto<BillBuvId> getBuvId() {
+        String url = "https://api.bilibili.com/x/frontend/finger/spi";
+        Map<String, String> additionalHeaders = new HashMap<>();
+        additionalHeaders.put("referer", "https://live.bilibili.com/");
+        additionalHeaders.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36");
+        String res = HttpClientUtil.get(url, additionalHeaders);
+        BiliResponseDto<BillBuvId> resp = JSON.parseObject(res, new TypeReference<BiliResponseDto<BillBuvId>>() {
+        });
+        return resp;
+    }
+
     public static String refreshToken(BiliBiliUser user) {
         String url = "https://passport.bilibili.com/api/v2/oauth2/refresh_token";
         Map<String, String> params = new TreeMap<>();
@@ -532,7 +502,7 @@ public class BiliApi {
         params.put("refresh_token", user.getRefreshToken());
         params.put("ts", String.valueOf(System.currentTimeMillis()));
         Map<String, String> headers = new HashMap<>();
-        if(StringUtils.isNotBlank(user.getCookies())){
+        if (StringUtils.isNotBlank(user.getCookies())) {
             headers.put("cookie", user.getCookies());
         }
         params.put("sign", "" + sign(params, "59b43e04ad6965f34319062b478f83dd"));
@@ -564,6 +534,41 @@ public class BiliApi {
         }
     }
 
+    /**
+     * 从URL中获取指定名称的查询参数值。
+     *
+     * @param url           URL字符串
+     * @param parameterName 要获取的参数名称
+     * @return 指定名称的参数值，如果不存在则返回null
+     */
+    public static String getParameterValueFromUrl(String url, String parameterName) {
+        try {
+            // 解析URL
+            URI uri = new URI(url);
+            String query = uri.getQuery();
+
+            if (query == null || query.isEmpty()) {
+                return null;
+            }
+
+            // 解析查询参数
+            Map<String, String> parameters = new HashMap<>();
+            for (String param : query.split("&")) {
+                String[] pair = param.split("=");
+                if (pair.length == 2) {
+                    parameters.put(pair[0], pair[1]);
+                } else if (pair.length == 1) {
+                    parameters.put(pair[0], "");
+                }
+            }
+
+            // 返回指定名称的参数值
+            return parameters.get(parameterName);
+
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Invalid URL: " + url, e);
+        }
+    }
 
     public static void main(String[] args) {
         System.out.println(generateQRUrlTV());
@@ -592,5 +597,6 @@ public class BiliApi {
     public static class GenerateQRDto {
         private String url;
         private String auth_code;
+        private String qrcode_key;
     }
 }

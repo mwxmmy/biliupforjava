@@ -35,6 +35,21 @@ public class RecordRoom {
 
     private int copyright = 1;
 
+    /**
+     * 合集id
+     */
+    private Long seasonId;
+
+    /**
+     * 仅自己可见
+     */
+    private int isOnlySelf = 0;
+
+    /**
+     * 不发布动态
+     */
+    private int noDisturbance = 0;
+
     private String coverUrl = "live";
 
     /**

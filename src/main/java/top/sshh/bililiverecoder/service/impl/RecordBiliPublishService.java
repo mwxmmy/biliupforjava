@@ -528,6 +528,8 @@ public class RecordBiliPublishService {
                     videoUploadDto.setTid(room.getTid());
                     videoUploadDto.setCover(coverUrl);
                     videoUploadDto.setCopyright(room.getCopyright());
+                    videoUploadDto.setNo_disturbance(room.getIsOnlySelf());
+                    videoUploadDto.setIs_only_self(room.getIsOnlySelf());
                     videoUploadDto.setTitle(this.template(room.getTitleTemplate(), map).getDesc());
                     videoUploadDto.setSource(this.template(videoUploadDto.getSource(), map).getDesc());
                     videoUploadDto.setDesc(this.template(room.getDescTemplate(), map).getDesc());
@@ -557,6 +559,16 @@ public class RecordBiliPublishService {
                         history.setPublish(true);
                         history = historyRepository.save(history);
                         log.info("发布={}=视频成功 == > {}", room.getUname(), JSON.toJSONString(history));
+                        try {
+                            String addSeasons = BiliApi.addSeasons(biliBiliUser, room.getSeasonId(), aid, String.valueOf(uploadParts.get(0).getCid()), videoUploadDto.getTitle());
+                            Integer code = JsonPath.read(addSeasons, "code");
+                            if (code == 0) {
+                                log.info("{}=加入合集成功 == > {}", history.getTitle(), JSON.toJSONString(history));
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            log.error("{}=加入合集失败 == > {}", history.getTitle(), JSON.toJSONString(history));
+                        }
                         if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("视频投稿")) {
                             Message message = new Message();
                             message.setAppToken(wxToken);

@@ -9,7 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import top.sshh.bililiverecoder.entity.*;
-import top.sshh.bililiverecoder.repo.*;
+import top.sshh.bililiverecoder.repo.BiliUserRepository;
+import top.sshh.bililiverecoder.repo.RecordHistoryPartRepository;
+import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
+import top.sshh.bililiverecoder.repo.RecordRoomRepository;
 import top.sshh.bililiverecoder.util.BiliApi;
 import top.sshh.bililiverecoder.util.UploadEnums;
 
@@ -166,6 +169,9 @@ public class RoomController {
             dbRoom.setTags(room.getTags());
             dbRoom.setUpload(room.isUpload());
             dbRoom.setUploadUserId(room.getUploadUserId());
+            dbRoom.setSeasonId(room.getSeasonId());
+            dbRoom.setIsOnlySelf(room.getIsOnlySelf());
+            dbRoom.setNoDisturbance(room.getNoDisturbance());
             dbRoom.setTitleTemplate(room.getTitleTemplate());
             dbRoom.setPartTitleTemplate(room.getPartTitleTemplate());
             dbRoom.setDescTemplate(room.getDescTemplate());
@@ -227,7 +233,7 @@ public class RoomController {
     }
 
     @GetMapping("/delete/{roomId}")
-    public Map<String, String> add(@PathVariable("roomId") Long roomId) {
+    public Map<String, String> delete(@PathVariable("roomId") Long roomId) {
         Map<String, String> result = new HashMap<>();
         if (roomId == null) {
             result.put("type", "info");
@@ -343,5 +349,18 @@ public class RoomController {
 
 
         return template;
+    }
+
+    @GetMapping("/seasons/{roomId}")
+    public String seasons(@PathVariable("roomId") Long roomId) {
+        Optional<RecordRoom> roomOptional = roomRepository.findById(roomId);
+        if (roomOptional.isPresent()) {
+            RecordRoom room = roomOptional.get();
+            if (room.getUploadUserId() != null) {
+                BiliBiliUser biliUser = userRepository.findById(room.getUploadUserId()).get();
+                return BiliApi.getSeasons(biliUser);
+            }
+        }
+        return null;
     }
 }

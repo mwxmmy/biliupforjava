@@ -281,6 +281,43 @@ public class BiliApi {
         return HttpClientUtil.get(uriBuilder.toUriString(), headers);
     }
 
+    /**
+     * 加入合集
+     *
+     * @param user
+     * @return
+     */
+    public static String addSeasons(BiliBiliUser user, long sectionId, String aid, String cid, String title) {
+        WebCookie cookie = Cookie.parse(user.getCookies());
+        String url = "https://member.bilibili.com/x2/creative/web/season/section/episodes/add?t=" + System.currentTimeMillis() + "&csrf=" + cookie.getCsrf();
+        Map<String, Object> params = new TreeMap<>();
+        params.put("csrf", cookie.getCsrf());
+        params.put("sectionId", sectionId);
+        Map<String, Object> episodes = new HashMap<>();
+        episodes.put("aid", Long.valueOf(aid));
+        episodes.put("cid", Long.valueOf(cid));
+        episodes.put("title", title);
+        episodes.put("charging_pay", 0);
+        params.put("episodes", Collections.singletonList(episodes));
+        Map<String, String> headers = new HashMap<>();
+        headers.put("referer", "https://member.bilibili.com/platform/upload/video/frame?page_from=creative_home_top_upload");
+        headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36");
+        BiliResponseDto<BillBuvId> buvId = getBuvId();
+        headers.put("cookie", cookie.getCookie() + "buvid3=" + buvId.getData().getB3() + ";buvid4=" + buvId.getData().getB4());
+        return HttpClientUtil.postJson(url, headers, params, true);
+    }
+
+    public static String getSeasons(BiliBiliUser user) {
+        WebCookie cookie = Cookie.parse(user.getCookies());
+        String url = "https://member.bilibili.com/x2/creative/web/seasons?pn=1&ps=50";
+        Map<String, String> headers = new HashMap<>();
+        headers.put("referer", "https://member.bilibili.com/platform/upload/video/frame?page_from=creative_home_top_upload");
+        headers.put("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36");
+        BiliResponseDto<BillBuvId> buvId = getBuvId();
+        headers.put("cookie", cookie.getCookie() + "buvid3=" + buvId.getData().getB3() + ";buvid4=" + buvId.getData().getB4());
+        return HttpClientUtil.get(url, headers);
+    }
+
     public static BiliVideoInfoResponse getVideoInfo(String bvid) {
         String url = "https://api.bilibili.com/x/web-interface/view";
         Map<String, String> params = new TreeMap<>();

@@ -211,6 +211,35 @@
                     <el-option label="否" :value="2"></el-option>
                 </el-select>
             </el-form-item>
+            <el-form-item :label-width="formLabelWidth" label="是否仅自己可见">
+                <el-select placeholder="请选择" v-model="room.isOnlySelf">
+                    <el-option :value="1" label="是"></el-option>
+                    <el-option :value="0" label="否"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item :label-width="formLabelWidth" label="合集选择">
+                <el-row>
+                    <el-col :span="7">
+                        <el-input autocomplete="off" type="number" v-model="room.seasonId"></el-input>
+                    </el-col>
+                </el-row>
+                <template>
+                    <el-select clearable filterable placeholder="请选择" v-model="room.seasonId">
+                        <el-option
+                                :key="item.sections.sections[0].id"
+                                :label="item.season.title"
+                                :value="item.sections.sections[0].id"
+                                v-for="item in seasonsList">
+                        </el-option>
+                    </el-select>
+                </template>
+            </el-form-item>
+            <el-form-item :label-width="formLabelWidth" label="是否发布动态">
+                <el-select placeholder="请选择" v-model="room.noDisturbance">
+                    <el-option :value="1" label="否"></el-option>
+                    <el-option :value="0" label="是"></el-option>
+                </el-select>
+            </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="上传线路">
                 <el-select placeholder="请选择" v-model="room.line">
                     <el-option :label="item" :value="item" v-for="item in lines"></el-option>
@@ -403,6 +432,7 @@
         el: '#roomTable',
         data: {
             loading: false,
+            seasonsList: [],
             typeList: [
                 {
                     "id": 160,
@@ -1885,9 +1915,11 @@
             handleEdit: function (index, row) {
                 this.room = row;
                 this.dialogFormVisible = true;
+                this.getSeasons(row.id);
             },
             handleEeditLiveMsg: function (index, row) {
                 this.room = row;
+                seasonsList = [];
                 this.editLiveMsgSettingVisible = true;
             },
             updateRoom: function () {
@@ -1984,6 +2016,18 @@
                             type: data.type
                         });
                         _this.initTable();
+                    }
+                });
+            },
+            getSeasons: function (roomId) {
+                let _this = this;
+                $.ajax({
+                    url: '/room/seasons/' + roomId,
+                    contentType: 'application/json;charset=utf-8',
+                    type: 'get',
+                    dataType: 'json',
+                    success: function (data) {
+                        _this.seasonsList = data.data.seasons;
                     }
                 });
             },

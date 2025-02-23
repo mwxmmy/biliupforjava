@@ -1,5 +1,6 @@
 package top.sshh.bililiverecoder.util;
 
+import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 
@@ -83,6 +84,27 @@ public class HttpClientUtil {
                 .headers(Headers.of(headers))
                 .url(url)
                 .post(formBody)
+                .build();
+        OkHttpClient currentClient = allowCookie ? clientAllowCookie : client;
+        try {
+
+            Response response = currentClient.newCall(build).execute();
+            String string = response.body().string();
+            return string;
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    public static String postJson(String url, Map<String, String> headers,
+                                  Map<String, Object> formParams,
+                                  Boolean allowCookie) {
+        RequestBody requestBody = RequestBody.create(JSON.toJSONString(formParams), MediaType.get("application/json; charset=utf-8"));
+        Request build = new Request.Builder()
+                .headers(Headers.of(headers))
+                .url(url)
+                .post(requestBody)
                 .build();
         OkHttpClient currentClient = allowCookie ? clientAllowCookie : client;
         try {

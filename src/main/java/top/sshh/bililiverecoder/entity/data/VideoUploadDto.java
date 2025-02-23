@@ -20,6 +20,7 @@ public class VideoUploadDto {
     private Integer web_os = 1;
     private Integer dolby = 0;
     private Integer is_only_self = 0;
+    private Integer no_disturbance = 0;
     private Integer lossless_music = 0;
     private String cover43 = "";
     private boolean handle_staff = false;

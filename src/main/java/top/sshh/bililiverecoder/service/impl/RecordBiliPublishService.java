@@ -548,6 +548,10 @@ public class RecordBiliPublishService {
                         }
                         String bvid = JSON.parseObject(uploadRes).getJSONObject("data").getString("bvid");
                         String aid = JSON.parseObject(uploadRes).getJSONObject("data").getString("aid");
+                        if(StringUtils.isBlank(bvid) || StringUtils.isBlank(aid)){
+                            log.info("发布={}=视频失败 == > {}", room.getUname(), uploadRes);
+                            throw new RuntimeException(uploadRes);
+                        }
                         history.setBvId(bvid);
                         history.setAvId(aid);
                         history.setPublish(true);

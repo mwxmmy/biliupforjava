@@ -34,6 +34,13 @@
                 <el-option label="否" value="false"></el-option>
             </el-select>
         </el-form-item>
+        <el-form-item label="是否审核通过">
+            <el-select @change="initTable" clearable placeholder="请选择" v-model="form.code">
+                <el-option label="全部" value=""></el-option>
+                <el-option label="是" value="0"></el-option>
+                <el-option label="否" value="-2"></el-option>
+            </el-select>
+        </el-form-item>
         <el-form-item label="结束时间">
             <el-date-picker
                     placeholder="开始时间"

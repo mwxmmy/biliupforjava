@@ -66,6 +66,7 @@ public class RecordBiliPublishService {
         workPath = workPath.replaceAll("\\\\\\\\", "\\\\");
         workPath = workPath.replace("\\", "/");
     }
+
     @Autowired
     private BiliUserRepository biliUserRepository;
     @Autowired
@@ -217,7 +218,9 @@ public class RecordBiliPublishService {
             videoUploadDto.setCover(history.getCoverUrl());
             videoUploadDto.setCopyright(room.getCopyright());
             videoUploadDto.setTitle(this.template(room.getTitleTemplate(), map).getDesc());
-            videoUploadDto.setSource(this.template(videoUploadDto.getSource(), map).getDesc());
+            if (videoUploadDto.getCopyright() == 2) {
+                videoUploadDto.setSource(this.template(videoUploadDto.getSource(), map).getDesc());
+            }
             videoUploadDto.setDesc(this.template(room.getDescTemplate(), map).getDesc());
             videoUploadDto.setDesc_v2(this.template(room.getDescTemplate(), map).getDescV2Dtos());
             videoUploadDto.setDynamic(this.template(room.getDescTemplate(), map).getDesc());
@@ -265,7 +268,7 @@ public class RecordBiliPublishService {
             log.error("视频状态为已发布，退出==>{}", JSON.toJSONString(history));
             return false;
         }
-        if (history.getUploadRetryCount()>10) {
+        if (history.getUploadRetryCount() > 10) {
             log.error("视频发布重试次数过多，退出==>{}", JSON.toJSONString(history));
             return false;
         }
@@ -303,21 +306,21 @@ public class RecordBiliPublishService {
                 TaskUtil.publishTask.remove(history.getId());
                 return false;
             }
-            if(uploadParts.size()>100){
+            if (uploadParts.size() > 100) {
                 log.error("录制异常，该录制历史part数量已超过100，强制分次投稿");
                 //更新唯一键,更新录制状态
                 String eventId = history.getEventId();
                 String sessionId = history.getSessionId();
-                history.setEventId(eventId +1);
-                history.setSessionId(sessionId +1);
+                history.setEventId(eventId + 1);
+                history.setSessionId(sessionId + 1);
                 history = historyRepository.save(history);
 
                 List<RecordHistoryPart> subList = uploadParts.subList(100, uploadParts.size());
-                if(!subList.isEmpty()){
+                if (!subList.isEmpty()) {
                     //创建新的录制历史
                     history.setId(null);
-                    history.setEventId(eventId +2);
-                    history.setSessionId(sessionId +2);
+                    history.setEventId(eventId + 2);
+                    history.setSessionId(sessionId + 2);
                     history.setStartTime(subList.get(0).getStartTime());
                     history = historyRepository.save(history);
                     for (RecordHistoryPart part : subList) {
@@ -330,7 +333,7 @@ public class RecordBiliPublishService {
                         message.setContentType(Message.CONTENT_TYPE_TEXT);
                         message.setContent(WX_MSG_FORMAT.formatted("投稿失败", room.getUname(), room.getTitle(),
                                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")),
-                                "分p数量超过100,将在切割后再次投稿，当前分P数量为："+uploadParts.size()));
+                                "分p数量超过100,将在切割后再次投稿，当前分P数量为：" + uploadParts.size()));
                         message.setUid(wxuid);
                         WxPusher.send(message);
                     }
@@ -356,7 +359,7 @@ public class RecordBiliPublishService {
                         uploadPart.setRecording(false);
                         if (uploadPart.getFileSize() == 0 || uploadPart.getDuration() == 0) {
                             uploadPart.setFileSize(file.length());
-                            uploadPart.setDuration((float) file.length() / 1024 / 1024);
+                            uploadPart.setDuration((float)file.length() / 1024 / 1024);
                         }
                         uploadPart = partRepository.save(uploadPart);
                         if (uploadPart.getEndTime().isAfter(now.plusMinutes(11L))) {
@@ -513,7 +516,7 @@ public class RecordBiliPublishService {
                             if (!cover.exists()) {
                                 cover = new File(filePath.replaceAll(".cover.jpg", ".cover.png"));
                             }
-                            byte[] bytes = new byte[(int) cover.length()];
+                            byte[] bytes = new byte[(int)cover.length()];
                             FileInputStream inputStream = new FileInputStream(cover);
                             inputStream.read(bytes);
                             inputStream.close();
@@ -536,10 +539,12 @@ public class RecordBiliPublishService {
                     videoUploadDto.setNo_disturbance(room.getIsOnlySelf());
                     videoUploadDto.setIs_only_self(room.getIsOnlySelf());
                     videoUploadDto.setTitle(this.template(room.getTitleTemplate(), map).getDesc());
-                    videoUploadDto.setSource(this.template(videoUploadDto.getSource(), map).getDesc());
+                    if (videoUploadDto.getCopyright() == 2) {
+                        videoUploadDto.setSource(this.template(videoUploadDto.getSource(), map).getDesc());
+                    }
                     videoUploadDto.setDesc(this.template(room.getDescTemplate(), map).getDesc());
                     videoUploadDto.setDesc_v2(this.template(room.getDescTemplate(), map).getDescV2Dtos());
-                    if(StringUtils.isNotBlank(room.getDynamicTemplate())){
+                    if (StringUtils.isNotBlank(room.getDynamicTemplate())) {
                         videoUploadDto.setDynamic(this.template(room.getDynamicTemplate(), map).getDesc());
                         videoUploadDto.setDynamic_v2(this.template(room.getDynamicTemplate(), map).getDescV2Dtos());
                     }
@@ -549,14 +554,14 @@ public class RecordBiliPublishService {
                     try {
                         uploadRes = BiliApi.webPublish(biliBiliUser, videoUploadDto);
                         log.info("webPublish uploadRes==>{}", uploadRes);
-                        if(uploadRes.contains("验证码")){
+                        if (uploadRes.contains("验证码")) {
                             Thread.sleep(120 * 1000L);
                             uploadRes = BiliApi.webPublish(biliBiliUser, videoUploadDto);
                             log.info("clientPublish uploadRes==>{}", uploadRes);
                         }
                         String bvid = JSON.parseObject(uploadRes).getJSONObject("data").getString("bvid");
                         String aid = JSON.parseObject(uploadRes).getJSONObject("data").getString("aid");
-                        if(StringUtils.isBlank(bvid) || StringUtils.isBlank(aid)){
+                        if (StringUtils.isBlank(bvid) || StringUtils.isBlank(aid)) {
                             log.info("发布={}=视频失败 == > {}", room.getUname(), uploadRes);
                             throw new RuntimeException(uploadRes);
                         }
@@ -566,7 +571,7 @@ public class RecordBiliPublishService {
                         history = historyRepository.save(history);
                         log.info("发布={}=视频成功 == > {}", room.getUname(), JSON.toJSONString(history));
                         try {
-                            if(room.getSeasonId() != null && room.getSeasonId() > 0){
+                            if (room.getSeasonId() != null && room.getSeasonId() > 0) {
                                 String addSeasons = BiliApi.addSeasons(biliBiliUser, room.getSeasonId(), aid, String.valueOf(uploadParts.get(0).getCid()), videoUploadDto.getTitle());
                                 Integer code = JsonPath.read(addSeasons, "code");
                                 if (code == 0) {
@@ -582,7 +587,7 @@ public class RecordBiliPublishService {
                             message.setAppToken(wxToken);
                             message.setContentType(Message.CONTENT_TYPE_TEXT);
                             message.setContent(WX_MSG_FORMAT.formatted("投稿成功", room.getUname(), room.getTitle(),
-                                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), "bvid=>"+bvid));
+                                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), "bvid=>" + bvid));
                             message.setUid(wxuid);
                             WxPusher.send(message);
                         }
@@ -591,28 +596,28 @@ public class RecordBiliPublishService {
                         try {
                             for (RecordHistoryPart part : uploadParts) {
                                 String filePath = part.getFilePath();
-                                if(room.getDeleteType() == 9){
+                                if (room.getDeleteType() == 9) {
                                     File file = new File(filePath);
                                     boolean delete = file.delete();
-                                    if(delete){
+                                    if (delete) {
                                         log.error("{}=>文件删除成功！！！", filePath);
-                                    }else {
+                                    } else {
                                         log.error("{}=>文件删除失败！！！", filePath);
                                     }
-                                }else if(StringUtils.isNotBlank(room.getMoveDir()) && room.getDeleteType() == 10){
+                                } else if (StringUtils.isNotBlank(room.getMoveDir()) && room.getDeleteType() == 10) {
 
                                     String fileName = filePath.substring(filePath.lastIndexOf("/") + 1, filePath.lastIndexOf("."));
-                                    String startDirPath = filePath.substring(0,filePath.lastIndexOf('/')+1);
-                                    String toDirPath = room.getMoveDir() + filePath.substring(0,filePath.lastIndexOf('/')+1).replace(workPath, "");
+                                    String startDirPath = filePath.substring(0, filePath.lastIndexOf('/') + 1);
+                                    String toDirPath = room.getMoveDir() + filePath.substring(0, filePath.lastIndexOf('/') + 1).replace(workPath, "");
                                     File toDir = new File(toDirPath);
-                                    if(!toDir.exists()){
+                                    if (!toDir.exists()) {
                                         toDir.mkdirs();
                                     }
                                     File startDir = new File(startDirPath);
                                     File[] files = startDir.listFiles((file, s) -> s.startsWith(fileName));
-                                    if(files != null){
+                                    if (files != null) {
                                         for (File file : files) {
-                                            if(! filePath.startsWith(workPath)){
+                                            if (!filePath.startsWith(workPath)) {
                                                 part.setFileDelete(true);
                                                 part = partRepository.save(part);
                                                 continue;
@@ -621,7 +626,7 @@ public class RecordBiliPublishService {
                                                 Files.move(Paths.get(file.getPath()), Paths.get(toDirPath + file.getName()),
                                                         StandardCopyOption.REPLACE_EXISTING);
                                                 log.error("{}=>文件移动成功！！！", file.getName());
-                                            }catch (Exception e){
+                                            } catch (Exception e) {
                                                 log.error("{}=>文件移动失败！！！", file.getName());
                                             }
                                         }
@@ -632,7 +637,7 @@ public class RecordBiliPublishService {
                                     part = partRepository.save(part);
                                 }
                             }
-                        }catch (Exception de){
+                        } catch (Exception de) {
                             de.printStackTrace();
                             log.error("投稿成功后发生处理文件删除移动发生异常：", de);
                         }

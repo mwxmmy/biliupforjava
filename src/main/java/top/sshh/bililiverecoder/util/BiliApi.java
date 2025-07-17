@@ -208,7 +208,7 @@ public class BiliApi {
         MultipartBody multipartBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("t", String.valueOf(System.currentTimeMillis()))
-                .addFormDataPart("file", fileName, RequestBody.create(fileBytes, MediaType.parse("image/png")))
+                .addFormDataPart("cover", fileName, RequestBody.create(fileBytes, MediaType.parse("image/png")))
                 .build();
         return HttpClientUtil.post(url, headers, multipartBody);
     }

@@ -518,6 +518,7 @@ public class RecordBiliPublishService {
                             inputStream.read(bytes);
                             inputStream.close();
                             String uploadCoverResponse = BiliApi.uploadCover(biliBiliUser, cover.getName(), bytes);
+                            log.info("clientPublish uploadCover==>{}", uploadCoverResponse);
                             coverUrl = JsonPath.read(uploadCoverResponse, "data.url");
                             history.setCoverUrl(coverUrl);
                             history = historyRepository.save(history);
@@ -565,10 +566,12 @@ public class RecordBiliPublishService {
                         history = historyRepository.save(history);
                         log.info("发布={}=视频成功 == > {}", room.getUname(), JSON.toJSONString(history));
                         try {
-                            String addSeasons = BiliApi.addSeasons(biliBiliUser, room.getSeasonId(), aid, String.valueOf(uploadParts.get(0).getCid()), videoUploadDto.getTitle());
-                            Integer code = JsonPath.read(addSeasons, "code");
-                            if (code == 0) {
-                                log.info("{}=加入合集成功 == > {}", history.getTitle(), JSON.toJSONString(history));
+                            if(room.getSeasonId() != null && room.getSeasonId() > 0){
+                                String addSeasons = BiliApi.addSeasons(biliBiliUser, room.getSeasonId(), aid, String.valueOf(uploadParts.get(0).getCid()), videoUploadDto.getTitle());
+                                Integer code = JsonPath.read(addSeasons, "code");
+                                if (code == 0) {
+                                    log.info("{}=加入合集成功 == > {}", history.getTitle(), JSON.toJSONString(history));
+                                }
                             }
                         } catch (Exception e) {
                             e.printStackTrace();

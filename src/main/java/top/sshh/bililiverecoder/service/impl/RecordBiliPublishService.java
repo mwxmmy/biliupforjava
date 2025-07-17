@@ -265,6 +265,10 @@ public class RecordBiliPublishService {
             log.error("视频状态为已发布，退出==>{}", JSON.toJSONString(history));
             return false;
         }
+        if (history.getUploadRetryCount()>10) {
+            log.error("视频发布重试次数过多，退出==>{}", JSON.toJSONString(history));
+            return false;
+        }
         Thread publishThread = TaskUtil.publishTask.get(history.getId());
         if (publishThread != null) {
             //正在发布，直接退出
@@ -309,7 +313,7 @@ public class RecordBiliPublishService {
                 history = historyRepository.save(history);
 
                 List<RecordHistoryPart> subList = uploadParts.subList(100, uploadParts.size());
-                if(subList.size()>0){
+                if(!subList.isEmpty()){
                     //创建新的录制历史
                     history.setId(null);
                     history.setEventId(eventId +2);
@@ -544,8 +548,9 @@ public class RecordBiliPublishService {
                     try {
                         uploadRes = BiliApi.webPublish(biliBiliUser, videoUploadDto);
                         log.info("webPublish uploadRes==>{}", uploadRes);
-                        if(uploadRes.contains("21138") && uploadRes.contains("分p视频数上限")){
-                            uploadRes = BiliApi.clientPublish(biliBiliUser.getAccessToken(), videoUploadDto);
+                        if(uploadRes.contains("验证码")){
+                            Thread.sleep(120 * 1000L);
+                            uploadRes = BiliApi.webPublish(biliBiliUser, videoUploadDto);
                             log.info("clientPublish uploadRes==>{}", uploadRes);
                         }
                         String bvid = JSON.parseObject(uploadRes).getJSONObject("data").getString("bvid");

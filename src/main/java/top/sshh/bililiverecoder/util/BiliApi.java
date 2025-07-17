@@ -163,22 +163,22 @@ public class BiliApi {
     }
 
 
-    public static String clientPublish(String accessToken, VideoUploadDto data) {
-        String url = "https://member.bilibili.com/x/vu/client/add?access_key=" + accessToken;
-        Map<String, String> query = new HashMap<>();
-        query.put("access_key", accessToken);
-        String sign = sign(query, appSecret);
-        url = url + "&sign=" + sign;
-        Map<String, String> headers = new HashMap<>();
-        long currentSecond = Instant.now().getEpochSecond();
-        headers.put("Display-ID", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5-" + currentSecond);
-        headers.put("Buvid", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5");
-        headers.put("User-Agent", "Mozilla/5.0 BiliDroid/5.37.0 (bbcallen@gmail.com)");
-        headers.put("Device-ID", "aBRoDWAVeRhsA3FDewMzS3lLMwM");
-
-        String body = JSON.toJSONString(data);
-        return HttpClientUtil.post(url, headers, body);
-    }
+    // public static String clientPublish(String accessToken, VideoUploadDto data) {
+    //     String url = "https://member.bilibili.com/x/vu/client/add?access_key=" + accessToken;
+    //     Map<String, String> query = new HashMap<>();
+    //     query.put("access_key", accessToken);
+    //     String sign = sign(query, appSecret);
+    //     url = url + "&sign=" + sign;
+    //     Map<String, String> headers = new HashMap<>();
+    //     long currentSecond = Instant.now().getEpochSecond();
+    //     headers.put("Display-ID", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5-" + currentSecond);
+    //     headers.put("Buvid", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5");
+    //     headers.put("User-Agent", "Mozilla/5.0 BiliDroid/5.37.0 (bbcallen@gmail.com)");
+    //     headers.put("Device-ID", "aBRoDWAVeRhsA3FDewMzS3lLMwM");
+    //
+    //     String body = JSON.toJSONString(data);
+    //     return HttpClientUtil.post(url, headers, body);
+    // }
 
     public static String editPublish(BiliBiliUser user, VideoEditUploadDto data) {
         WebCookie cookie = Cookie.parse(user.getCookies());
@@ -196,18 +196,18 @@ public class BiliApi {
     }
 
     public static String uploadCover(BiliBiliUser user, String fileName, byte[] fileBytes) {
-        String url = "https://member.bilibili.com/x/vu/client/cover/up?access_key=" + user.getAccessToken();
+        String url = "https://member.bilibili.com/x/vu/web/cover/up";
+        WebCookie cookie = Cookie.parse(user.getCookies());
         Map<String, String> query = new HashMap<>();
         query.put("access_key", user.getAccessToken());
         String sign = sign(query, appSecret);
         url = url + "&sign=" + sign;
         Map<String, String> headers = new HashMap<>();
         headers.put("User-Agent", "");
-        headers.put("cookie", user.getCookies());
+        headers.put("cookie", cookie.getCookie());
         MultipartBody multipartBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
-                .addFormDataPart("access_key", user.getAccessToken())
-                .addFormDataPart("sign", sign(query, appSecret))
+                .addFormDataPart("t", String.valueOf(System.currentTimeMillis()))
                 .addFormDataPart("file", fileName, RequestBody.create(fileBytes, MediaType.parse("image/png")))
                 .build();
         return HttpClientUtil.post(url, headers, multipartBody);
@@ -318,7 +318,7 @@ public class BiliApi {
         return HttpClientUtil.get(url, headers);
     }
 
-    public static BiliVideoInfoResponse getVideoInfo(String bvid) {
+    public static BiliVideoInfoResponse getVideoInfo(BiliBiliUser user,String bvid) {
         String url = "https://api.bilibili.com/x/web-interface/view";
         Map<String, String> params = new TreeMap<>();
         params.put("bvid", bvid);
@@ -328,6 +328,11 @@ public class BiliApi {
         headers.put("Buvid", "XXD9E43D7A1EBB6669597650E3EE417D9E7F5");
         headers.put("User-Agent", "Mozilla/5.0 BiliDroid/5.37.0 (bbcallen@gmail.com)");
         headers.put("Device-ID", "aBRoDWAVeRhsA3FDewMzS3lLMwM");
+        if(user != null){
+            WebCookie cookie = Cookie.parse(user.getCookies());
+            BiliResponseDto<BillBuvId> buvId = getBuvId();
+            headers.put("cookie", cookie.getCookie() + "buvid3=" + buvId.getData().getB3() + ";buvid4=" + buvId.getData().getB4());
+        }
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(url);
         params.forEach(uriBuilder::queryParam);
         String response = HttpClientUtil.get(uriBuilder.toUriString(), headers);

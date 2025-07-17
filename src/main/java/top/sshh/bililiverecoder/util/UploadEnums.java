@@ -11,7 +11,7 @@ public enum UploadEnums {
     JD_TX("JD_TX", "upos", "cs", "tx", "ugcupos/bup"),
     JD_TXA("JD_TXA", "upos", "cs", "txa", "ugcupos/bup"),
     JD_ALIA("JD_ALIA", "upos", "cs", "alia", "ugcupos/bup"),
-    APP("APP_不推荐", "app", "", "", "ugcfr/pc3"),
+    // APP("APP_不推荐", "app", "", "", "ugcfr/pc3"),
     CS_QN("CS_QN_废弃", "upos", "cs", "qn", "ugcupos/bup"),
     CS_QNHK("CS_QNHK_废弃", "upos", "cs", "qnhk", "ugcupos/bup"),
     SZ_WS("SZ_WS_废弃", "upos", "sz", "ws", "ugcupos/bup"),

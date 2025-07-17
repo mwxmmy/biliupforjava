@@ -350,6 +350,8 @@ public class HistoryController {
         Optional<RecordHistory> historyOptional = historyRepository.findById(id);
         if (historyOptional.isPresent()) {
             RecordHistory history = historyOptional.get();
+            history.setUploadRetryCount(0);
+            history = historyRepository.save(history);
             publishService.asyncRepublishRecordHistory(history);
             result.put("type", "success");
             result.put("msg", "触发转码修复事件成功");

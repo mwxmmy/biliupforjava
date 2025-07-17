@@ -7,10 +7,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import top.sshh.bililiverecoder.entity.BiliBiliUser;
 import top.sshh.bililiverecoder.entity.RecordHistory;
 import top.sshh.bililiverecoder.entity.RecordHistoryPart;
 import top.sshh.bililiverecoder.entity.RecordRoom;
 import top.sshh.bililiverecoder.entity.data.BiliVideoInfoResponse;
+import top.sshh.bililiverecoder.repo.BiliUserRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryPartRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
 import top.sshh.bililiverecoder.repo.RecordRoomRepository;
@@ -32,16 +34,19 @@ public class videoSyncJob {
     private String workPath;
 
     @Autowired
-    RecordBiliPublishService publishService;
+    private RecordBiliPublishService publishService;
 
     @Autowired
-    RecordRoomRepository roomRepository;
+    private RecordRoomRepository roomRepository;
 
     @Autowired
-    RecordHistoryRepository historyRepository;
+    private RecordHistoryRepository historyRepository;
 
     @Autowired
-    RecordHistoryPartRepository partRepository;
+    private RecordHistoryPartRepository partRepository;
+
+    @Autowired
+    private BiliUserRepository userRepository;
 
     @Autowired
     private LiveMsgService liveMsgService;
@@ -52,7 +57,12 @@ public class videoSyncJob {
     public void syncVideo() {
         //查询出所有需要同步的录播记录
         for (RecordHistory next : historyRepository.findByBvIdNotNullAndPublishIsTrueAndCodeLessThan(0)) {
-            BiliVideoInfoResponse videoInfoResponse = BiliApi.getVideoInfo(next.getBvId());
+            RecordRoom room = roomRepository.findByRoomId(next.getRoomId());
+            BiliBiliUser user = null;
+            if(room.getIsOnlySelf() == 1){
+                user = userRepository.findById(room.getUploadUserId()).get();
+            }
+            BiliVideoInfoResponse videoInfoResponse = BiliApi.getVideoInfo(user,next.getBvId());
             int code = videoInfoResponse.getCode();
             if(code == 62002 || code == -400 || code == -404){
                 next = historyRepository.save(next);
@@ -69,7 +79,7 @@ public class videoSyncJob {
             next.setBvId(videoInfoResponseData.getBvid());
             next.setCoverUrl(videoInfoResponseData.getPic());
             next = historyRepository.save(next);
-            RecordRoom recordRoom = roomRepository.findByRoomId(next.getRoomId());
+            RecordRoom recordRoom = room;
             List<BiliVideoInfoResponse.BiliVideoInfoPart> pages = videoInfoResponseData.getPages();
             for (BiliVideoInfoResponse.BiliVideoInfoPart page : pages) {
                 RecordHistoryPart part = partRepository.findByHistoryIdAndTitle(next.getId(), page.getPart());

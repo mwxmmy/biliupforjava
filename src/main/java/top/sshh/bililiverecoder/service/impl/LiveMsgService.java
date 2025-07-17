@@ -304,7 +304,7 @@ public class LiveMsgService {
     
     public void syncVideoState(String bvid) {
         RecordHistory history = recordHistoryRepository.findByBvId(bvid);
-        BiliVideoInfoResponse videoInfoResponse = BiliApi.getVideoInfo(history.getBvId());
+        BiliVideoInfoResponse videoInfoResponse = BiliApi.getVideoInfo(null,history.getBvId());
         int code = videoInfoResponse.getCode();
         BiliVideoInfoResponse.BiliVideoInfo videoInfoResponseData = videoInfoResponse.getData();
         if (code != 0 || videoInfoResponseData.getState() != 0) {

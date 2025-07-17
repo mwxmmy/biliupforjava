@@ -198,15 +198,15 @@ public class BiliApi {
     }
 
     public static String uploadCover(BiliBiliUser user, String fileName, byte[] fileBytes) {
-        String url = "https://member.bilibili.com/x/vu/web/cover/up";
         WebCookie cookie = Cookie.parse(user.getCookies());
+        String url = "https://member.bilibili.com/x/vu/web/cover/up?t=" + System.currentTimeMillis() + "&csrf=" + cookie.getCsrf();
         Map<String, String> query = new HashMap<>();
-        query.put("t", String.valueOf(System.currentTimeMillis()));
         query.put("cover","data:image/png;base64," + new String(org.apache.commons.codec.binary.Base64.encodeBase64(fileBytes)));
         Map<String, String> headers = new HashMap<>();
         headers.put("User-Agent", "");
         headers.put("Content-Type", "application/x-www-form-urlencoded");
-        headers.put("cookie", cookie.getCookie());
+        BiliResponseDto<BillBuvId> buvId = getBuvId();
+        headers.put("cookie", cookie.getCookie() + "buvid3=" + buvId.getData().getB3() + ";buvid4=" + buvId.getData().getB4());
         return HttpClientUtil.post(url, headers,"");
     }
 

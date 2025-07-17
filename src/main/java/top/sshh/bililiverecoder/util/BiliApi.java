@@ -5,7 +5,9 @@ import com.alibaba.fastjson.TypeReference;
 import lombok.Data;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.*;
+import okhttp3.Headers;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -199,18 +201,13 @@ public class BiliApi {
         String url = "https://member.bilibili.com/x/vu/web/cover/up";
         WebCookie cookie = Cookie.parse(user.getCookies());
         Map<String, String> query = new HashMap<>();
-        query.put("access_key", user.getAccessToken());
-        String sign = sign(query, appSecret);
-        url = url + "&sign=" + sign;
+        query.put("t", String.valueOf(System.currentTimeMillis()));
+        query.put("cover","data:image/png;base64," + new String(org.apache.commons.codec.binary.Base64.encodeBase64(fileBytes)));
         Map<String, String> headers = new HashMap<>();
         headers.put("User-Agent", "");
+        headers.put("Content-Type", "application/x-www-form-urlencoded");
         headers.put("cookie", cookie.getCookie());
-        MultipartBody multipartBody = new MultipartBody.Builder()
-                .setType(MultipartBody.FORM)
-                .addFormDataPart("t", String.valueOf(System.currentTimeMillis()))
-                .addFormDataPart("cover", fileName, RequestBody.create(fileBytes, MediaType.parse("image/png")))
-                .build();
-        return HttpClientUtil.post(url, headers, multipartBody);
+        return HttpClientUtil.post(url, headers,"");
     }
 
     public static String uploadChunk(

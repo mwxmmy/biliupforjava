@@ -2,6 +2,7 @@ package top.sshh.bililiverecoder.repo;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import top.sshh.bililiverecoder.entity.LiveMsg;
@@ -21,7 +22,7 @@ public interface LiveMsgRepository extends CrudRepository<LiveMsg, Long> {
      * @param pool
      * @return
      */
-    List<LiveMsg> findByPartIdAndPoolOrderBySendTimeAsc(Long partId, int pool);
+    List<LiveMsg> findByPartIdAndPoolAndCidNotNullOrderBySendTimeAsc(Long partId, int pool);
 
     int countByPartId(Long partId);
 
@@ -34,4 +35,24 @@ public interface LiveMsgRepository extends CrudRepository<LiveMsg, Long> {
     List<LiveMsg> queryByBvid(String bvid);
 
     List<LiveMsg> queryByCid(Long cid);
+
+    List<LiveMsg> queryByPartId(Long partId);
+
+    @Query(value = "SELECT " +
+            "   FLOOR(send_time / 60000) AS time, " +
+            "   COUNT(*) AS num " +
+            "FROM live_msg " +
+            "WHERE part_id = ?1 " +
+            "GROUP BY FLOOR(send_time / 60000)",
+            nativeQuery = true)
+    List<Object[]> getMsgCountByMinute(Long partId);
+
+    @Query(value = "SELECT " +
+            "   FLOOR(send_time / 1000) AS time, " +
+            "   COUNT(*) AS num " +
+            "FROM live_msg " +
+            "WHERE part_id = ?1 " +
+            "GROUP BY FLOOR(send_time / 1000)",
+            nativeQuery = true)
+    List<Object[]> getMsgCountBySecond(Long partId);
 }

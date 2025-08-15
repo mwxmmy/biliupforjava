@@ -19,10 +19,12 @@ import top.sshh.bililiverecoder.repo.LiveMsgRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryPartRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
 import top.sshh.bililiverecoder.repo.RecordRoomRepository;
+import top.sshh.bililiverecoder.service.impl.HighEnergyCutPublishService;
 import top.sshh.bililiverecoder.service.impl.LiveMsgService;
 import top.sshh.bililiverecoder.service.impl.RecordBiliPublishService;
 
 import java.io.File;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -46,6 +48,8 @@ public class HistoryController {
     private LiveMsgRepository msgRepository;
     @Autowired
     private LiveMsgService msgService;
+    @Autowired
+    private HighEnergyCutPublishService highEnergyCutPublishService;
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -331,6 +335,43 @@ public class HistoryController {
             publishService.asyncPublishRecordHistory(history);
             result.put("type", "success");
             result.put("msg", "触发发布事件成功");
+            return result;
+        } else {
+            result.put("type", "warning");
+            result.put("msg", "录制历史不存在");
+            return result;
+        }
+    }
+
+    @GetMapping("/highEnergyCutPublish/{id}")
+    public Map<String, String> HighEnergyCutPublish(@PathVariable("id") Long id) throws IOException {
+        Map<String, String> result = new HashMap<>();
+        if (id == null) {
+            result.put("type", "info");
+            result.put("msg", "请输入id");
+            return result;
+        }
+        Optional<RecordHistory> historyOptional = historyRepository.findById(id);
+        if (historyOptional.isPresent()) {
+            RecordHistory history = historyOptional.get();
+            history.setUploadRetryCount(0);
+            history = historyRepository.save(history);
+            String msg = HighEnergyCutPublishService.taskRunningMsg.get(history.getId());
+            if (msg != null) {
+                result.put("type", "warning");
+                result.put("msg", "正在剪辑处理\n" + msg);
+                return result;
+            }
+            try {
+                highEnergyCutPublishService.process(history);
+            } catch (Exception e) {
+                HighEnergyCutPublishService.taskRunningMsg.remove(history.getId());
+                result.put("type", "error");
+                result.put("msg", e.getMessage());
+                return result;
+            }
+            result.put("type", "success");
+            result.put("msg", "触发高能剪辑成功");
             return result;
         } else {
             result.put("type", "warning");

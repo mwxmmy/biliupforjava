@@ -170,6 +170,8 @@ public class RoomController {
             dbRoom.setUpload(room.isUpload());
             dbRoom.setUploadUserId(room.getUploadUserId());
             dbRoom.setSeasonId(room.getSeasonId());
+            dbRoom.setHighEnergyCut(room.isHighEnergyCut());
+            dbRoom.setPercentileRank(room.getPercentileRank());
             dbRoom.setIsOnlySelf(room.getIsOnlySelf());
             dbRoom.setNoDisturbance(room.getNoDisturbance());
             dbRoom.setTitleTemplate(room.getTitleTemplate());

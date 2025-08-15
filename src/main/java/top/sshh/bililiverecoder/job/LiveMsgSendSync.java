@@ -106,7 +106,7 @@ public class LiveMsgSendSync {
                 StringBuilder context = new StringBuilder();
                 context.append("sc和上舰列表,网页可跳转\n");
                 for (RecordHistoryPart part : parts) {
-                    List<LiveMsg> msgList = msgRepository.findByPartIdAndPoolOrderBySendTimeAsc(part.getId(), 1);
+                    List<LiveMsg> msgList = msgRepository.findByPartIdAndPoolAndCidNotNullOrderBySendTimeAsc(part.getId(), 1);
                     for (LiveMsg liveMsg : msgList) {
                         StringBuilder builder = new StringBuilder();
                         builder.append(part.getPage()).append('#').append(format.format(new Date(liveMsg.getSendTime()))).append("  ").append(liveMsg.getContext()).append('\n');

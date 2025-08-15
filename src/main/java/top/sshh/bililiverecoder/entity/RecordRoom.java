@@ -33,7 +33,18 @@ public class RecordRoom {
     private Integer tid = 171;
 
 
+    // 1自制，2 转载
     private int copyright = 1;
+
+    /**
+     * 自动剪辑的弹幕数量比因子
+     */
+    private double percentileRank = 0.95;
+
+    /**
+     * 是否启用高能剪辑发布
+     */
+    private boolean highEnergyCut = false;
 
     /**
      * 合集id

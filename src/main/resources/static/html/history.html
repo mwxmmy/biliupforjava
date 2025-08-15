@@ -189,10 +189,10 @@
                         </el-button>
                     </el-tooltip>
                 </el-popconfirm>
-                <!--                <el-button-->
-                <!--                        @click="uploadEdit(scope.$index, scope.row)" size="mini"-->
-                <!--                        type="primary">云剪辑-->
-                <!--                </el-button>-->
+                <el-button
+                        @click="highEnergyCutPublish(scope.row.id)" size="mini"
+                        type="primary">发布高能片段
+                </el-button>
                 <el-popover
                         placement="right"
                         width="400"
@@ -471,6 +471,22 @@
                 let _this = this;
                 $.ajax({
                     url: '/history/rePublish/' + id,
+                    contentType: 'application/json;charset=utf-8',
+                    type: 'get',
+                    dataType: 'json',
+                    success: function (data) {
+                        _this.$message({
+                            message: data.msg,
+                            type: data.type
+                        });
+                        _this.initTable();
+                    }
+                });
+            },
+            highEnergyCutPublish: function (id) {
+                let _this = this;
+                $.ajax({
+                    url: '/history/highEnergyCutPublish/' + id,
                     contentType: 'application/json;charset=utf-8',
                     type: 'get',
                     dataType: 'json',

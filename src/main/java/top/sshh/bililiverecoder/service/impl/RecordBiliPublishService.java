@@ -13,15 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import top.sshh.bililiverecoder.entity.BiliBiliUser;
-import top.sshh.bililiverecoder.entity.RecordHistory;
-import top.sshh.bililiverecoder.entity.RecordHistoryPart;
-import top.sshh.bililiverecoder.entity.RecordRoom;
+import top.sshh.bililiverecoder.entity.*;
 import top.sshh.bililiverecoder.entity.data.*;
-import top.sshh.bililiverecoder.repo.BiliUserRepository;
-import top.sshh.bililiverecoder.repo.RecordHistoryPartRepository;
-import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
-import top.sshh.bililiverecoder.repo.RecordRoomRepository;
+import top.sshh.bililiverecoder.repo.*;
 import top.sshh.bililiverecoder.service.UploadServiceFactory;
 import top.sshh.bililiverecoder.util.BiliApi;
 import top.sshh.bililiverecoder.util.TaskUtil;
@@ -77,6 +71,12 @@ public class RecordBiliPublishService {
     private RecordRoomRepository roomRepository;
     @Autowired
     private UploadServiceFactory uploadServiceFactory;
+    @Autowired
+    private HighEnergyCutPublishService highEnergyCutPublishService;
+    @Autowired
+    private LiveMsgService liveMsgService;
+    @Autowired
+    private LiveMsgRepository msgRepository;
 
     @Async
     public void asyncPublishRecordHistory(RecordHistory history) {
@@ -570,6 +570,27 @@ public class RecordBiliPublishService {
                         history.setPublish(true);
                         history = historyRepository.save(history);
                         log.info("发布={}=视频成功 == > {}", room.getUname(), JSON.toJSONString(history));
+
+                        if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("视频投稿")) {
+                            Message message = new Message();
+                            message.setAppToken(wxToken);
+                            message.setContentType(Message.CONTENT_TYPE_TEXT);
+                            message.setContent(WX_MSG_FORMAT.formatted("投稿成功", room.getUname(), room.getTitle(),
+                                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), "bvid=>" + bvid));
+                            message.setUid(wxuid);
+                            WxPusher.send(message);
+                        }
+                        //处理高能剪辑事件
+                        if (room.isHighEnergyCut()) {
+                            for (RecordHistoryPart part : uploadParts) {
+                                //解析弹幕入库
+                                List<LiveMsg> liveMsgs = msgRepository.queryByPartId(part.getId());
+                                msgRepository.deleteAll(liveMsgs);
+                                liveMsgService.processing(part);
+                            }
+                            highEnergyCutPublishService.process(history);
+                        }
+
                         try {
                             if (room.getSeasonId() != null && room.getSeasonId() > 0) {
                                 String addSeasons = BiliApi.addSeasons(biliBiliUser, room.getSeasonId(), aid, String.valueOf(uploadParts.get(0).getCid()), videoUploadDto.getTitle());
@@ -581,15 +602,6 @@ public class RecordBiliPublishService {
                         } catch (Exception e) {
                             e.printStackTrace();
                             log.error("{}=加入合集失败 == > {}", history.getTitle(), JSON.toJSONString(history));
-                        }
-                        if (StringUtils.isNotBlank(wxuid) && StringUtils.isNotBlank(pushMsgTags) && pushMsgTags.contains("视频投稿")) {
-                            Message message = new Message();
-                            message.setAppToken(wxToken);
-                            message.setContentType(Message.CONTENT_TYPE_TEXT);
-                            message.setContent(WX_MSG_FORMAT.formatted("投稿成功", room.getUname(), room.getTitle(),
-                                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日HH点mm分ss秒")), "bvid=>" + bvid));
-                            message.setUid(wxuid);
-                            WxPusher.send(message);
                         }
 
                         //如果配置成投稿完成后删除则删除文件

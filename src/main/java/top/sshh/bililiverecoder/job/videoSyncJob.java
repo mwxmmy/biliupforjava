@@ -7,15 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import top.sshh.bililiverecoder.entity.BiliBiliUser;
-import top.sshh.bililiverecoder.entity.RecordHistory;
-import top.sshh.bililiverecoder.entity.RecordHistoryPart;
-import top.sshh.bililiverecoder.entity.RecordRoom;
+import top.sshh.bililiverecoder.entity.*;
 import top.sshh.bililiverecoder.entity.data.BiliVideoInfoResponse;
-import top.sshh.bililiverecoder.repo.BiliUserRepository;
-import top.sshh.bililiverecoder.repo.RecordHistoryPartRepository;
-import top.sshh.bililiverecoder.repo.RecordHistoryRepository;
-import top.sshh.bililiverecoder.repo.RecordRoomRepository;
+import top.sshh.bililiverecoder.repo.*;
 import top.sshh.bililiverecoder.service.impl.LiveMsgService;
 import top.sshh.bililiverecoder.service.impl.RecordBiliPublishService;
 import top.sshh.bililiverecoder.util.BiliApi;
@@ -50,6 +44,8 @@ public class videoSyncJob {
 
     @Autowired
     private LiveMsgService liveMsgService;
+    @Autowired
+    private LiveMsgRepository msgRepository;
 
 
     // 定时查询录制历史，每五分钟验证一下是否发布成功
@@ -58,6 +54,10 @@ public class videoSyncJob {
         //查询出所有需要同步的录播记录
         for (RecordHistory next : historyRepository.findByBvIdNotNullAndPublishIsTrueAndCodeLessThan(0)) {
             RecordRoom room = roomRepository.findByRoomId(next.getRoomId());
+            if (room == null) {
+                log.error("同步视频状态，未找到房间{}，请删除该录制历史 {}", next.getRoomId(), next);
+                continue;
+            }
             BiliBiliUser user = null;
             if(room.getIsOnlySelf() == 1){
                 user = userRepository.findById(room.getUploadUserId()).get();
@@ -89,6 +89,8 @@ public class videoSyncJob {
                     part.setDuration(page.getDuration());
                     part = partRepository.save(part);
                     //解析弹幕入库
+                    List<LiveMsg> liveMsgs = msgRepository.queryByPartId(part.getId());
+                    msgRepository.deleteAll(liveMsgs);
                     liveMsgService.processing(part);
                     log.info("同步视频分p 成功==>{}", JSON.toJSONString(part));
                 }

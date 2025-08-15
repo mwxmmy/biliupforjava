@@ -24,7 +24,7 @@ public class RefreshTokenJob {
 
     //两天更新一次
     @Scheduled(fixedDelay = 172800000, initialDelay = 60000)
-    public void sndMsgProcess() {
+    public void refreshTokenProcess() {
         LocalDateTime now = LocalDateTime.now().minusHours(1);
         Iterable<BiliBiliUser> all = userRepository.findAll();
         for (BiliBiliUser user : all) {

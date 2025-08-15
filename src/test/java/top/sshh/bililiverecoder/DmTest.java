@@ -13,6 +13,7 @@ import top.sshh.bililiverecoder.repo.BiliUserRepository;
 import top.sshh.bililiverecoder.repo.LiveMsgRepository;
 import top.sshh.bililiverecoder.repo.RecordHistoryPartRepository;
 import top.sshh.bililiverecoder.service.impl.BiliBiliUserService;
+import top.sshh.bililiverecoder.service.impl.HighEnergyCutPublishService;
 import top.sshh.bililiverecoder.service.impl.JdbcService;
 import top.sshh.bililiverecoder.service.impl.LiveMsgService;
 import top.sshh.bililiverecoder.util.BiliApi;
@@ -44,6 +45,15 @@ public class DmTest {
     private BiliUserRepository biliUserRepository;
     @Autowired
     private BiliBiliUserService biliUserService;
+    @Autowired
+    private HighEnergyCutPublishService highEnergyCutPublishService;
+
+    // @Test
+    public void testHighEnergyCut() {
+
+        Map<Integer, Integer> highEnergyCut = highEnergyCutPublishService.getHighEnergyCut(partRepository.findById(12079L).get(), 0.95);
+        System.out.println(highEnergyCut);
+    }
 
     // @Test
     public void sendDm() {

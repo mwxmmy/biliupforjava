@@ -316,6 +316,20 @@
                     <el-option label="否" :value="false"></el-option>
                 </el-select>
             </el-form-item>
+            <el-form-item :label-width="formLabelWidth" label="是否投稿高能片段">
+                <el-select placeholder="请选择" v-model="room.highEnergyCut">
+                    <el-option :value="true" label="是"></el-option>
+                    <el-option :value="false" label="否"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item :label-width="formLabelWidth" label="高能片段因子,0.8-0.99">
+                <el-col :span="7">
+                    <el-input autocomplete="off" max="0.9" min="0.5"
+                              placeholder="如0.95,则剪辑平滑处理后每秒钟弹幕数量大于整体95%的片段"
+                              step="0.01" type="number"
+                              v-model="room.percentileRank"></el-input>
+                </el-col>
+            </el-form-item>
             <el-form-item :label-width="formLabelWidth" label="是否发送弹幕">
                 <el-select placeholder="请选择" v-model="room.sendDm">
                     <el-option :value="true" label="是"></el-option>

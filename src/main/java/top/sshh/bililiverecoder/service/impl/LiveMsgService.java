@@ -86,9 +86,6 @@ public class LiveMsgService {
             RecordHistory history = historyOptional.get();
             bvid = history.getBvId();
         }
-        if (StringUtils.isBlank(bvid) || part.getCid() == null || part.getCid() < 1) {
-            return;
-        }
         RecordRoom room = roomRepository.findByRoomId(part.getRoomId());
         String dmKeywordBlacklist = room.getDmKeywordBlacklist();
         String[] EXCLUSION_DM;
@@ -124,7 +121,7 @@ public class LiveMsgService {
                 for (Node node : scNodes) {
                     DefaultElement element = (DefaultElement) node;
                     String time = element.attribute("ts").getValue();
-                    long sendTime = (long) (Float.parseFloat(time) * 1000);
+                    long sendTime = Double.valueOf(time).longValue() * 1000;
                     String userName = element.attribute("user").getValue();
                     String price = element.attribute("price").getValue();
 
@@ -159,7 +156,7 @@ public class LiveMsgService {
                 for (Node node : guardNodes) {
                     DefaultElement element = (DefaultElement) node;
                     String time = element.attribute("ts").getValue();
-                    long sendTime = (long) (Float.parseFloat(time) * 1000);
+                    long sendTime = Double.valueOf(time).longValue() * 1000;
                     String userName = element.attribute("user").getValue();
                     String level = element.attribute("level").getValue();
                     String count = element.attribute("count").getValue();
@@ -257,7 +254,7 @@ public class LiveMsgService {
 
                     String value = element.attribute("p").getValue();
                     String[] values = value.split(",");
-                    long sendTime = (long) (Float.parseFloat(values[0]) * 1000) - 10000L;
+                    long sendTime = Double.valueOf(values[0]).longValue() * 1000;
                     if (sendTime < 0) {
                         continue;
                     }

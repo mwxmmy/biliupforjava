@@ -30,7 +30,7 @@ public class RecordRoom {
     private String tags = "直播回放,${uname},${areaName}";
 
     // 发布到哪个分区
-    private Integer tid = 171;
+    private Integer tid = 21;
 
 
     // 1自制，2 转载

@@ -510,7 +510,9 @@ public class HighEnergyCutPublishService {
         List<Integer> smoothedNums = new ArrayList<>(smoothedValues.values());
         Collections.sort(smoothedNums);
         double percentile = calculatePercentile(smoothedNums, percentileRank);
-
+        if (percentile <= 1) {
+            percentile = 1;
+        }
         // 5. 筛选高能点
         List<Integer> highEnergySeconds = new ArrayList<>();
         for (Map.Entry<Integer, Integer> entry : smoothedValues.entrySet()) {
@@ -544,13 +546,13 @@ public class HighEnergyCutPublishService {
         }
         originalIntervals.add(new int[]{start, end});
 
-        // 7. 时间调整（前推30秒，延长40秒）
+        // 7. 时间调整（前推30秒，延长10秒）
         List<int[]> adjustedIntervals = new ArrayList<>();
         for (int[] interval : originalIntervals) {
             int originalStart = interval[0];
             int originalEnd = interval[1];
             int adjustedStart = originalStart - 30;  // 前推30秒
-            int adjustedEnd = originalEnd + 40;      // 延长40秒
+            int adjustedEnd = originalEnd + 40;      // 延长10秒
             adjustedIntervals.add(new int[]{adjustedStart, adjustedEnd});
         }
 
